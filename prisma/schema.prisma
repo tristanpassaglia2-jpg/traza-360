@@ -1,0 +1,483 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════
+// ENUMS
+// ═══════════════════════════════════════
+
+enum UserRole {
+  PROTECTED    // persona protegida
+  CAREGIVER    // familiar / cuidador
+  ADMIN
+}
+
+enum AlertType {
+  PANIC
+  INTRUDER
+  SILENT
+  FALL
+  CHILD_LOST
+  WORK_EMERGENCY
+}
+
+enum AlertStatus {
+  ACTIVE
+  RESOLVED
+  CANCELLED
+  ESCALATED
+}
+
+enum EvidenceType {
+  AUDIO
+  VIDEO
+  PHOTO
+  NOTE
+  DOCUMENT
+}
+
+enum TrackingStatus {
+  ACTIVE
+  COMPLETED
+  EXPIRED
+  EMERGENCY
+}
+
+enum ReminderStatus {
+  PENDING
+  DONE
+  SNOOZED
+  MISSED
+}
+
+enum MedicationLogStatus {
+  TAKEN
+  MISSED
+  SNOOZED
+}
+
+enum PlanId {
+  FREE
+  PREMIUM_PERSONAL
+  PREMIUM_FAMILIAR
+}
+
+enum ContactRelation {
+  FAMILIAR
+  AMIGO
+  CUIDADOR
+  SUPERVISOR
+  VECINO
+  OTRO
+}
+
+enum AuditAction {
+  ALERT_CREATED
+  ALERT_RESOLVED
+  EVIDENCE_UPLOADED
+  EVIDENCE_DELETED
+  TRACKING_STARTED
+  TRACKING_STOPPED
+  LOCATION_SHARED
+  LOGIN
+  LOGOUT
+  SETTINGS_CHANGED
+  SUBSCRIPTION_CHANGED
+}
+
+// ═══════════════════════════════════════
+// USERS & AUTH
+// ═══════════════════════════════════════
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  role          UserRole  @default(PROTECTED)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+  isActive      Boolean   @default(true)
+
+  profile       UserProfile?
+  contacts      Contact[]
+  alerts        Alert[]
+  sessions      LocationSession[]
+  evidence      EvidenceItem[]
+  reminders     Reminder[]
+  medications   Medication[]
+  checkinRules  CheckinRule[]
+  checkinLogs   CheckinLog[]
+  subscription  Subscription?
+  settings      AppSetting[]
+  auditLogs     AuditLog[]
+
+  // Relaciones de cuidador
+  caregivingFor CaregiverLink[] @relation("CaregiverUser")
+  protectedBy   CaregiverLink[] @relation("ProtectedUser")
+
+  @@index([email])
+}
+
+model UserProfile {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName     String?
+  phone           String?
+  birthDate       DateTime?
+  primaryModule   String?   // VIOLENCIA, MAYOR, NINO, HOGAR, TRABAJO
+  medicalNotes    String?
+  homeAddress     String?
+  homeLat         Float?
+  homeLng         Float?
+  avatarUrl       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model CaregiverLink {
+  id            String   @id @default(cuid())
+  caregiverId   String
+  caregiver     User     @relation("CaregiverUser", fields: [caregiverId], references: [id], onDelete: Cascade)
+  protectedId   String
+  protected     User     @relation("ProtectedUser", fields: [protectedId], references: [id], onDelete: Cascade)
+  canSeeLocation    Boolean @default(true)
+  canSeeAlerts      Boolean @default(true)
+  canSeeCheckins    Boolean @default(true)
+  canSeeMedication  Boolean @default(false)
+  canSeeLastSignal  Boolean @default(true)
+  isActive          Boolean @default(true)
+  createdAt     DateTime @default(now())
+
+  @@unique([caregiverId, protectedId])
+  @@index([protectedId])
+}
+
+// ═══════════════════════════════════════
+// CONTACTS
+// ═══════════════════════════════════════
+
+model Contact {
+  id            String          @id @default(cuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  relation      ContactRelation
+  phone         String
+  email         String?
+  whatsapp      String?
+  priority      Int             @default(1)
+  receivesAlerts    Boolean     @default(true)
+  receivesLocation  Boolean     @default(false)
+  receivesLastSignal Boolean    @default(false)
+  receivesCheckins  Boolean     @default(false)
+  receivesMedication Boolean    @default(false)
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  alertRecipients AlertRecipient[]
+
+  @@index([userId])
+}
+
+// ═══════════════════════════════════════
+// ALERTS
+// ═══════════════════════════════════════
+
+model Alert {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        AlertType
+  status      AlertStatus @default(ACTIVE)
+  latitude    Float?
+  longitude   Float?
+  address     String?
+  notes       String?
+  module      String?     // qué módulo lo disparó
+  createdAt   DateTime    @default(now())
+  resolvedAt  DateTime?
+  updatedAt   DateTime    @updatedAt
+
+  recipients  AlertRecipient[]
+  evidence    EvidenceItem[]
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+model AlertRecipient {
+  id          String   @id @default(cuid())
+  alertId     String
+  alert       Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  contactId   String
+  contact     Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  notifiedAt  DateTime?
+  method      String?  // SMS, WHATSAPP, PUSH, EMAIL
+  createdAt   DateTime @default(now())
+
+  @@index([alertId])
+}
+
+// ═══════════════════════════════════════
+// TRACKING & LOCATION
+// ═══════════════════════════════════════
+
+model LocationSession {
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status      TrackingStatus @default(ACTIVE)
+  type        String?        // ROUTE, ZONE_RISK, ON_MY_WAY, GOING_HOME
+  destination String?
+  destLat     Float?
+  destLng     Float?
+  durationMin Int?           // duración esperada en minutos
+  startedAt   DateTime       @default(now())
+  endedAt     DateTime?
+  expiresAt   DateTime?
+
+  points      LocationPoint[]
+
+  @@index([userId, status])
+  @@index([expiresAt])
+}
+
+model LocationPoint {
+  id          String          @id @default(cuid())
+  sessionId   String
+  session     LocationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  latitude    Float
+  longitude   Float
+  accuracy    Float?
+  battery     Float?          // porcentaje 0-100
+  networkType String?         // WIFI, 4G, 3G, NONE
+  recordedAt  DateTime        @default(now())
+
+  @@index([sessionId, recordedAt])
+}
+
+// ═══════════════════════════════════════
+// EVIDENCE
+// ═══════════════════════════════════════
+
+model EvidenceItem {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  alertId     String?
+  alert       Alert?       @relation(fields: [alertId], references: [id], onDelete: SetNull)
+  type        EvidenceType
+  title       String?
+  description String?
+  fileUrl     String?      // URL en storage externo (S3/Supabase)
+  fileKey     String?      // key en storage
+  fileSizeKb  Int?
+  mimeType    String?
+  latitude    Float?
+  longitude   Float?
+  durationSec Int?         // para audio/video
+  isEncrypted Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+
+  @@index([userId, createdAt])
+  @@index([alertId])
+}
+
+// ═══════════════════════════════════════
+// REMINDERS
+// ═══════════════════════════════════════
+
+model Reminder {
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  emoji       String?
+  scheduledAt DateTime
+  repeatRule  String?        // DAILY, WEEKDAYS, WEEKLY, NONE
+  module      String?        // MAYOR, NINO
+  status      ReminderStatus @default(PENDING)
+  snoozedTo   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  logs        ReminderLog[]
+
+  @@index([userId, scheduledAt])
+  @@index([status])
+}
+
+model ReminderLog {
+  id          String   @id @default(cuid())
+  reminderId  String
+  reminder    Reminder @relation(fields: [reminderId], references: [id], onDelete: Cascade)
+  action      String   // COMPLETED, SNOOZED, MISSED
+  note        String?
+  createdAt   DateTime @default(now())
+}
+
+// ═══════════════════════════════════════
+// MEDICATIONS
+// ═══════════════════════════════════════
+
+model Medication {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  dosage      String?
+  notes       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  schedules   MedicationSchedule[]
+  logs        MedicationLog[]
+
+  @@index([userId])
+}
+
+model MedicationSchedule {
+  id           String     @id @default(cuid())
+  medicationId String
+  medication   Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  timeOfDay    String     // "08:00", "14:00", "20:00"
+  daysOfWeek   String?    // "1,2,3,4,5,6,7" o null = todos
+  isActive     Boolean    @default(true)
+
+  @@index([medicationId])
+}
+
+model MedicationLog {
+  id            String              @id @default(cuid())
+  medicationId  String
+  medication    Medication          @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  scheduledTime String              // "08:00"
+  scheduledDate DateTime
+  status        MedicationLogStatus
+  takenAt       DateTime?
+  createdAt     DateTime            @default(now())
+
+  @@index([medicationId, scheduledDate])
+}
+
+// ═══════════════════════════════════════
+// CHECK-INS
+// ═══════════════════════════════════════
+
+model CheckinRule {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  intervalMin Int      @default(120) // cada cuántos minutos
+  startTime   String   @default("08:00")
+  endTime     String   @default("22:00")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+model CheckinLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  respondedAt DateTime?
+  missedAt    DateTime?
+  latitude    Float?
+  longitude   Float?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// ═══════════════════════════════════════
+// PLANS & SUBSCRIPTIONS
+// ═══════════════════════════════════════
+
+model Plan {
+  id              String        @id // FREE, PREMIUM_PERSONAL, PREMIUM_FAMILIAR
+  name            String
+  description     String?
+  priceMonthly    Float         @default(0)
+  priceCurrency   String        @default("USD")
+  isActive        Boolean       @default(true)
+
+  features        PlanFeature[]
+  subscriptions   Subscription[]
+}
+
+model PlanFeature {
+  id       String  @id @default(cuid())
+  planId   String
+  plan     Plan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  feature  String  // maxContacts, evidenceCloud, fullHistory, etc.
+  value    String  // "2", "true", "unlimited"
+
+  @@unique([planId, feature])
+}
+
+model Subscription {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId    String
+  plan      Plan     @relation(fields: [planId], references: [id])
+  startedAt DateTime @default(now())
+  expiresAt DateTime?
+  isActive  Boolean  @default(true)
+
+  @@index([planId])
+}
+
+model FeatureFlag {
+  id        String  @id @default(cuid())
+  key       String  @unique
+  value     Boolean @default(false)
+  description String?
+}
+
+// ═══════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════
+
+model AppSetting {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key    String
+  value  String
+
+  @@unique([userId, key])
+  @@index([userId])
+}
+
+// ═══════════════════════════════════════
+// AUDIT LOG
+// ═══════════════════════════════════════
+
+model AuditLog {
+  id        String      @id @default(cuid())
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    AuditAction
+  details   String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime    @default(now())
+
+  @@index([userId, createdAt])
+  @@index([action])
+}
