@@ -6,6 +6,7 @@ import useAuthStore from './context/authStore';
 // Pages
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
+import LandingPage from './pages/home/LandingPage';
 import HomePage from './pages/home/HomePage';
 import ViolenciaPage from './pages/violencia/ViolenciaPage';
 import MayorPage from './pages/mayor/MayorPage';
