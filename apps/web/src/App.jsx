@@ -38,7 +38,8 @@ export default function App() {
         <Route path="/register" element={<RegisterPage />} />
 
         {/* Protected */}
-        <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+        <Route path="/" element={<LandingPage />} />
+<Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
         <Route path="/violencia" element={<ProtectedRoute><ViolenciaPage /></ProtectedRoute>} />
         <Route path="/mayor" element={<ProtectedRoute><MayorPage /></ProtectedRoute>} />
         <Route path="/nino" element={<ProtectedRoute><NinoPage /></ProtectedRoute>} />
