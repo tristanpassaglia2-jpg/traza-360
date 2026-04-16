@@ -80,7 +80,23 @@ const PLANS = [
     ],
   },
 ];
+const ADOLESCENTES_FEATURES = [
+  "Voy a lo de...",
+  "Vuelvo a casa a las...",
+  "Entré a un lugar desconocido",
+  "Estoy perdido",
+  "Transporte de confianza",
+  "Estoy en problemas",
+];
 
+const ADOLESCENTES_DETAILS = [
+  "Salí de casa y aviso a qué lugar o persona voy.",
+  "Indico a qué hora vuelvo; si no regreso, se avisa a mis contactos.",
+  "Activo un temporizador de seguridad; si no lo desactivo con PIN, se comparte mi ubicación.",
+  "Envío mi ubicación actual a amigos, padres o contactos elegidos.",
+  "Llamo o abro una movilidad segura con un solo toque.",
+  "Envío alerta, ubicación actual y seguimiento a contactos seleccionados.",
+];
 export default function LandingPage() {
   const navigate = useNavigate();
 
