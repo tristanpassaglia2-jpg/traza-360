@@ -183,7 +183,31 @@ export default function LandingPage() {
               <p className="mb-4 text-sm leading-relaxed text-slate-400">
                 {m.desc}
               </p>
+{m.key === "hogar" && (
+  <div className="mb-4 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4">
+    <div className="mb-2 text-sm font-semibold text-violet-300">
+      Adolescentes seguros
+    </div>
 
+    <p className="mb-3 text-xs leading-5 text-slate-400">
+      Herramientas para salir, volver y pedir respaldo sin perder autonomía.
+    </p>
+
+    <div className="space-y-2">
+      {ADOLESCENTES_FEATURES.map((item, index) => (
+        <div
+          key={item}
+          className="rounded-xl border border-white/8 bg-white/5 px-3 py-3"
+        >
+          <div className="text-xs font-semibold text-slate-100">{item}</div>
+          <div className="mt-1 text-[11px] leading-5 text-slate-400">
+            {ADOLESCENTES_DETAILS[index]}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
               <WhatsAppButton
                 tipo={m.waTipo}
                 label="Consultar este módulo"
