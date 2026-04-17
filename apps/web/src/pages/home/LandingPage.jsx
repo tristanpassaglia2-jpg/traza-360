@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import WhatsAppButton, {
   WhatsAppFloatingButton,
@@ -12,6 +13,18 @@ const MODULES = [
     desc: "Alerta silenciosa, ubicación y red de apoyo ante situaciones de riesgo.",
     color: "from-fuchsia-500 to-rose-500",
     border: "border-fuchsia-500/20",
+    extraTitle: "Respaldo preventivo",
+    extraColor: "fuchsia",
+    extraFeatures: [
+      {
+        name: "Ingreso a lo de...",
+        detail: "Aviso que ingresé a un domicilio o lugar sensible y comparto mi ubicación con contactos asignados.",
+      },
+      {
+        name: "Ingreso con resguardo",
+        detail: "Defino un tiempo estimado de salida. Si no cancelo con PIN, se disparan mensajes o llamada por WhatsApp, ubicación en tiempo real y seguimiento para contactos seleccionados.",
+      },
+    ],
   },
   {
     key: "adulto_mayor",
@@ -21,6 +34,22 @@ const MODULES = [
     desc: "Seguimiento y asistencia ante caída, descompensación o desorientación.",
     color: "from-amber-400 to-orange-500",
     border: "border-amber-500/20",
+    extraTitle: "Cuidado continuo",
+    extraColor: "amber",
+    extraFeatures: [
+      {
+        name: "Check-in diario",
+        detail: "Confirmación automática de estado; si no responde, se avisa a familiares.",
+      },
+      {
+        name: "Detección de caída",
+        detail: "Alerta automática ante caídas o movimientos inusuales.",
+      },
+      {
+        name: "Recordatorio de medicamentos",
+        detail: "Notificaciones para toma de medicación con confirmación.",
+      },
+    ],
   },
   {
     key: "ninos",
@@ -30,6 +59,22 @@ const MODULES = [
     desc: "Mayor trazabilidad para trayectos, rutinas y situaciones inesperadas.",
     color: "from-sky-400 to-cyan-500",
     border: "border-sky-500/20",
+    extraTitle: "Trayectos seguros",
+    extraColor: "sky",
+    extraFeatures: [
+      {
+        name: "Camino a la escuela",
+        detail: "Seguimiento en tiempo real del trayecto casa-escuela-casa.",
+      },
+      {
+        name: "Llegué bien",
+        detail: "Confirmación automática al llegar a destinos habituales.",
+      },
+      {
+        name: "Zonas seguras",
+        detail: "Alertas si sale de áreas establecidas como seguras.",
+      },
+    ],
   },
   {
     key: "hogar",
@@ -39,6 +84,34 @@ const MODULES = [
     desc: "Canal rápido de activación ante amenazas o intrusos en domicilio.",
     color: "from-violet-500 to-purple-500",
     border: "border-violet-500/20",
+    extraTitle: "Adolescentes seguros",
+    extraColor: "violet",
+    extraFeatures: [
+      {
+        name: "Voy a lo de...",
+        detail: "Salí de casa y aviso a qué lugar o persona voy.",
+      },
+      {
+        name: "Vuelvo a casa a las...",
+        detail: "Indico a qué hora vuelvo; si no regreso, se avisa a mis contactos.",
+      },
+      {
+        name: "Entré a un lugar desconocido",
+        detail: "Activo un temporizador de seguridad; si no lo desactivo con PIN, se comparte mi ubicación.",
+      },
+      {
+        name: "Estoy perdido",
+        detail: "Envío mi ubicación actual a amigos, padres o contactos elegidos.",
+      },
+      {
+        name: "Transporte de confianza",
+        detail: "Llamo o abro una movilidad segura con un solo toque.",
+      },
+      {
+        name: "Estoy en problemas",
+        detail: "Envío alerta, ubicación actual y seguimiento a contactos seleccionados.",
+      },
+    ],
   },
 ];
 
@@ -50,8 +123,8 @@ const PLANS = [
     features: [
       "1 perfil",
       "2 contactos de confianza",
-      "alerta manual",
-      "ubicación en vivo en incidente",
+      "Alerta manual",
+      "Ubicación en vivo en incidente",
     ],
   },
   {
@@ -60,10 +133,10 @@ const PLANS = [
     sub: "Más seguimiento, más automatización y más control.",
     features: [
       "Todo lo gratis",
-      "historial de ubicaciones",
-      "hasta 5 contactos",
-      "geocercas",
-      "alertas automáticas básicas",
+      "Historial de ubicaciones",
+      "Hasta 5 contactos",
+      "Geocercas",
+      "Alertas automáticas básicas",
     ],
     highlight: true,
   },
@@ -73,52 +146,119 @@ const PLANS = [
     sub: "Pensado para familia, cuidadores o uso profesional.",
     features: [
       "Todo Premium Personal",
-      "varios perfiles protegidos",
-      "reportes",
-      "prioridad",
-      "módulos avanzados",
+      "Varios perfiles protegidos",
+      "Reportes",
+      "Prioridad",
+      "Módulos avanzados",
     ],
   },
 ];
 
-const ADOLESCENTES_FEATURES = [
-  "Voy a lo de...",
-  "Vuelvo a casa a las...",
-  "Entré a un lugar desconocido",
-  "Estoy perdido",
-  "Transporte de confianza",
-  "Estoy en problemas",
-];
+// Colores para los acentos de las secciones expandibles
+const EXTRA_COLORS = {
+  fuchsia: {
+    border: "border-fuchsia-500/20",
+    bg: "bg-fuchsia-500/5",
+    text: "text-fuchsia-300",
+    button: "bg-fuchsia-500/10 hover:bg-fuchsia-500/20 text-fuchsia-300",
+  },
+  amber: {
+    border: "border-amber-500/20",
+    bg: "bg-amber-500/5",
+    text: "text-amber-300",
+    button: "bg-amber-500/10 hover:bg-amber-500/20 text-amber-300",
+  },
+  sky: {
+    border: "border-sky-500/20",
+    bg: "bg-sky-500/5",
+    text: "text-sky-300",
+    button: "bg-sky-500/10 hover:bg-sky-500/20 text-sky-300",
+  },
+  violet: {
+    border: "border-violet-500/20",
+    bg: "bg-violet-500/5",
+    text: "text-violet-300",
+    button: "bg-violet-500/10 hover:bg-violet-500/20 text-violet-300",
+  },
+};
 
-const ADOLESCENTES_DETAILS = [
-  "Salí de casa y aviso a qué lugar o persona voy.",
-  "Indico a qué hora vuelvo; si no regreso, se avisa a mis contactos.",
-  "Activo un temporizador de seguridad; si no lo desactivo con PIN, se comparte mi ubicación.",
-  "Envío mi ubicación actual a amigos, padres o contactos elegidos.",
-  "Llamo o abro una movilidad segura con un solo toque.",
-  "Envío alerta, ubicación actual y seguimiento a contactos seleccionados.",
-];
+function ModuleCard({ module }) {
+  const [expanded, setExpanded] = useState(false);
+  const colors = EXTRA_COLORS[module.extraColor];
 
-const VIOLENCIA_EXTRA_FEATURES = [
-  "Ingreso a lo de...",
-  "Ingreso con resguardo",
-];
+  return (
+    <div
+      className={`flex flex-col rounded-2xl border ${module.border} bg-[#11182e] p-5 h-full`}
+    >
+      {/* Header */}
+      <div className="mb-3 flex items-center gap-3">
+        <div
+          className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${module.color} shadow-lg shrink-0`}
+        >
+          <span className="text-2xl">{module.emoji}</span>
+        </div>
+        <h4 className="text-base font-bold">{module.title}</h4>
+      </div>
 
-const VIOLENCIA_EXTRA_DETAILS = [
-  "Aviso que ingresé a un domicilio o lugar sensible y comparto mi ubicación con contactos asignados.",
-  "Defino un tiempo estimado de salida al entrar a un lugar. Si no cancelo con PIN, se disparan mensajes o llamada por WhatsApp, ubicación en tiempo real y seguimiento para contactos seleccionados.",
-];
+      {/* Descripción */}
+      <p className="mb-4 text-sm leading-relaxed text-slate-400">
+        {module.desc}
+      </p>
 
-// ✅ FIX: Constantes que faltaban en el código original
-const TRABAJO_EXTRA_FEATURES = [
-  "Ingreso a lo de...",
-  "Ingreso con resguardo",
-];
+      {/* Botón expandir/colapsar sección extra */}
+      {module.extraFeatures && module.extraFeatures.length > 0 && (
+        <div className="mb-4">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className={`w-full rounded-xl ${colors.button} px-4 py-2.5 text-xs font-semibold transition-colors flex items-center justify-between`}
+          >
+            <span>
+              {expanded ? "Ocultar" : "Ver"} {module.extraTitle}
+            </span>
+            <span className={`transition-transform ${expanded ? "rotate-180" : ""}`}>
+              ▼
+            </span>
+          </button>
 
-const TRABAJO_EXTRA_DETAILS = [
-  "Aviso que ingresé a un domicilio o lugar de trabajo y comparto ubicación con contactos asignados.",
-  "Defino un tiempo estimado de salida. Si no cancelo con PIN, se activan alertas automáticas para mis contactos.",
-];
+          {/* Contenido expandible */}
+          {expanded && (
+            <div className={`mt-3 rounded-2xl border ${colors.border} ${colors.bg} p-4`}>
+              <div className={`mb-3 text-sm font-semibold ${colors.text}`}>
+                {module.extraTitle}
+              </div>
+              <div className="space-y-2">
+                {module.extraFeatures.map((feature) => (
+                  <div
+                    key={feature.name}
+                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-3"
+                  >
+                    <div className="text-xs font-semibold text-slate-100">
+                      {feature.name}
+                    </div>
+                    <div className="mt-1 text-[11px] leading-5 text-slate-400">
+                      {feature.detail}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* WhatsApp button al final */}
+      <div className="mt-auto">
+        <WhatsAppButton
+          tipo={module.waTipo}
+          label="Consultar este módulo"
+          variant="compact"
+          size="sm"
+          className="w-full"
+        />
+      </div>
+    </div>
+  );
+}
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -181,178 +321,117 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Solutions Section */}
+      {/* Solutions Section - BALANCEADO */}
       <section className="px-5 py-10">
-        <h3 className="text-lg font-bold text-center mb-2">
-          Soluciones según tu necesidad
-        </h3>
-        <p className="text-sm text-slate-400 text-center mb-8">
-          Cada situación necesita una respuesta distinta.
-        </p>
+        <div className="mx-auto max-w-6xl">
+          <h3 className="text-2xl font-bold text-center mb-2">
+            Soluciones según tu necesidad
+          </h3>
+          <p className="text-sm text-slate-400 text-center mb-10">
+            Cada situación necesita una respuesta distinta.
+          </p>
 
-        <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-2">
-          {MODULES.map((m) => (
-            <div
-              key={m.key}
-              className={`rounded-2xl border ${m.border} bg-[#11182e] p-5`}
-            >
-              <div className="mb-3 flex items-center gap-3">
-                <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${m.color} shadow-lg`}
-                >
-                  <span className="text-2xl">{m.emoji}</span>
-                </div>
-                <h4 className="text-base font-bold">{m.title}</h4>
-              </div>
-
-              <p className="mb-4 text-sm leading-relaxed text-slate-400">
-                {m.desc}
-              </p>
-
-              {/* Violencia Section */}
-              {m.key === "violencia" && (
-                <div className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/5 p-4 mb-4">
-                  <div className="mb-2 text-sm font-semibold text-fuchsia-300">
-                    Respaldo preventivo
-                  </div>
-
-                  <p className="mb-3 text-xs leading-5 text-slate-400">
-                    Herramientas para avisar ingresos sensibles y activar resguardo con tiempo estimado de salida.
-                  </p>
-
-                  <div className="space-y-2">
-                    {VIOLENCIA_EXTRA_FEATURES.map((item, index) => (
-                      <div
-                        key={item}
-                        className="rounded-xl border border-white/8 bg-white/5 px-3 py-3"
-                      >
-                        <div className="text-xs font-semibold text-slate-100">{item}</div>
-                        <div className="mt-1 text-[11px] leading-5 text-slate-400">
-                          {VIOLENCIA_EXTRA_DETAILS[index]}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Adolescentes Section - Only in Hogar */}
-              {m.key === "hogar" && (
-                <div className="mb-4 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4">
-                  <div className="mb-2 text-sm font-semibold text-violet-300">
-                    Adolescentes seguros
-                  </div>
-
-                  <p className="mb-3 text-xs leading-5 text-slate-400">
-                    Herramientas para salir, volver y pedir respaldo sin perder autonomía.
-                  </p>
-
-                  <div className="space-y-2">
-                    {ADOLESCENTES_FEATURES.map((item, index) => (
-                      <div
-                        key={item}
-                        className="rounded-xl border border-white/8 bg-white/5 px-3 py-3"
-                      >
-                        <div className="text-xs font-semibold text-slate-100">{item}</div>
-                        <div className="mt-1 text-[11px] leading-5 text-slate-400">
-                          {ADOLESCENTES_DETAILS[index]}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <WhatsAppButton
-                tipo={m.waTipo}
-                label="Consultar este módulo"
-                variant="compact"
-                size="sm"
-                className="w-full"
-              />
-            </div>
-          ))}
+          {/* Grid con altura uniforme - 2 cols mobile, 4 cols desktop */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {MODULES.map((m) => (
+              <ModuleCard key={m.key} module={m} />
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Plans Section */}
       <section className="px-5 py-10">
-        <h3 className="text-lg font-bold text-center mb-2">
-          Elegí cómo querés usar Traza 360
-        </h3>
-        <p className="text-sm text-slate-400 text-center mb-8">
-          Protección básica gratis. Más seguimiento, historial y coordinación en
-          Premium.
-        </p>
+        <div className="mx-auto max-w-6xl">
+          <h3 className="text-2xl font-bold text-center mb-2">
+            Elegí cómo querés usar Traza 360
+          </h3>
+          <p className="text-sm text-slate-400 text-center mb-10">
+            Protección básica gratis. Más seguimiento, historial y coordinación en
+            Premium.
+          </p>
 
-        <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-3">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.name}
-              className={`rounded-2xl border p-5 ${
-                plan.highlight
-                  ? "border-orange-500/30 bg-orange-500/5"
-                  : "border-slate-800 bg-[#11182e]"
-              }`}
-            >
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-base font-bold">{plan.name}</span>
-                <span
-                  className={`text-sm font-bold ${
-                    plan.highlight ? "text-orange-400" : "text-slate-300"
-                  }`}
-                >
-                  {plan.price}
-                </span>
-              </div>
-
-              <p className="mb-4 text-sm text-slate-400">{plan.sub}</p>
-
-              <div className="mb-4 space-y-2">
-                {plan.features.map((f) => (
-                  <div key={f} className="flex items-center gap-2 text-sm">
-                    <span className="text-emerald-400">✓</span>
-                    <span>{f}</span>
+          <div className="grid gap-4 md:grid-cols-3">
+            {PLANS.map((plan) => (
+              <div
+                key={plan.name}
+                className={`flex flex-col rounded-2xl border p-6 ${
+                  plan.highlight
+                    ? "border-orange-500/40 bg-gradient-to-b from-orange-500/10 to-orange-500/5 shadow-lg shadow-orange-500/10"
+                    : "border-slate-800 bg-[#11182e]"
+                }`}
+              >
+                {plan.highlight && (
+                  <div className="mb-3 inline-flex self-start rounded-full bg-orange-500/20 px-3 py-1 text-[10px] font-bold text-orange-300 uppercase tracking-wider">
+                    Más elegido
                   </div>
-                ))}
-              </div>
+                )}
 
-              <WhatsAppButton
-                tipo="planes"
-                label="Consultar planes"
-                variant={plan.highlight ? "primary" : "compact"}
-                size="sm"
-                className="w-full"
-              />
-            </div>
-          ))}
+                <div className="mb-2 flex items-baseline gap-2 flex-wrap">
+                  <span className="text-xl font-bold">{plan.name}</span>
+                </div>
+
+                <div className="mb-3">
+                  <span
+                    className={`text-2xl font-bold ${
+                      plan.highlight ? "text-orange-400" : "text-slate-200"
+                    }`}
+                  >
+                    {plan.price}
+                  </span>
+                </div>
+
+                <p className="mb-5 text-sm text-slate-400">{plan.sub}</p>
+
+                <div className="mb-6 space-y-2.5 flex-1">
+                  {plan.features.map((f) => (
+                    <div key={f} className="flex items-start gap-2 text-sm">
+                      <span className="text-emerald-400 mt-0.5">✓</span>
+                      <span className="text-slate-300">{f}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <WhatsAppButton
+                  tipo="planes"
+                  label="Consultar planes"
+                  variant={plan.highlight ? "primary" : "compact"}
+                  size="sm"
+                  className="w-full"
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Footer Section */}
-      <section className="border-t border-slate-800/50 px-5 py-10 text-center">
-        <p className="text-sm text-slate-400 mb-4">
-          ¿Tenés dudas? Hablá con nosotros.
-        </p>
+      <section className="border-t border-slate-800/50 px-5 py-12 text-center">
+        <div className="mx-auto max-w-2xl">
+          <p className="text-base text-slate-300 mb-6">
+            ¿Tenés dudas? Hablá con nosotros.
+          </p>
 
-        <WhatsAppButton
-          tipo="general"
-          label="Hablar por WhatsApp"
-          variant="primary"
-          size="md"
-          className="mx-auto"
-        />
+          <div className="flex justify-center mb-8">
+            <WhatsAppButton
+              tipo="general"
+              label="Hablar por WhatsApp"
+              variant="primary"
+              size="md"
+            />
+          </div>
 
-        <div className="mt-8 flex items-center justify-center gap-2">
-          <span className="text-sm font-bold text-red-400">📞 911</span>
-          <span className="text-xs text-slate-500">
-            En emergencias inmediatas, contactá primero al servicio oficial.
-          </span>
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <span className="text-sm font-bold text-red-400">📞 911</span>
+            <span className="text-xs text-slate-500">
+              En emergencias inmediatas, contactá primero al servicio oficial.
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-600">
+            Traza 360 © 2026 · Hecho en Argentina 🇦🇷
+          </p>
         </div>
-
-        <p className="mt-6 text-xs text-slate-600">
-          Traza 360 © 2026 · Hecho en Argentina
-        </p>
       </section>
 
       {/* Floating WhatsApp Button */}
