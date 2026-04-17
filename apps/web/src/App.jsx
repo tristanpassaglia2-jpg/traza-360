@@ -76,16 +76,16 @@ const MODULES = [
     waTipo: "adulto_mayor",
     emoji: "🫶",
     title: "Adulto mayor",
-    desc: "Seguimiento y asistencia ante caída, descompensación o desorientación.",
+    desc: "Seguimiento, asistencia y recordatorios para descompensación, caídas o desorientación.",
     color: "from-amber-400 to-orange-500",
     border: "border-amber-500/20",
   },
   {
-    key: "ninos",
-    waTipo: "ninos",
-    emoji: "🧒",
-    title: "Niños",
-    desc: "Mayor trazabilidad para trayectos, rutinas y situaciones inesperadas.",
+    key: "adolescentes",
+    waTipo: "hogar",
+    emoji: "🧑",
+    title: "Adolescente seguro",
+    desc: "Salida, regreso, ingreso a lugares desconocidos y aviso inmediato a contactos elegidos.",
     color: "from-sky-400 to-cyan-500",
     border: "border-sky-500/20",
   },
@@ -93,8 +93,8 @@ const MODULES = [
     key: "hogar",
     waTipo: "hogar",
     emoji: "🏠",
-    title: "Hogar / regreso seguro",
-    desc: "Protección en domicilio y acompañamiento digital para adolescentes en salidas, trayectos y regreso a casa.",
+    title: "Hogar seguro",
+    desc: "Protección ante intrusos, accidentes domésticos y conflictos en el entorno inmediato.",
     color: "from-violet-500 to-purple-500",
     border: "border-violet-500/20",
   },
@@ -127,10 +127,39 @@ const ADOLESCENTES_DETAILS = [
   "Se activa aviso inmediato, ubicación automática y seguimiento en tiempo real para contactos elegidos.",
 ];
 
-const VIOLENCIA_EXTRA_FEATURES = ["Ingreso a lo de...", "Ingreso con resguardo"];
+const HOGAR_FEATURES = [
+  "Intruso",
+  "Accidente doméstico",
+  "Llamar al vecino",
+  "Conflicto vecinal",
+];
+
+const HOGAR_DETAILS = [
+  "Botón de alerta rápida con aviso a contactos y acceso inmediato a ayuda.",
+  "Activa pedido de asistencia y comparte ubicación dentro del hogar.",
+  "Llamado rápido a vecino o contacto de cercanía para apoyo inmediato.",
+  "Registro rápido del incidente y aviso a red de apoyo seleccionada.",
+];
+
+const ADULTO_MAYOR_FEATURES = [
+  "Recordatorio de medicamentos",
+  "Check-in diario",
+  "Caída o descompensación",
+  "Llegué a casa",
+];
+
+const ADULTO_MAYOR_DETAILS = [
+  "Avisos programados para medicación con confirmación de toma.",
+  "Chequeo diario para confirmar que está bien y responder a tiempo si no contesta.",
+  "Botón SOS para avisar caída o descompensación y compartir ubicación.",
+  "Confirmación simple para avisar que llegó bien a destino o regresó al hogar.",
+];
+
+const VIOLENCIA_EXTRA_FEATURES = ["Ingreso a lo de...", "Ingreso con resguardo", "Estoy en peligro"];
 const VIOLENCIA_EXTRA_DETAILS = [
   "Aviso que ingresé a un domicilio o lugar sensible y comparto mi ubicación con contactos asignados.",
   "Defino un tiempo estimado de salida al entrar a un lugar. Si no cancelo con PIN, se disparan mensajes o llamada por WhatsApp, ubicación en tiempo real y seguimiento para contactos seleccionados.",
+  "Botón SOS visible para activar alerta inmediata, ubicación automática y seguimiento en tiempo real.",
 ];
 
 const TRABAJO_EXTRA_FEATURES = ["Entré a un lugar desconocido"];
@@ -195,9 +224,6 @@ function ModuleCard({ m }) {
       {m.key === "violencia" && (
         <div className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/5 p-4 mb-4">
           <div className="mb-2 text-sm font-semibold text-fuchsia-300">Respaldo preventivo</div>
-          <p className="mb-3 text-xs leading-5 text-slate-400">
-            Herramientas para avisar ingresos sensibles y activar resguardo con tiempo estimado de salida.
-          </p>
           <div className="space-y-2">
             {VIOLENCIA_EXTRA_FEATURES.map((item, index) => (
               <div key={item} className="rounded-xl border border-white/8 bg-white/5 px-3 py-3">
@@ -209,12 +235,23 @@ function ModuleCard({ m }) {
         </div>
       )}
 
-      {m.key === "hogar" && (
-        <div className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4 mb-4">
-          <div className="mb-2 text-sm font-semibold text-violet-300">Adolescentes seguros</div>
-          <p className="mb-3 text-xs leading-5 text-slate-400">
-            Herramientas para salir, volver y pedir respaldo sin perder autonomía.
-          </p>
+      {m.key === "adulto_mayor" && (
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 mb-4">
+          <div className="mb-2 text-sm font-semibold text-amber-300">Asistencia cotidiana</div>
+          <div className="space-y-2">
+            {ADULTO_MAYOR_FEATURES.map((item, index) => (
+              <div key={item} className="rounded-xl border border-white/8 bg-white/5 px-3 py-3">
+                <div className="text-xs font-semibold text-slate-100">{item}</div>
+                <div className="mt-1 text-[11px] leading-5 text-slate-400">{ADULTO_MAYOR_DETAILS[index]}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {m.key === "adolescentes" && (
+        <div className="rounded-2xl border border-sky-500/20 bg-sky-500/5 p-4 mb-4">
+          <div className="mb-2 text-sm font-semibold text-sky-300">Adolescente seguro</div>
           <div className="space-y-2">
             {ADOLESCENTES_FEATURES.map((item, index) => (
               <div key={item} className="rounded-xl border border-white/8 bg-white/5 px-3 py-3">
@@ -226,12 +263,23 @@ function ModuleCard({ m }) {
         </div>
       )}
 
+      {m.key === "hogar" && (
+        <div className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4 mb-4">
+          <div className="mb-2 text-sm font-semibold text-violet-300">Hogar seguro</div>
+          <div className="space-y-2">
+            {HOGAR_FEATURES.map((item, index) => (
+              <div key={item} className="rounded-xl border border-white/8 bg-white/5 px-3 py-3">
+                <div className="text-xs font-semibold text-slate-100">{item}</div>
+                <div className="mt-1 text-[11px] leading-5 text-slate-400">{HOGAR_DETAILS[index]}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {m.key === "trabajo" && (
         <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4 mb-4">
           <div className="mb-2 text-sm font-semibold text-cyan-300">Resguardo en lugares desconocidos</div>
-          <p className="mb-3 text-xs leading-5 text-slate-400">
-            Ideal para acompañantes nocturnas, visitas domiciliarias y entradas a lugares no habituales.
-          </p>
           <div className="space-y-2">
             {TRABAJO_EXTRA_FEATURES.map((item, index) => (
               <div key={item} className="rounded-xl border border-white/8 bg-white/5 px-3 py-3">
@@ -243,9 +291,14 @@ function ModuleCard({ m }) {
         </div>
       )}
 
+      <div className="mb-4 rounded-2xl border border-red-500/25 bg-red-500/10 p-3">
+        <div className="text-sm font-bold text-red-300">Botón SOS</div>
+        <p className="mt-1 text-[11px] leading-5 text-slate-300">Activación visible de emergencia con aviso inmediato, ubicación automática y seguimiento en tiempo real.</p>
+      </div>
+
       <WhatsAppButton
         tipo={m.waTipo}
-        label={m.key === "hogar" ? "Consultar hogar y regreso seguro" : "Consultar este módulo"}
+        label="Consultar este módulo"
         variant="compact"
         className="w-full"
       />
