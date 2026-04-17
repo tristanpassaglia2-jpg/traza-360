@@ -80,6 +80,7 @@ const PLANS = [
     ],
   },
 ];
+
 const ADOLESCENTES_FEATURES = [
   "Voy a lo de...",
   "Vuelvo a casa a las...",
@@ -96,7 +97,9 @@ const ADOLESCENTES_DETAILS = [
   "Envío mi ubicación actual a amigos, padres o contactos elegidos.",
   "Llamo o abro una movilidad segura con un solo toque.",
   "Envío alerta, ubicación actual y seguimiento a contactos seleccionados.",
-];const VIOLENCIA_EXTRA_FEATURES = [
+];
+
+const VIOLENCIA_EXTRA_FEATURES = [
   "Ingreso a lo de...",
   "Ingreso con resguardo",
 ];
@@ -105,11 +108,24 @@ const VIOLENCIA_EXTRA_DETAILS = [
   "Aviso que ingresé a un domicilio o lugar sensible y comparto mi ubicación con contactos asignados.",
   "Defino un tiempo estimado de salida al entrar a un lugar. Si no cancelo con PIN, se disparan mensajes o llamada por WhatsApp, ubicación en tiempo real y seguimiento para contactos seleccionados.",
 ];
+
+// ✅ FIX: Constantes que faltaban en el código original
+const TRABAJO_EXTRA_FEATURES = [
+  "Ingreso a lo de...",
+  "Ingreso con resguardo",
+];
+
+const TRABAJO_EXTRA_DETAILS = [
+  "Aviso que ingresé a un domicilio o lugar de trabajo y comparto ubicación con contactos asignados.",
+  "Defino un tiempo estimado de salida. Si no cancelo con PIN, se activan alertas automáticas para mis contactos.",
+];
+
 export default function LandingPage() {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-[#05080f] text-slate-100">
+      {/* Hero Section */}
       <section className="px-5 pt-16 pb-12 text-center">
         <div className="mx-auto flex max-w-4xl flex-col items-center">
           <div className="mb-4 flex items-center justify-center gap-3">
@@ -142,14 +158,14 @@ export default function LandingPage() {
           <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
             <button
               onClick={() => navigate("/login")}
-              className="w-full rounded-2xl bg-gradient-to-r from-purple-500 to-sky-500 px-4 py-4 font-semibold text-white shadow-lg shadow-purple-500/20"
+              className="w-full rounded-2xl bg-gradient-to-r from-purple-500 to-sky-500 px-4 py-4 font-semibold text-white shadow-lg shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/30 transition-shadow"
             >
               Ingresar con mi cuenta
             </button>
 
             <button
               onClick={() => navigate("/register")}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-4 font-semibold text-white"
+              className="w-full rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-4 font-semibold text-white hover:bg-slate-800/60 transition-colors"
             >
               Crear cuenta
             </button>
@@ -165,6 +181,7 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Solutions Section */}
       <section className="px-5 py-10">
         <h3 className="text-lg font-bold text-center mb-2">
           Soluciones según tu necesidad
@@ -191,106 +208,62 @@ export default function LandingPage() {
               <p className="mb-4 text-sm leading-relaxed text-slate-400">
                 {m.desc}
               </p>
+
+              {/* Violencia Section */}
               {m.key === "violencia" && (
-  <div className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/5 p-4">
-    <div className="mb-2 text-sm font-semibold text-fuchsia-300">
-      Respaldo preventivo
-    </div>
+                <div className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/5 p-4 mb-4">
+                  <div className="mb-2 text-sm font-semibold text-fuchsia-300">
+                    Respaldo preventivo
+                  </div>
 
-    <p className="mb-3 text-xs leading-5 text-slate-400">
-      Herramientas para avisar ingresos sensibles y activar resguardo con tiempo estimado de salida.
-    </p>
+                  <p className="mb-3 text-xs leading-5 text-slate-400">
+                    Herramientas para avisar ingresos sensibles y activar resguardo con tiempo estimado de salida.
+                  </p>
 
-    <div className="space-y-2">
-      {VIOLENCIA_EXTRA_FEATURES.map((item, index) => (
-        <div
-          key={item}
-          className="rounded-xl border border-white/8 bg-white/5 px-3 py-3"
-        >
-          <div className="text-xs font-semibold text-slate-100">{item}</div>
-          <div className="mt-1 text-[11px] leading-5 text-slate-400">
-            {VIOLENCIA_EXTRA_DETAILS[index]}
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-                {m.key === "hogar" && (
-  <div className="mb-4 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4">
-    <div className="mb-2 text-sm font-semibold text-violet-300">
-      Adolescentes seguros
-    </div>
+                  <div className="space-y-2">
+                    {VIOLENCIA_EXTRA_FEATURES.map((item, index) => (
+                      <div
+                        key={item}
+                        className="rounded-xl border border-white/8 bg-white/5 px-3 py-3"
+                      >
+                        <div className="text-xs font-semibold text-slate-100">{item}</div>
+                        <div className="mt-1 text-[11px] leading-5 text-slate-400">
+                          {VIOLENCIA_EXTRA_DETAILS[index]}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-    <p className="mb-3 text-xs leading-5 text-slate-400">
-      Herramientas para salir, volver y pedir respaldo sin perder autonomía.
-    </p>
+              {/* Adolescentes Section - Only in Hogar */}
+              {m.key === "hogar" && (
+                <div className="mb-4 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4">
+                  <div className="mb-2 text-sm font-semibold text-violet-300">
+                    Adolescentes seguros
+                  </div>
 
-    <div className="space-y-2">
-      {ADOLESCENTES_FEATURES.map((item, index) => (
-        <div
-          key={item}
-          className="rounded-xl border border-white/8 bg-white/5 px-3 py-3"
-        >
-          <div className="text-xs font-semibold text-slate-100">{item}</div>
-          <div className="mt-1 text-[11px] leading-5 text-slate-400">
-            {ADOLESCENTES_DETAILS[index]}
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-{m.key === "hogar" && (
-  <div className="mb-4 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4">
-    <div className="mb-2 text-sm font-semibold text-violet-300">
-      Adolescentes seguros
-    </div>
+                  <p className="mb-3 text-xs leading-5 text-slate-400">
+                    Herramientas para salir, volver y pedir respaldo sin perder autonomía.
+                  </p>
 
-    <p className="mb-3 text-xs leading-5 text-slate-400">
-      Herramientas para salir, volver y pedir respaldo sin perder autonomía.
-    </p>
+                  <div className="space-y-2">
+                    {ADOLESCENTES_FEATURES.map((item, index) => (
+                      <div
+                        key={item}
+                        className="rounded-xl border border-white/8 bg-white/5 px-3 py-3"
+                      >
+                        <div className="text-xs font-semibold text-slate-100">{item}</div>
+                        <div className="mt-1 text-[11px] leading-5 text-slate-400">
+                          {ADOLESCENTES_DETAILS[index]}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-    <div className="space-y-2">
-      {ADOLESCENTES_FEATURES.map((item, index) => (
-        <div
-          key={item}
-          className="rounded-xl border border-white/8 bg-white/5 px-3 py-3"
-        >
-          <div className="text-xs font-semibold text-slate-100">{item}</div>
-          <div className="mt-1 text-[11px] leading-5 text-slate-400">
-            {ADOLESCENTES_DETAILS[index]}
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-{m.key === "trabajo" && (
-  <div className="mb-4 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4">
-    <div className="mb-2 text-sm font-semibold text-cyan-300">
-      Resguardo en lugares desconocidos
-    </div>
-
-    <p className="mb-3 text-xs leading-5 text-slate-400">
-      Ideal para acompañantes nocturnas, visitas domiciliarias y entradas a lugares no habituales.
-    </p>
-
-    <div className="space-y-2">
-      {TRABAJO_EXTRA_FEATURES.map((item, index) => (
-        <div
-          key={item}
-          className="rounded-xl border border-white/8 bg-white/5 px-3 py-3"
-        >
-          <div className="text-xs font-semibold text-slate-100">{item}</div>
-          <div className="mt-1 text-[11px] leading-5 text-slate-400">
-            {TRABAJO_EXTRA_DETAILS[index]}
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)}              <WhatsAppButton
+              <WhatsAppButton
                 tipo={m.waTipo}
                 label="Consultar este módulo"
                 variant="compact"
@@ -302,6 +275,7 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Plans Section */}
       <section className="px-5 py-10">
         <h3 className="text-lg font-bold text-center mb-2">
           Elegí cómo querés usar Traza 360
@@ -355,6 +329,7 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Footer Section */}
       <section className="border-t border-slate-800/50 px-5 py-10 text-center">
         <p className="text-sm text-slate-400 mb-4">
           ¿Tenés dudas? Hablá con nosotros.
@@ -380,6 +355,7 @@ export default function LandingPage() {
         </p>
       </section>
 
+      {/* Floating WhatsApp Button */}
       <WhatsAppFloatingButton tipo="general" />
     </div>
   );
