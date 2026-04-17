@@ -1,0 +1,12 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/:path((?!_next|api|assets).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
