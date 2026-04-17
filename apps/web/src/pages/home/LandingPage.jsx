@@ -233,7 +233,31 @@ export default function LandingPage() {
     </div>
   </div>
 )}
-              <WhatsAppButton
+{m.key === "trabajo" && (
+  <div className="mb-4 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4">
+    <div className="mb-2 text-sm font-semibold text-cyan-300">
+      Resguardo en lugares desconocidos
+    </div>
+
+    <p className="mb-3 text-xs leading-5 text-slate-400">
+      Ideal para acompañantes nocturnas, visitas domiciliarias y entradas a lugares no habituales.
+    </p>
+
+    <div className="space-y-2">
+      {TRABAJO_EXTRA_FEATURES.map((item, index) => (
+        <div
+          key={item}
+          className="rounded-xl border border-white/8 bg-white/5 px-3 py-3"
+        >
+          <div className="text-xs font-semibold text-slate-100">{item}</div>
+          <div className="mt-1 text-[11px] leading-5 text-slate-400">
+            {TRABAJO_EXTRA_DETAILS[index]}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}              <WhatsAppButton
                 tipo={m.waTipo}
                 label="Consultar este módulo"
                 variant="compact"
