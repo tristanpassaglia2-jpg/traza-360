@@ -96,6 +96,14 @@ const ADOLESCENTES_DETAILS = [
   "Envío mi ubicación actual a amigos, padres o contactos elegidos.",
   "Llamo o abro una movilidad segura con un solo toque.",
   "Envío alerta, ubicación actual y seguimiento a contactos seleccionados.",
+];const VIOLENCIA_EXTRA_FEATURES = [
+  "Ingreso a lo de...",
+  "Ingreso con resguardo",
+];
+
+const VIOLENCIA_EXTRA_DETAILS = [
+  "Aviso que ingresé a un domicilio o lugar sensible y comparto mi ubicación con contactos asignados.",
+  "Defino un tiempo estimado de salida al entrar a un lugar. Si no cancelo con PIN, se disparan mensajes o llamada por WhatsApp, ubicación en tiempo real y seguimiento para contactos seleccionados.",
 ];
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -183,6 +191,31 @@ export default function LandingPage() {
               <p className="mb-4 text-sm leading-relaxed text-slate-400">
                 {m.desc}
               </p>
+              {m.key === "violencia" && (
+  <div className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/5 p-4">
+    <div className="mb-2 text-sm font-semibold text-fuchsia-300">
+      Respaldo preventivo
+    </div>
+
+    <p className="mb-3 text-xs leading-5 text-slate-400">
+      Herramientas para avisar ingresos sensibles y activar resguardo con tiempo estimado de salida.
+    </p>
+
+    <div className="space-y-2">
+      {VIOLENCIA_EXTRA_FEATURES.map((item, index) => (
+        <div
+          key={item}
+          className="rounded-xl border border-white/8 bg-white/5 px-3 py-3"
+        >
+          <div className="text-xs font-semibold text-slate-100">{item}</div>
+          <div className="mt-1 text-[11px] leading-5 text-slate-400">
+            {VIOLENCIA_EXTRA_DETAILS[index]}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
                 {m.key === "hogar" && (
   <div className="mb-4 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4">
     <div className="mb-2 text-sm font-semibold text-violet-300">
