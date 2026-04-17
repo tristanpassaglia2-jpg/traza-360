@@ -293,7 +293,9 @@ function ModuleCard({ m }) {
 
       <div className="mb-4 rounded-2xl border border-red-500/25 bg-red-500/10 p-3">
         <div className="text-sm font-bold text-red-300">Botón SOS</div>
-        <p className="mt-1 text-[11px] leading-5 text-slate-300">Activación visible de emergencia con aviso inmediato, ubicación automática y seguimiento en tiempo real.</p>
+        <p className="mt-1 text-[11px] leading-5 text-slate-300">
+          Activación visible de emergencia con aviso inmediato, ubicación automática y seguimiento en tiempo real.
+        </p>
       </div>
 
       <WhatsAppButton
@@ -305,7 +307,6 @@ function ModuleCard({ m }) {
     </div>
   );
 }
-
 function PlanCard({ plan }) {
   return (
     <div className={`rounded-2xl border p-5 ${plan.highlight ? "border-orange-500/30 bg-orange-500/5" : "border-slate-800 bg-[#11182e]"}`}>
