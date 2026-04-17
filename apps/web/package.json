@@ -3,10 +3,15 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "description": "Traza 360 - Protección, seguimiento y asistencia en tiempo real",
+  "author": "Tristan Passaglia",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "echo 'Add ESLint configuration'",
+    "type-check": "echo 'Add TypeScript checking'"
   },
   "dependencies": {
     "react": "^18.3.0",
@@ -17,11 +22,16 @@
   },
   "devDependencies": {
     "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",
     "vite": "^6.0.0",
     "vite-plugin-pwa": "^0.21.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   }
 }
