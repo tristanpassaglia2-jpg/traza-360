@@ -2,22 +2,91 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /* ═══════════════════════════════════════════════════════════════
    TRAZA 360 — App completa (single file)
-   Versión: 5.0 · Abril 2026
+   Versión: 6.0 · Abril 2026
    ═══════════════════════════════════════════════════════════════
-   4 MÓDULOS:
+   5 MÓDULOS:
    - Violencia de género
    - Adolescente seguro
    - Adulto mayor seguro
    - Hogar seguro
+   - Trabajo seguro
    
-   CADA UNO CON ABANICO EXPANDIBLE DE SUB-BOTONES.
-   Timers con PIN. GPS a casa. Transporte de confianza.
+   FUNCIONES TRANSVERSALES:
+   - Abanico expandible con sub-botones
+   - Timers con PIN de cancelación
+   - GPS a casa (Google Maps)
+   - Transporte de confianza (Uber)
+   - Compartir ubicación en tiempo real
+   - Ubicación automática en toda alerta crítica (con fallback a última conocida)
    ═══════════════════════════════════════════════════════════════ */
 
 // ─── CONFIG ─────────────────────────────────
 const WHATSAPP_NUMBER = "549XXXXXXXXXX"; // ← REEMPLAZAR con tu número real
-const PIN_DEFAULT = "1234"; // ← PIN por defecto para cancelar timers
-const HOME_ADDRESS_DEFAULT = "Mi casa"; // ← Dirección o alias del hogar (editable luego)
+const PIN_DEFAULT = "1234";              // ← PIN para cancelar timers
+const HOME_ADDRESS_DEFAULT = "Mi casa";  // ← Alias o dirección real del hogar
+
+// ─── GEOLOCALIZACIÓN ────────────────────────
+// Guardamos la última ubicación conocida para fallback en alertas críticas
+let lastKnownLocation = null;
+
+function saveLastLocation(lat, lng) {
+  lastKnownLocation = { lat, lng, timestamp: Date.now() };
+  try {
+    // Guardamos también en memoria del browser para persistencia entre sesiones
+    if (typeof window !== "undefined" && window.sessionStorage) {
+      window.sessionStorage.setItem("traza360_last_location", JSON.stringify(lastKnownLocation));
+    }
+  } catch (e) {
+    // Si sessionStorage no está disponible, seguimos con la variable en memoria
+  }
+}
+
+function loadLastLocation() {
+  if (lastKnownLocation) return lastKnownLocation;
+  try {
+    if (typeof window !== "undefined" && window.sessionStorage) {
+      const raw = window.sessionStorage.getItem("traza360_last_location");
+      if (raw) {
+        lastKnownLocation = JSON.parse(raw);
+        return lastKnownLocation;
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
+// Obtiene ubicación actual. Si falla, usa la última conocida.
+function getCurrentLocationWithFallback() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      resolve({ location: loadLastLocation(), source: "fallback" });
+      return;
+    }
+    const timeoutId = setTimeout(() => {
+      resolve({ location: loadLastLocation(), source: "fallback" });
+    }, 5000);
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        clearTimeout(timeoutId);
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude, timestamp: Date.now() };
+        saveLastLocation(loc.lat, loc.lng);
+        resolve({ location: loc, source: "live" });
+      },
+      () => {
+        clearTimeout(timeoutId);
+        resolve({ location: loadLastLocation(), source: "fallback" });
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
+    );
+  });
+}
+
+// Construye link de Google Maps desde coords
+function buildMapLink(loc) {
+  if (!loc) return null;
+  return `https://www.google.com/maps?q=${loc.lat},${loc.lng}`;
+}
 
 // ─── WHATSAPP CORE ──────────────────────────
 function openWhatsAppWithMessage(text) {
@@ -25,13 +94,49 @@ function openWhatsAppWithMessage(text) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
-// Abre Google Maps con navegación a una dirección/coordenadas
+// Envía alerta por WhatsApp incluyendo ubicación (live o última conocida)
+async function sendAlertWithLocation(baseMessage) {
+  const { location, source } = await getCurrentLocationWithFallback();
+  let finalMessage = baseMessage;
+  if (location) {
+    const mapLink = buildMapLink(location);
+    const tag = source === "live" ? "📍 Ubicación en tiempo real" : "📍 Última ubicación registrada";
+    finalMessage += `\n\n${tag}:\n${mapLink}`;
+  } else {
+    finalMessage += "\n\n⚠️ No se pudo obtener ubicación. Contacten por otros medios.";
+  }
+  openWhatsAppWithMessage(finalMessage);
+}
+
+// Compartir ubicación en tiempo real: inicia el tracking + envía mensaje
+async function shareLiveLocation() {
+  const { location, source } = await getCurrentLocationWithFallback();
+  if (!location) {
+    openWhatsAppWithMessage("📍 Quiero compartir mi ubicación pero no logro obtenerla. Por favor contáctenme.");
+    return;
+  }
+  const mapLink = buildMapLink(location);
+  const tag = source === "live" ? "en tiempo real" : "(última registrada)";
+  const message = `📍 Comparto mi ubicación ${tag} y activo seguimiento continuo:\n${mapLink}\n\nTraza 360 seguirá actualizando mi ubicación mientras la app esté activa.`;
+  openWhatsAppWithMessage(message);
+
+  // Activar watchPosition para ir actualizando ubicación en segundo plano
+  if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(
+      (pos) => saveLastLocation(pos.coords.latitude, pos.coords.longitude),
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 15000 }
+    );
+  }
+}
+
+// Abre Google Maps con navegación a un destino (dirección o coords)
 function openMapsTo(destination) {
   const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
-// Abre Uber (web) con destino
+// Abre Uber con destino
 function openUber(destination) {
   const url = `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${encodeURIComponent(destination)}`;
   window.open(url, "_blank", "noopener,noreferrer");
@@ -61,12 +166,23 @@ function WhatsAppFloatingButton() {
   );
 }
 
-// ─── DATOS: 4 MÓDULOS CON ABANICO ───────────
+// ─── ACCIÓN: COMPARTIR UBICACIÓN (común a todos los módulos) ───
+const SHARE_LOCATION_ACTION = {
+  key: "compartir_ubicacion",
+  icon: "📡",
+  name: "Compartir ubicación en tiempo real",
+  desc: "Envío mi ubicación y activo seguimiento continuo a mis contactos.",
+  type: "share_location",
+};
+
+// ─── DATOS: 5 MÓDULOS CON ABANICO ───────────
 // Tipos de action:
-//   - "whatsapp" : abre WhatsApp con el mensaje
-//   - "timer"    : abre modal con timer + PIN para cancelar
-//   - "maps"     : abre Google Maps con navegación al destino
-//   - "uber"     : abre Uber web con destino
+//   - "whatsapp"        : abre WhatsApp con mensaje (sin ubicación)
+//   - "alert"           : alerta crítica - envía mensaje + ubicación automática
+//   - "timer"           : modal con timer + PIN; al expirar dispara alerta con ubicación
+//   - "maps"            : abre Google Maps con navegación
+//   - "uber"            : abre Uber con destino
+//   - "share_location"  : comparte ubicación en vivo + activa seguimiento
 const MODULES = [
   {
     key: "violencia",
@@ -83,10 +199,11 @@ const MODULES = [
         key: "panico",
         icon: "🚨",
         name: "Botón de pánico",
-        desc: "Alerta inmediata, ubicación y red de apoyo activa.",
-        type: "whatsapp",
-        message: "🚨 ALERTA · Botón de pánico activado. Necesito ayuda urgente. Se adjunta mi ubicación.",
+        desc: "Alerta inmediata + ubicación automática + red de apoyo activa.",
+        type: "alert",
+        message: "🚨 ALERTA · Botón de pánico activado. Necesito ayuda urgente.",
       },
+      SHARE_LOCATION_ACTION,
       {
         key: "grabar_audio",
         icon: "🎙️",
@@ -116,22 +233,22 @@ const MODULES = [
         icon: "🏘️",
         name: "Entro a la casa de...",
         desc: "Aviso que entro a un domicilio y comparto ubicación.",
-        type: "whatsapp",
-        message: "🏘️ Entro a la casa de [completar nombre]. Comparto mi ubicación con mis contactos.",
+        type: "alert",
+        message: "🏘️ Entro a la casa de [completar nombre]. Aviso a mis contactos.",
       },
       {
         key: "me_reuno_con",
         icon: "👥",
         name: "Me reúno con...",
         desc: "Aviso que me encuentro con alguien en un lugar.",
-        type: "whatsapp",
+        type: "alert",
         message: "👥 Me reúno con [completar nombre]. Les comparto ubicación y horario.",
       },
       {
         key: "ingreso_lugar_desconocido",
         icon: "⏱️",
         name: "Ingreso a lugar desconocido",
-        desc: "Timer de seguridad. Si no cancelás con PIN, se dispara alerta automática.",
+        desc: "Timer de seguridad. Si no cancelás con PIN, se dispara alerta + ubicación.",
         type: "timer",
         minutes: 30,
         triggerMessage: "⚠️ ALERTA · Ingresé a un lugar desconocido y no cancelé el timer. Revisen mi ubicación urgente.",
@@ -158,11 +275,20 @@ const MODULES = [
     accentText: "text-sky-300",
     actions: [
       {
+        key: "peligro",
+        icon: "🚨",
+        name: "Estoy en peligro (SOS)",
+        desc: "Alerta inmediata + ubicación automática + seguimiento en tiempo real.",
+        type: "alert",
+        message: "🚨 SOS · Estoy en peligro. Necesito ayuda urgente.",
+      },
+      SHARE_LOCATION_ACTION,
+      {
         key: "sali_voy_a",
         icon: "🚶",
         name: "Salí de casa, voy a lo de...",
         desc: "Aviso que salí y a qué lugar o persona voy.",
-        type: "whatsapp",
+        type: "alert",
         message: "🚶 Salí de casa. Voy a lo de [completar]. Les aviso cuando llegue.",
       },
       {
@@ -193,7 +319,7 @@ const MODULES = [
         key: "lugar_desconocido",
         icon: "⏱️",
         name: "Entré a un lugar desconocido",
-        desc: "Timer de seguridad. Si no cancelás con PIN, se dispara alerta automática.",
+        desc: "Timer de seguridad. Si no cancelás con PIN, se dispara alerta + ubicación.",
         type: "timer",
         minutes: 45,
         triggerMessage: "⚠️ ALERTA · Entré a un lugar desconocido y no cancelé el timer. Revisen mi ubicación.",
@@ -203,8 +329,8 @@ const MODULES = [
         icon: "📍",
         name: "Estoy perdido",
         desc: "Envía mi ubicación actual a contactos elegidos.",
-        type: "whatsapp",
-        message: "📍 Estoy perdido. Necesito ayuda. Les comparto mi ubicación actual.",
+        type: "alert",
+        message: "📍 Estoy perdido. Necesito ayuda.",
       },
       {
         key: "transporte",
@@ -213,14 +339,6 @@ const MODULES = [
         desc: "Abre Uber con destino a tu casa para movilidad segura.",
         type: "uber",
         destination: HOME_ADDRESS_DEFAULT,
-      },
-      {
-        key: "peligro",
-        icon: "🚨",
-        name: "Estoy en peligro",
-        desc: "Alerta inmediata + ubicación automática + seguimiento en tiempo real.",
-        type: "whatsapp",
-        message: "🚨 ALERTA · Estoy en peligro. Ubicación y seguimiento activos. Ayuda urgente.",
       },
     ],
   },
@@ -236,6 +354,15 @@ const MODULES = [
     accentText: "text-amber-300",
     actions: [
       {
+        key: "me_cai",
+        icon: "🆘",
+        name: "Me caí",
+        desc: "Alerta inmediata por caída + ubicación a cuidadores.",
+        type: "alert",
+        message: "🆘 ALERTA · Me caí. Necesito asistencia.",
+      },
+      SHARE_LOCATION_ACTION,
+      {
         key: "medicamentos",
         icon: "💊",
         name: "Tomé la medicación",
@@ -250,14 +377,6 @@ const MODULES = [
         desc: "Solicitar configuración de avisos programados.",
         type: "whatsapp",
         message: "⏰ Quiero configurar recordatorios de medicamentos para los horarios diarios.",
-      },
-      {
-        key: "me_cai",
-        icon: "🆘",
-        name: "Me caí",
-        desc: "Alerta inmediata por caída con ubicación a cuidadores.",
-        type: "whatsapp",
-        message: "🆘 ALERTA · Me caí. Necesito asistencia. Envío ubicación.",
       },
       {
         key: "llamar_familiar",
@@ -280,15 +399,15 @@ const MODULES = [
         icon: "📍",
         name: "Me perdí",
         desc: "Envía mi ubicación actual a familiares y cuidadores.",
-        type: "whatsapp",
-        message: "📍 Me perdí. No sé dónde estoy. Envío mi ubicación para que me encuentren.",
+        type: "alert",
+        message: "📍 Me perdí. No sé dónde estoy. Necesito ayuda.",
       },
       {
         key: "no_me_siento_bien",
         icon: "💔",
         name: "No me siento bien",
-        desc: "Aviso de descompensación con ubicación y llamado a cuidador.",
-        type: "whatsapp",
+        desc: "Aviso de descompensación + ubicación + llamado a cuidador.",
+        type: "alert",
         message: "💔 No me siento bien. Necesito asistencia médica o de mi cuidador.",
       },
       {
@@ -316,16 +435,17 @@ const MODULES = [
         key: "intruso",
         icon: "🚨",
         name: "Intruso en domicilio",
-        desc: "Alerta inmediata: ubicación del hogar y llamado a contactos.",
-        type: "whatsapp",
+        desc: "Alerta inmediata + ubicación del hogar + llamado a contactos.",
+        type: "alert",
         message: "🚨 ALERTA · Posible intruso en mi domicilio. Necesito ayuda urgente.",
       },
+      SHARE_LOCATION_ACTION,
       {
         key: "ruido_sospechoso",
         icon: "👂",
         name: "Ruido sospechoso",
         desc: "Aviso preventivo a contactos con ubicación del hogar.",
-        type: "whatsapp",
+        type: "alert",
         message: "👂 Escucho ruido sospechoso en mi domicilio. Estén atentos.",
       },
       {
@@ -340,16 +460,16 @@ const MODULES = [
         key: "problema_vecino",
         icon: "⚠️",
         name: "Problema con vecino",
-        desc: "Reportá un conflicto o situación problemática con un vecino.",
-        type: "whatsapp",
+        desc: "Reportá un conflicto o situación con un vecino.",
+        type: "alert",
         message: "⚠️ Tengo un problema con un vecino. Necesito ayuda o mediación.",
       },
       {
         key: "accidente_domestico",
         icon: "🩹",
         name: "Accidente doméstico",
-        desc: "Aviso de accidente en el hogar con ubicación a contactos.",
-        type: "whatsapp",
+        desc: "Aviso de accidente en el hogar + ubicación a contactos.",
+        type: "alert",
         message: "🩹 ALERTA · Tuve un accidente doméstico. Necesito asistencia en mi domicilio.",
       },
       {
@@ -365,9 +485,80 @@ const MODULES = [
         key: "emergencia_hogar",
         icon: "🆘",
         name: "Emergencia en el hogar",
-        desc: "Alerta máxima con ubicación y contactos de emergencia.",
-        type: "whatsapp",
+        desc: "Alerta máxima + ubicación + contactos de emergencia.",
+        type: "alert",
         message: "🆘 EMERGENCIA en el hogar. Necesito asistencia inmediata.",
+      },
+    ],
+  },
+  {
+    key: "trabajo",
+    emoji: "💼",
+    title: "Trabajo seguro",
+    desc: "Protección para acompañantes nocturnas, trabajos a domicilio y situaciones de riesgo laboral.",
+    color: "from-emerald-500 to-teal-500",
+    border: "border-emerald-500/20",
+    accentBg: "bg-emerald-500/10",
+    accentBorder: "border-emerald-500/30",
+    accentText: "text-emerald-300",
+    actions: [
+      {
+        key: "ingreso_domicilio_desconocido",
+        icon: "⏱️",
+        name: "Ingreso a domicilio desconocido",
+        desc: "Timer al entrar a trabajar. Si no cancelás con PIN, se dispara alerta + ubicación.",
+        type: "timer",
+        minutes: 60,
+        triggerMessage: "⚠️ ALERTA · Ingresé a un domicilio desconocido por trabajo y no cancelé el timer. Revisen mi ubicación urgente.",
+      },
+      {
+        key: "peligro",
+        icon: "🚨",
+        name: "Estoy en peligro (SOS)",
+        desc: "Alerta inmediata + ubicación automática + seguimiento en tiempo real.",
+        type: "alert",
+        message: "🚨 SOS · Estoy en peligro durante mi trabajo. Necesito ayuda urgente.",
+      },
+      SHARE_LOCATION_ACTION,
+      {
+        key: "salgo_con_desconocido",
+        icon: "🧑‍🤝‍🧑",
+        name: "Salgo con desconocido/a",
+        desc: "Aviso que salgo con un cliente o persona no conocida + ubicación.",
+        type: "alert",
+        message: "🧑‍🤝‍🧑 Salgo con un/a cliente desconocido/a. Les comparto mi ubicación por seguridad.",
+      },
+      {
+        key: "cliente_sospechoso",
+        icon: "⚠️",
+        name: "Cliente sospechoso",
+        desc: "Aviso preventivo si algo no se siente bien con el cliente.",
+        type: "alert",
+        message: "⚠️ Cliente con actitud sospechosa. Estén atentos por si necesito ayuda.",
+      },
+      {
+        key: "cambio_planes",
+        icon: "🔄",
+        name: "Cambio de planes / lugar",
+        desc: "Aviso que cambié de lugar o extendí el trabajo, con ubicación actualizada.",
+        type: "alert",
+        message: "🔄 Cambio de planes o lugar durante el trabajo. Les actualizo mi ubicación.",
+      },
+      {
+        key: "transporte",
+        icon: "🚗",
+        name: "Llamar transporte de confianza",
+        desc: "Abre Uber con destino a tu casa al terminar el trabajo.",
+        type: "uber",
+        destination: HOME_ADDRESS_DEFAULT,
+      },
+      {
+        key: "llegue_bien",
+        icon: "✅",
+        name: "Llegué bien / terminé el trabajo",
+        desc: "Confirmación de que el trabajo terminó sin problemas. Cierra seguimiento.",
+        type: "whatsapp",
+        message: "✅ Terminé mi trabajo y estoy bien. Todo en orden.",
       },
     ],
   },
@@ -405,11 +596,23 @@ function TimerModal({ action, moduleColor, onClose }) {
   const [error, setError] = useState("");
   const triggeredRef = useRef(false);
 
+  // Trackea ubicación mientras el timer corre
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => saveLastLocation(pos.coords.latitude, pos.coords.longitude),
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 15000 }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
+
   useEffect(() => {
     if (timeLeft <= 0) {
       if (!triggeredRef.current) {
         triggeredRef.current = true;
-        openWhatsAppWithMessage(action.triggerMessage);
+        // Al expirar, envía alerta CON ubicación automática
+        sendAlertWithLocation(action.triggerMessage);
       }
       return;
     }
@@ -441,7 +644,7 @@ function TimerModal({ action, moduleColor, onClose }) {
           {!expired ? (
             <>
               <p className="mt-2 text-xs text-slate-400">
-                Si no ingresás tu PIN antes de que termine el tiempo, se enviará una alerta automática a tus contactos.
+                Si no ingresás tu PIN antes de que termine el tiempo, se enviará una alerta automática con tu ubicación a tus contactos.
               </p>
 
               <div className={`my-6 rounded-2xl border ${moduleColor.accentBorder} ${moduleColor.accentBg} py-6`}>
@@ -484,7 +687,7 @@ function TimerModal({ action, moduleColor, onClose }) {
             <>
               <p className="mt-2 text-sm font-semibold text-red-400">⚠️ Tiempo agotado</p>
               <p className="mt-2 text-xs text-slate-400">
-                Se disparó la alerta automática a tus contactos vía WhatsApp.
+                Se disparó la alerta automática con tu ubicación a tus contactos vía WhatsApp.
               </p>
               <button
                 onClick={onClose}
@@ -506,19 +709,28 @@ function ModuleCard({ m }) {
   const [activeTimer, setActiveTimer] = useState(null);
 
   function handleAction(action) {
-    if (action.type === "timer") {
-      setActiveTimer(action);
-      return;
+    switch (action.type) {
+      case "timer":
+        setActiveTimer(action);
+        return;
+      case "maps":
+        openMapsTo(action.destination);
+        return;
+      case "uber":
+        openUber(action.destination);
+        return;
+      case "share_location":
+        shareLiveLocation();
+        return;
+      case "alert":
+        // Alerta: envía mensaje + ubicación automática
+        sendAlertWithLocation(action.message);
+        return;
+      case "whatsapp":
+      default:
+        openWhatsAppWithMessage(action.message);
+        return;
     }
-    if (action.type === "maps") {
-      openMapsTo(action.destination);
-      return;
-    }
-    if (action.type === "uber") {
-      openUber(action.destination);
-      return;
-    }
-    openWhatsAppWithMessage(action.message);
   }
 
   // Badge según tipo de acción
@@ -541,6 +753,20 @@ function ModuleCard({ m }) {
       return (
         <div className="mt-1.5 inline-block rounded-full bg-slate-700/50 text-slate-200 px-2 py-0.5 text-[10px] font-semibold">
           🚗 Abre Uber
+        </div>
+      );
+    }
+    if (action.type === "share_location") {
+      return (
+        <div className="mt-1.5 inline-block rounded-full bg-cyan-500/10 text-cyan-300 px-2 py-0.5 text-[10px] font-semibold">
+          📡 Tracking en vivo
+        </div>
+      );
+    }
+    if (action.type === "alert") {
+      return (
+        <div className="mt-1.5 inline-block rounded-full bg-red-500/10 text-red-300 px-2 py-0.5 text-[10px] font-semibold">
+          🚨 Alerta + Ubicación
         </div>
       );
     }
@@ -697,7 +923,7 @@ function Hero() {
         </h2>
 
         <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-400 md:text-base">
-          Protección, seguimiento y asistencia para personas en situación de riesgo o vulnerabilidad. Diseñada para familias, cuidadores y contextos de emergencia.
+          Protección, seguimiento y asistencia para personas en situación de riesgo o vulnerabilidad. Diseñada para familias, cuidadores, trabajadores y contextos de emergencia.
         </p>
       </div>
     </section>
@@ -742,7 +968,7 @@ function LandingScreen({ onScreen }) {
         <LandingActions onScreen={onScreen} />
       </div>
 
-      {/* 4 Módulos */}
+      {/* 5 Módulos */}
       <section className="px-5 py-12">
         <div className="mx-auto max-w-5xl">
           <h3 className="mb-2 text-center text-xl font-bold md:text-2xl">Soluciones según tu necesidad</h3>
@@ -750,10 +976,16 @@ function LandingScreen({ onScreen }) {
             Hacé clic en "Ver opciones" para desplegar el menú completo de cada módulo.
           </p>
 
+          {/* Primeros 4 en grid 2x2 */}
           <div className="grid gap-4 sm:grid-cols-2">
-            {MODULES.map((m) => (
+            {MODULES.slice(0, 4).map((m) => (
               <ModuleCard key={m.key} m={m} />
             ))}
+          </div>
+
+          {/* Trabajo seguro ancho completo */}
+          <div className="mt-4">
+            <ModuleCard m={MODULES[4]} />
           </div>
         </div>
       </section>
@@ -893,10 +1125,11 @@ function RegisterScreen({ onBack, onSuccess }) {
 function HomeScreen({ onLogout }) {
   const quickCards = useMemo(
     () => [
-      { emoji: "🛡️", title: "Violencia de género", text: "Botón de pánico, grabación, transporte y red de apoyo." },
-      { emoji: "🧑‍🎓", title: "Adolescente seguro", text: "Salida, regreso, GPS a casa y transporte de confianza." },
-      { emoji: "🫶", title: "Adulto mayor seguro", text: "Medicamentos, caídas, GPS a casa y llamar familiar." },
-      { emoji: "🏠", title: "Hogar seguro", text: "Intrusos, vecinos, accidentes y resguardo preventivo." },
+      { emoji: "🛡️", title: "Violencia de género", text: "Pánico, grabación, transporte y red de apoyo." },
+      { emoji: "🧑‍🎓", title: "Adolescente seguro", text: "Salida, regreso, GPS a casa y transporte." },
+      { emoji: "🫶", title: "Adulto mayor seguro", text: "Medicamentos, caídas, GPS a casa y familia." },
+      { emoji: "🏠", title: "Hogar seguro", text: "Intrusos, vecinos, accidentes y resguardo." },
+      { emoji: "💼", title: "Trabajo seguro", text: "Acompañantes, domicilios y situaciones de riesgo laboral." },
     ],
     []
   );
@@ -910,7 +1143,7 @@ function HomeScreen({ onLogout }) {
               <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Panel inicial</p>
               <h2 className="mt-2 text-2xl font-bold md:text-3xl">Bienvenido a Traza 360</h2>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">
-                Accedé a los 4 módulos desde la landing. Cada uno tiene su abanico completo de acciones.
+                Accedé a los 5 módulos desde la landing. Cada uno tiene su abanico completo de acciones con ubicación automática.
               </p>
             </div>
             <button
@@ -922,7 +1155,7 @@ function HomeScreen({ onLogout }) {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {quickCards.map((card) => (
             <div key={card.title} className="rounded-2xl border border-white/10 bg-white/5 p-5 hover:bg-white/10">
               <div className="mb-2 text-2xl">{card.emoji}</div>
@@ -940,6 +1173,17 @@ function HomeScreen({ onLogout }) {
 
 // ─── APP ROOT ───────────────────────────────
 export default function App() {
+  // Al iniciar, intentamos capturar ubicación para tener un punto de partida
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => saveLastLocation(pos.coords.latitude, pos.coords.longitude),
+        () => {},
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      );
+    }
+  }, []);
+
   const [screen, setScreen] = useState("landing");
 
   if (screen === "login") {
