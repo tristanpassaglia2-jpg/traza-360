@@ -2,9 +2,9 @@ import React, { useMemo, useState } from "react";
 
 /* ═══════════════════════════════════════════
    TRAZA 360 — App completa (single file)
-   Versión: 2.0 · Abril 2026
+   Versión: 3.0 · Abril 2026
    Stack: React 18 + Tailwind CSS
-   Deploy: Vercel
+   Deploy: Render / Vercel
    ═══════════════════════════════════════════ */
 
 // ─── CONFIG ────────────────────────────────
@@ -77,7 +77,6 @@ const MODULES = [
     desc: "Alerta silenciosa, ubicación y red de apoyo ante situaciones de riesgo.",
     color: "from-fuchsia-500 to-rose-500",
     border: "border-fuchsia-500/20",
-    bg: "bg-fuchsia-500/5",
   },
   {
     key: "adulto_mayor",
@@ -87,7 +86,6 @@ const MODULES = [
     desc: "Seguimiento y asistencia ante caída, descompensación o desorientación.",
     color: "from-amber-400 to-orange-500",
     border: "border-amber-500/20",
-    bg: "bg-amber-500/5",
   },
   {
     key: "ninos",
@@ -97,7 +95,6 @@ const MODULES = [
     desc: "Mayor trazabilidad para trayectos, rutinas y situaciones inesperadas.",
     color: "from-sky-400 to-cyan-500",
     border: "border-sky-500/20",
-    bg: "bg-sky-500/5",
   },
   {
     key: "hogar",
@@ -107,7 +104,6 @@ const MODULES = [
     desc: "Protección en domicilio y acompañamiento digital para adolescentes en salidas, trayectos y regreso a casa.",
     color: "from-violet-500 to-purple-500",
     border: "border-violet-500/20",
-    bg: "bg-violet-500/5",
   },
   {
     key: "trabajo",
@@ -117,48 +113,8 @@ const MODULES = [
     desc: "Resguardo para trabajos en domicilio, acompañamiento nocturno y entradas a lugares desconocidos.",
     color: "from-cyan-400 to-blue-500",
     border: "border-cyan-500/20",
-    bg: "bg-cyan-500/5",
   },
 ];
-
-const EXTRA_SECTIONS = {
-  violencia: {
-    title: "Respaldo preventivo",
-    subtitle: "Herramientas para avisar ingresos sensibles y activar resguardo con tiempo estimado de salida.",
-    colorBorder: "border-fuchsia-500/20",
-    colorBg: "bg-fuchsia-500/5",
-    colorText: "text-fuchsia-300",
-    features: [
-      { name: "Ingreso a lo de...", detail: "Aviso que ingresé a un domicilio o lugar sensible y comparto mi ubicación con contactos asignados." },
-      { name: "Ingreso con resguardo", detail: "Defino un tiempo estimado de salida al entrar a un lugar. Si no cancelo con PIN, se disparan mensajes o llamada por WhatsApp, ubicación en tiempo real y seguimiento para contactos seleccionados." },
-    ],
-  },
-  hogar: {
-    title: "Adolescentes seguros",
-    subtitle: "Herramientas para salir, volver y pedir respaldo sin perder autonomía.",
-    colorBorder: "border-violet-500/20",
-    colorBg: "bg-violet-500/5",
-    colorText: "text-violet-300",
-    features: [
-      { name: "Salí de casa, voy a lo de...", detail: "Aviso que salí de casa y digo a qué persona o lugar voy." },
-      { name: "Vuelvo a las...", detail: "Indico mi hora estimada de regreso; si no vuelvo a horario, se avisa a mis contactos." },
-      { name: "Llegué a casa, todo bien", detail: "Confirmo que llegué bien y cierro el seguimiento del trayecto." },
-      { name: "Entré a un lugar desconocido", detail: "Activo un temporizador; si no lo cancelo con PIN al salir, se comparte mi ubicación." },
-      { name: "Estoy perdido", detail: "Envío mi ubicación actual a amigos, padres o contactos seleccionados." },
-      { name: "Estoy en peligro", detail: "Se activa aviso inmediato, ubicación automática y seguimiento en tiempo real para contactos elegidos." },
-    ],
-  },
-  trabajo: {
-    title: "Resguardo en lugares desconocidos",
-    subtitle: "Ideal para acompañantes nocturnas, visitas domiciliarias y entradas a lugares no habituales.",
-    colorBorder: "border-cyan-500/20",
-    colorBg: "bg-cyan-500/5",
-    colorText: "text-cyan-300",
-    features: [
-      { name: "Entré a un lugar desconocido", detail: "Activo un temporizador con tiempo estimado de salida; si no aviso que salí, se disparan mensajes o llamada por WhatsApp y seguimiento en tiempo real para contactos seleccionados." },
-    ],
-  },
-};
 
 const PLANS = [
   {
@@ -186,28 +142,9 @@ const PLANS = [
 ];
 
 // ─── UI COMPONENTS ─────────────────────────
-function ExtraSection({ data }) {
-  return (
-    <div className={`rounded-2xl border ${data.colorBorder} ${data.colorBg} p-4 mb-4`}>
-      <div className={`mb-2 text-sm font-semibold ${data.colorText}`}>{data.title}</div>
-      <p className="mb-3 text-xs leading-5 text-slate-400">{data.subtitle}</p>
-      <div className="space-y-2">
-        {data.features.map((f) => (
-          <div key={f.name} className="rounded-xl border border-white/10 bg-white/5 px-3 py-3">
-            <div className="text-xs font-semibold text-slate-100">{f.name}</div>
-            <div className="mt-1 text-[11px] leading-5 text-slate-400">{f.detail}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function ModuleCard({ m }) {
-  const extra = EXTRA_SECTIONS[m.key];
   return (
     <div className={`rounded-2xl border ${m.border} bg-[#11182e] p-5 flex flex-col`}>
-      {/* Header */}
       <div className="mb-3 flex items-center gap-3">
         <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${m.color} shadow-lg`}>
           <span className="text-2xl">{m.emoji}</span>
@@ -215,21 +152,14 @@ function ModuleCard({ m }) {
         <h4 className="text-base font-bold text-slate-100">{m.title}</h4>
       </div>
 
-      {/* Descripción */}
-      <p className="mb-4 text-sm leading-relaxed text-slate-400">{m.desc}</p>
+      <p className="mb-5 text-sm leading-relaxed text-slate-400 flex-1">{m.desc}</p>
 
-      {/* Extra section (si aplica) */}
-      {extra && <ExtraSection data={extra} />}
-
-      {/* CTA */}
-      <div className="mt-auto">
-        <WhatsAppButton
-          tipo={m.waTipo}
-          label={m.key === "hogar" ? "Consultar hogar y regreso seguro" : "Consultar este módulo"}
-          variant="compact"
-          className="w-full"
-        />
-      </div>
+      <WhatsAppButton
+        tipo={m.waTipo}
+        label={m.key === "hogar" ? "Consultar hogar y regreso seguro" : "Consultar este módulo"}
+        variant="compact"
+        className="w-full"
+      />
     </div>
   );
 }
@@ -237,9 +167,9 @@ function ModuleCard({ m }) {
 function PlanCard({ plan }) {
   return (
     <div
-      className={`rounded-2xl border p-5 flex flex-col ${
+      className={`relative rounded-2xl border p-5 flex flex-col ${
         plan.highlight
-          ? "border-orange-500/30 bg-gradient-to-b from-orange-500/10 to-transparent relative"
+          ? "border-orange-500/40 bg-gradient-to-b from-orange-500/10 to-transparent"
           : "border-slate-800 bg-[#11182e]"
       }`}
     >
@@ -356,7 +286,6 @@ function LandingScreen({ onScreen }) {
     <div className="min-h-screen bg-[#05080f] text-slate-100">
       <Hero />
 
-      {/* CTA Buttons */}
       <div className="px-5 pb-12">
         <LandingActions onScreen={onScreen} />
       </div>
@@ -369,21 +298,14 @@ function LandingScreen({ onScreen }) {
             Cada situación necesita una respuesta distinta.
           </p>
 
-          {/* Primera fila: 2 columnas */}
+          {/* Primeros 4 módulos en grid 2x2 */}
           <div className="grid gap-4 sm:grid-cols-2">
-            {MODULES.slice(0, 2).map((m) => (
+            {MODULES.slice(0, 4).map((m) => (
               <ModuleCard key={m.key} m={m} />
             ))}
           </div>
 
-          {/* Segunda fila: 2 columnas */}
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {MODULES.slice(2, 4).map((m) => (
-              <ModuleCard key={m.key} m={m} />
-            ))}
-          </div>
-
-          {/* Tercera fila: Trabajo seguro - ancho completo */}
+          {/* Trabajo seguro ancho completo */}
           <div className="mt-4">
             <ModuleCard m={MODULES[4]} />
           </div>
@@ -477,7 +399,6 @@ function RegisterScreen({ onBack, onSuccess }) {
           <p className="mt-2 text-sm text-slate-400">Creá tu acceso y activá tu red de protección</p>
         </div>
 
-        {/* Modo de uso */}
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
           <div className="mb-3 text-sm font-semibold text-slate-200">¿Cómo vas a usar Traza 360?</div>
           <div className="grid grid-cols-2 gap-3">
@@ -531,7 +452,6 @@ function HomeScreen({ onLogout }) {
   return (
     <div className="min-h-screen bg-[#07111f] px-5 py-8 text-white">
       <div className="mx-auto max-w-6xl">
-        {/* Welcome banner */}
         <div className="mb-8 rounded-3xl border border-white/10 bg-white/5 p-6 md:p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
@@ -550,10 +470,9 @@ function HomeScreen({ onLogout }) {
           </div>
         </div>
 
-        {/* Quick cards */}
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {quickCards.map((card) => (
-            <div key={card.title} className="rounded-2xl border border-white/10 bg-white/5 p-5 transition-colors duration-200 hover:bg-white/8">
+            <div key={card.title} className="rounded-2xl border border-white/10 bg-white/5 p-5 transition-colors duration-200 hover:bg-white/10">
               <div className="mb-2 text-2xl">{card.emoji}</div>
               <div className="text-base font-semibold text-slate-100">{card.title}</div>
               <p className="mt-2 text-sm leading-6 text-slate-400">{card.text}</p>
