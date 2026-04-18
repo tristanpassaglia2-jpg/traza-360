@@ -1,54 +1,48 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
-/* ═══════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
    TRAZA 360 — App completa (single file)
-   Versión: 3.0 · Abril 2026
-   Stack: React 18 + Tailwind CSS
-   Deploy: Render / Vercel
-   ═══════════════════════════════════════════ */
+   Versión: 5.0 · Abril 2026
+   ═══════════════════════════════════════════════════════════════
+   4 MÓDULOS:
+   - Violencia de género
+   - Adolescente seguro
+   - Adulto mayor seguro
+   - Hogar seguro
+   
+   CADA UNO CON ABANICO EXPANDIBLE DE SUB-BOTONES.
+   Timers con PIN. GPS a casa. Transporte de confianza.
+   ═══════════════════════════════════════════════════════════════ */
 
-// ─── CONFIG ────────────────────────────────
-const WHATSAPP_NUMBER = "549XXXXXXXXXX"; // ← Reemplazar con número real
+// ─── CONFIG ─────────────────────────────────
+const WHATSAPP_NUMBER = "549XXXXXXXXXX"; // ← REEMPLAZAR con tu número real
+const PIN_DEFAULT = "1234"; // ← PIN por defecto para cancelar timers
+const HOME_ADDRESS_DEFAULT = "Mi casa"; // ← Dirección o alias del hogar (editable luego)
 
-// ─── WHATSAPP HELPERS ──────────────────────
-function openWhatsApp(tipo = "general") {
-  const messages = {
-    general: "Hola, quiero información sobre Traza 360.",
-    demo: "Hola, quiero solicitar una demo de Traza 360.",
-    planes: "Hola, quiero consultar los planes de Traza 360.",
-    violencia: "Hola, quiero información sobre Traza 360 para red de apoyo y resguardo preventivo.",
-    adulto_mayor: "Hola, quiero información sobre Traza 360 para cuidado y seguimiento de adultos mayores.",
-    ninos: "Hola, quiero información sobre Traza 360 para seguimiento y protección de niños.",
-    hogar: "Hola, quiero información sobre Traza 360 para hogar seguro, regreso seguro y adolescentes seguros.",
-    trabajo: "Hola, quiero información sobre Traza 360 para trabajo seguro y resguardo en lugares desconocidos.",
-  };
-  const text = messages[tipo] || messages.general;
-  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+// ─── WHATSAPP CORE ──────────────────────────
+function openWhatsAppWithMessage(text) {
+  const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+  window.open(url, "_blank", "noopener,noreferrer");
 }
 
+// Abre Google Maps con navegación a una dirección/coordenadas
+function openMapsTo(destination) {
+  const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+// Abre Uber (web) con destino
+function openUber(destination) {
+  const url = `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${encodeURIComponent(destination)}`;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+// ─── SVG ICONS ──────────────────────────────
 function WhatsAppIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
     </svg>
-  );
-}
-
-function WhatsAppButton({ tipo = "general", label = "Hablar por WhatsApp", className = "", variant = "compact" }) {
-  const styles = {
-    primary: "bg-[#25D366] text-white hover:bg-[#20BD5A] shadow-lg shadow-[#25D366]/20",
-    compact: "bg-[#25D366]/10 border border-[#25D366]/20 text-[#25D366] hover:bg-[#25D366]/15",
-    outline: "bg-transparent border border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366]/10",
-  };
-  return (
-    <button
-      type="button"
-      onClick={() => openWhatsApp(tipo)}
-      className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${styles[variant]} ${className}`}
-    >
-      <WhatsAppIcon size={18} />
-      <span>{label}</span>
-    </button>
   );
 }
 
@@ -58,7 +52,7 @@ function WhatsAppFloatingButton() {
       <button
         type="button"
         aria-label="Abrir WhatsApp"
-        onClick={() => openWhatsApp("general")}
+        onClick={() => openWhatsAppWithMessage("Hola, quiero información sobre Traza 360.")}
         className="flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-xl shadow-[#25D366]/30 transition-transform duration-200 hover:scale-110 active:scale-95"
       >
         <WhatsAppIcon size={28} />
@@ -67,52 +61,315 @@ function WhatsAppFloatingButton() {
   );
 }
 
-// ─── DATA ──────────────────────────────────
+// ─── DATOS: 4 MÓDULOS CON ABANICO ───────────
+// Tipos de action:
+//   - "whatsapp" : abre WhatsApp con el mensaje
+//   - "timer"    : abre modal con timer + PIN para cancelar
+//   - "maps"     : abre Google Maps con navegación al destino
+//   - "uber"     : abre Uber web con destino
 const MODULES = [
   {
     key: "violencia",
-    waTipo: "violencia",
     emoji: "🛡️",
     title: "Violencia de género",
     desc: "Alerta silenciosa, ubicación y red de apoyo ante situaciones de riesgo.",
     color: "from-fuchsia-500 to-rose-500",
     border: "border-fuchsia-500/20",
+    accentBg: "bg-fuchsia-500/10",
+    accentBorder: "border-fuchsia-500/30",
+    accentText: "text-fuchsia-300",
+    actions: [
+      {
+        key: "panico",
+        icon: "🚨",
+        name: "Botón de pánico",
+        desc: "Alerta inmediata, ubicación y red de apoyo activa.",
+        type: "whatsapp",
+        message: "🚨 ALERTA · Botón de pánico activado. Necesito ayuda urgente. Se adjunta mi ubicación.",
+      },
+      {
+        key: "grabar_audio",
+        icon: "🎙️",
+        name: "Grabar sonido ambiente",
+        desc: "Graba audio del entorno como evidencia.",
+        type: "whatsapp",
+        message: "🎙️ Inicié grabación de sonido ambiente como evidencia. Situación en curso.",
+      },
+      {
+        key: "grabar_video",
+        icon: "🎥",
+        name: "Grabar video",
+        desc: "Activa grabación de video como respaldo.",
+        type: "whatsapp",
+        message: "🎥 Activé grabación de video como evidencia. Situación en curso.",
+      },
+      {
+        key: "archivos",
+        icon: "📁",
+        name: "Carpeta de archivos",
+        desc: "Accedé a tus evidencias guardadas (audios, videos, fotos).",
+        type: "whatsapp",
+        message: "📁 Quiero consultar mis archivos y evidencias guardadas en Traza 360.",
+      },
+      {
+        key: "entro_casa_de",
+        icon: "🏘️",
+        name: "Entro a la casa de...",
+        desc: "Aviso que entro a un domicilio y comparto ubicación.",
+        type: "whatsapp",
+        message: "🏘️ Entro a la casa de [completar nombre]. Comparto mi ubicación con mis contactos.",
+      },
+      {
+        key: "me_reuno_con",
+        icon: "👥",
+        name: "Me reúno con...",
+        desc: "Aviso que me encuentro con alguien en un lugar.",
+        type: "whatsapp",
+        message: "👥 Me reúno con [completar nombre]. Les comparto ubicación y horario.",
+      },
+      {
+        key: "ingreso_lugar_desconocido",
+        icon: "⏱️",
+        name: "Ingreso a lugar desconocido",
+        desc: "Timer de seguridad. Si no cancelás con PIN, se dispara alerta automática.",
+        type: "timer",
+        minutes: 30,
+        triggerMessage: "⚠️ ALERTA · Ingresé a un lugar desconocido y no cancelé el timer. Revisen mi ubicación urgente.",
+      },
+      {
+        key: "transporte",
+        icon: "🚗",
+        name: "Llamar transporte de confianza",
+        desc: "Abre Uber con destino a tu casa para movilidad segura.",
+        type: "uber",
+        destination: HOME_ADDRESS_DEFAULT,
+      },
+    ],
+  },
+  {
+    key: "adolescente",
+    emoji: "🧑‍🎓",
+    title: "Adolescente seguro",
+    desc: "Salidas, regresos y trayectos con trazabilidad. Autonomía con respaldo.",
+    color: "from-sky-400 to-cyan-500",
+    border: "border-sky-500/20",
+    accentBg: "bg-sky-500/10",
+    accentBorder: "border-sky-500/30",
+    accentText: "text-sky-300",
+    actions: [
+      {
+        key: "sali_voy_a",
+        icon: "🚶",
+        name: "Salí de casa, voy a lo de...",
+        desc: "Aviso que salí y a qué lugar o persona voy.",
+        type: "whatsapp",
+        message: "🚶 Salí de casa. Voy a lo de [completar]. Les aviso cuando llegue.",
+      },
+      {
+        key: "vuelvo_a_las",
+        icon: "🕐",
+        name: "Vuelvo a las...",
+        desc: "Indico hora estimada de regreso. Si no vuelvo, avisa a mis contactos.",
+        type: "whatsapp",
+        message: "🕐 Vuelvo a casa a las [completar hora]. Si no regreso en tiempo, avisen a mis contactos.",
+      },
+      {
+        key: "llegar_a_casa",
+        icon: "🗺️",
+        name: "Llegar a casa (GPS)",
+        desc: "Abre Google Maps con navegación directa a tu casa.",
+        type: "maps",
+        destination: HOME_ADDRESS_DEFAULT,
+      },
+      {
+        key: "llegue_bien",
+        icon: "✅",
+        name: "Llegué bien",
+        desc: "Confirmación de llegada. Cierra el seguimiento.",
+        type: "whatsapp",
+        message: "✅ Llegué bien. Todo en orden.",
+      },
+      {
+        key: "lugar_desconocido",
+        icon: "⏱️",
+        name: "Entré a un lugar desconocido",
+        desc: "Timer de seguridad. Si no cancelás con PIN, se dispara alerta automática.",
+        type: "timer",
+        minutes: 45,
+        triggerMessage: "⚠️ ALERTA · Entré a un lugar desconocido y no cancelé el timer. Revisen mi ubicación.",
+      },
+      {
+        key: "perdido",
+        icon: "📍",
+        name: "Estoy perdido",
+        desc: "Envía mi ubicación actual a contactos elegidos.",
+        type: "whatsapp",
+        message: "📍 Estoy perdido. Necesito ayuda. Les comparto mi ubicación actual.",
+      },
+      {
+        key: "transporte",
+        icon: "🚗",
+        name: "Llamar transporte de confianza",
+        desc: "Abre Uber con destino a tu casa para movilidad segura.",
+        type: "uber",
+        destination: HOME_ADDRESS_DEFAULT,
+      },
+      {
+        key: "peligro",
+        icon: "🚨",
+        name: "Estoy en peligro",
+        desc: "Alerta inmediata + ubicación automática + seguimiento en tiempo real.",
+        type: "whatsapp",
+        message: "🚨 ALERTA · Estoy en peligro. Ubicación y seguimiento activos. Ayuda urgente.",
+      },
+    ],
   },
   {
     key: "adulto_mayor",
-    waTipo: "adulto_mayor",
     emoji: "🫶",
-    title: "Adulto mayor",
-    desc: "Seguimiento y asistencia ante caída, descompensación o desorientación.",
+    title: "Adulto mayor seguro",
+    desc: "Seguimiento, medicamentos y asistencia ante caídas o desorientación.",
     color: "from-amber-400 to-orange-500",
     border: "border-amber-500/20",
-  },
-  {
-    key: "ninos",
-    waTipo: "ninos",
-    emoji: "🧒",
-    title: "Niños",
-    desc: "Mayor trazabilidad para trayectos, rutinas y situaciones inesperadas.",
-    color: "from-sky-400 to-cyan-500",
-    border: "border-sky-500/20",
+    accentBg: "bg-amber-500/10",
+    accentBorder: "border-amber-500/30",
+    accentText: "text-amber-300",
+    actions: [
+      {
+        key: "medicamentos",
+        icon: "💊",
+        name: "Tomé la medicación",
+        desc: "Confirmo que tomé la medicación del horario.",
+        type: "whatsapp",
+        message: "💊 Tomé la medicación del horario correspondiente. Todo en orden.",
+      },
+      {
+        key: "recordatorio_meds",
+        icon: "⏰",
+        name: "Recordatorio de medicamentos",
+        desc: "Solicitar configuración de avisos programados.",
+        type: "whatsapp",
+        message: "⏰ Quiero configurar recordatorios de medicamentos para los horarios diarios.",
+      },
+      {
+        key: "me_cai",
+        icon: "🆘",
+        name: "Me caí",
+        desc: "Alerta inmediata por caída con ubicación a cuidadores.",
+        type: "whatsapp",
+        message: "🆘 ALERTA · Me caí. Necesito asistencia. Envío ubicación.",
+      },
+      {
+        key: "llamar_familiar",
+        icon: "📞",
+        name: "Llamar a familiar",
+        desc: "Contactar rápido con familiar o cuidador asignado.",
+        type: "whatsapp",
+        message: "📞 Necesito hablar con mi familiar o cuidador. ¿Pueden contactarlo?",
+      },
+      {
+        key: "llegar_a_casa",
+        icon: "🗺️",
+        name: "Llegar a casa (GPS)",
+        desc: "Abre Google Maps con navegación directa a tu casa.",
+        type: "maps",
+        destination: HOME_ADDRESS_DEFAULT,
+      },
+      {
+        key: "me_perdi",
+        icon: "📍",
+        name: "Me perdí",
+        desc: "Envía mi ubicación actual a familiares y cuidadores.",
+        type: "whatsapp",
+        message: "📍 Me perdí. No sé dónde estoy. Envío mi ubicación para que me encuentren.",
+      },
+      {
+        key: "no_me_siento_bien",
+        icon: "💔",
+        name: "No me siento bien",
+        desc: "Aviso de descompensación con ubicación y llamado a cuidador.",
+        type: "whatsapp",
+        message: "💔 No me siento bien. Necesito asistencia médica o de mi cuidador.",
+      },
+      {
+        key: "check_in",
+        icon: "✅",
+        name: "Estoy bien - Check-in",
+        desc: "Confirmación diaria de que todo está en orden.",
+        type: "whatsapp",
+        message: "✅ Check-in diario: Estoy bien, todo en orden.",
+      },
+    ],
   },
   {
     key: "hogar",
-    waTipo: "hogar",
     emoji: "🏠",
-    title: "Hogar / regreso seguro",
-    desc: "Protección en domicilio y acompañamiento digital para adolescentes en salidas, trayectos y regreso a casa.",
+    title: "Hogar seguro",
+    desc: "Protección en domicilio: intrusos, vecinos, emergencias y accidentes.",
     color: "from-violet-500 to-purple-500",
     border: "border-violet-500/20",
-  },
-  {
-    key: "trabajo",
-    waTipo: "trabajo",
-    emoji: "💼",
-    title: "Trabajo seguro",
-    desc: "Resguardo para trabajos en domicilio, acompañamiento nocturno y entradas a lugares desconocidos.",
-    color: "from-cyan-400 to-blue-500",
-    border: "border-cyan-500/20",
+    accentBg: "bg-violet-500/10",
+    accentBorder: "border-violet-500/30",
+    accentText: "text-violet-300",
+    actions: [
+      {
+        key: "intruso",
+        icon: "🚨",
+        name: "Intruso en domicilio",
+        desc: "Alerta inmediata: ubicación del hogar y llamado a contactos.",
+        type: "whatsapp",
+        message: "🚨 ALERTA · Posible intruso en mi domicilio. Necesito ayuda urgente.",
+      },
+      {
+        key: "ruido_sospechoso",
+        icon: "👂",
+        name: "Ruido sospechoso",
+        desc: "Aviso preventivo a contactos con ubicación del hogar.",
+        type: "whatsapp",
+        message: "👂 Escucho ruido sospechoso en mi domicilio. Estén atentos.",
+      },
+      {
+        key: "llamar_vecino",
+        icon: "🏘️",
+        name: "Llamar a vecino",
+        desc: "Contactar rápido con un vecino de confianza.",
+        type: "whatsapp",
+        message: "🏘️ Necesito contactar a mi vecino de confianza. ¿Pueden avisarle?",
+      },
+      {
+        key: "problema_vecino",
+        icon: "⚠️",
+        name: "Problema con vecino",
+        desc: "Reportá un conflicto o situación problemática con un vecino.",
+        type: "whatsapp",
+        message: "⚠️ Tengo un problema con un vecino. Necesito ayuda o mediación.",
+      },
+      {
+        key: "accidente_domestico",
+        icon: "🩹",
+        name: "Accidente doméstico",
+        desc: "Aviso de accidente en el hogar con ubicación a contactos.",
+        type: "whatsapp",
+        message: "🩹 ALERTA · Tuve un accidente doméstico. Necesito asistencia en mi domicilio.",
+      },
+      {
+        key: "ingreso_hogar",
+        icon: "⏱️",
+        name: "Ingreso con timer",
+        desc: "Timer de seguridad al entrar. Si no cancelás con PIN, se dispara alerta.",
+        type: "timer",
+        minutes: 15,
+        triggerMessage: "⚠️ ALERTA · No cancelé el timer de ingreso al domicilio. Revisen mi situación.",
+      },
+      {
+        key: "emergencia_hogar",
+        icon: "🆘",
+        name: "Emergencia en el hogar",
+        desc: "Alerta máxima con ubicación y contactos de emergencia.",
+        type: "whatsapp",
+        message: "🆘 EMERGENCIA en el hogar. Necesito asistencia inmediata.",
+      },
+    ],
   },
 ];
 
@@ -127,40 +384,219 @@ const PLANS = [
   {
     name: "Premium Personal",
     price: "US$4.99/mes",
-    sub: "Más seguimiento, historial y automatización para un uso individual más completo.",
-    features: ["Todo lo gratis", "Historial de ubicaciones", "Hasta 5 contactos", "Geocercas", "Alertas automáticas básicas"],
+    sub: "Más seguimiento, historial y automatización para uso individual.",
+    features: ["Todo lo gratis", "Historial de ubicaciones", "Hasta 5 contactos", "Geocercas", "Alertas automáticas"],
     cta: "Quiero Premium",
     highlight: true,
   },
   {
     name: "Premium Familiar",
     price: "US$9.99/mes",
-    sub: "Diseñado para familias, cuidadores y seguimiento de varios perfiles protegidos.",
+    sub: "Diseñado para familias, cuidadores y varios perfiles protegidos.",
     features: ["Todo Premium Personal", "Varios perfiles protegidos", "Reportes", "Prioridad", "Módulos avanzados"],
     cta: "Consultar plan familiar",
   },
 ];
 
-// ─── UI COMPONENTS ─────────────────────────
-function ModuleCard({ m }) {
+// ─── TIMER MODAL (PIN para cancelar) ────────
+function TimerModal({ action, moduleColor, onClose }) {
+  const [timeLeft, setTimeLeft] = useState(action.minutes * 60);
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState("");
+  const triggeredRef = useRef(false);
+
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      if (!triggeredRef.current) {
+        triggeredRef.current = true;
+        openWhatsAppWithMessage(action.triggerMessage);
+      }
+      return;
+    }
+    const id = setInterval(() => setTimeLeft((t) => t - 1), 1000);
+    return () => clearInterval(id);
+  }, [timeLeft, action.triggerMessage]);
+
+  const mm = String(Math.floor(timeLeft / 60)).padStart(2, "0");
+  const ss = String(timeLeft % 60).padStart(2, "0");
+
+  function handleCancel() {
+    if (pin === PIN_DEFAULT) {
+      onClose();
+    } else {
+      setError("PIN incorrecto");
+      setPin("");
+    }
+  }
+
+  const expired = timeLeft <= 0;
+
   return (
-    <div className={`rounded-2xl border ${m.border} bg-[#11182e] p-5 flex flex-col`}>
-      <div className="mb-3 flex items-center gap-3">
-        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${m.color} shadow-lg`}>
-          <span className="text-2xl">{m.emoji}</span>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#0d1426] p-6 shadow-2xl">
+        <div className="text-center">
+          <div className="mb-3 text-4xl">⏱️</div>
+          <div className="text-lg font-bold text-slate-100">{action.name}</div>
+
+          {!expired ? (
+            <>
+              <p className="mt-2 text-xs text-slate-400">
+                Si no ingresás tu PIN antes de que termine el tiempo, se enviará una alerta automática a tus contactos.
+              </p>
+
+              <div className={`my-6 rounded-2xl border ${moduleColor.accentBorder} ${moduleColor.accentBg} py-6`}>
+                <div className="font-mono text-5xl font-bold text-white tabular-nums">
+                  {mm}:{ss}
+                </div>
+                <div className="mt-1 text-[10px] uppercase tracking-widest text-slate-400">Tiempo restante</div>
+              </div>
+
+              <div className="space-y-3">
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  value={pin}
+                  onChange={(e) => {
+                    setPin(e.target.value);
+                    setError("");
+                  }}
+                  placeholder="Ingresá tu PIN"
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center text-base text-white outline-none focus:border-cyan-400/50"
+                />
+                {error && <p className="text-xs text-red-400">{error}</p>}
+
+                <button
+                  onClick={handleCancel}
+                  className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white shadow-lg"
+                >
+                  Cancelar timer con PIN
+                </button>
+
+                <button
+                  onClick={onClose}
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-xs font-medium text-slate-400"
+                >
+                  Cerrar sin cancelar (mantiene el timer)
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mt-2 text-sm font-semibold text-red-400">⚠️ Tiempo agotado</p>
+              <p className="mt-2 text-xs text-slate-400">
+                Se disparó la alerta automática a tus contactos vía WhatsApp.
+              </p>
+              <button
+                onClick={onClose}
+                className="mt-6 w-full rounded-2xl bg-slate-700 py-3 text-sm font-semibold text-white"
+              >
+                Cerrar
+              </button>
+            </>
+          )}
         </div>
-        <h4 className="text-base font-bold text-slate-100">{m.title}</h4>
+      </div>
+    </div>
+  );
+}
+
+// ─── MODULE CARD con abanico expandible ─────
+function ModuleCard({ m }) {
+  const [expanded, setExpanded] = useState(false);
+  const [activeTimer, setActiveTimer] = useState(null);
+
+  function handleAction(action) {
+    if (action.type === "timer") {
+      setActiveTimer(action);
+      return;
+    }
+    if (action.type === "maps") {
+      openMapsTo(action.destination);
+      return;
+    }
+    if (action.type === "uber") {
+      openUber(action.destination);
+      return;
+    }
+    openWhatsAppWithMessage(action.message);
+  }
+
+  // Badge según tipo de acción
+  function renderBadge(action) {
+    if (action.type === "timer") {
+      return (
+        <div className={`mt-1.5 inline-block rounded-full ${m.accentBg} ${m.accentText} px-2 py-0.5 text-[10px] font-semibold`}>
+          ⏱️ Timer {action.minutes} min
+        </div>
+      );
+    }
+    if (action.type === "maps") {
+      return (
+        <div className="mt-1.5 inline-block rounded-full bg-blue-500/10 text-blue-300 px-2 py-0.5 text-[10px] font-semibold">
+          🗺️ Abre GPS
+        </div>
+      );
+    }
+    if (action.type === "uber") {
+      return (
+        <div className="mt-1.5 inline-block rounded-full bg-slate-700/50 text-slate-200 px-2 py-0.5 text-[10px] font-semibold">
+          🚗 Abre Uber
+        </div>
+      );
+    }
+    return null;
+  }
+
+  return (
+    <>
+      <div className={`rounded-2xl border ${m.border} bg-[#11182e] p-5 flex flex-col`}>
+        {/* Header */}
+        <div className="mb-3 flex items-center gap-3">
+          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${m.color} shadow-lg`}>
+            <span className="text-2xl">{m.emoji}</span>
+          </div>
+          <h4 className="text-base font-bold text-slate-100">{m.title}</h4>
+        </div>
+
+        {/* Descripción */}
+        <p className="mb-4 text-sm leading-relaxed text-slate-400">{m.desc}</p>
+
+        {/* Botón expandible (abanico) */}
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className={`w-full rounded-2xl border ${m.accentBorder} ${m.accentBg} ${m.accentText} px-4 py-3 text-sm font-semibold transition-all duration-200 flex items-center justify-between hover:brightness-125`}
+        >
+          <span>{expanded ? "Ocultar opciones" : "Ver opciones"}</span>
+          <span className={`text-xs transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}>▼</span>
+        </button>
+
+        {/* ABANICO: Sub-botones desplegados */}
+        {expanded && (
+          <div className="mt-4 space-y-2">
+            {m.actions.map((action) => (
+              <button
+                key={action.key}
+                onClick={() => handleAction(action)}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left transition-colors duration-200 hover:bg-white/10 active:scale-[0.98]"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-xl shrink-0">{action.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-slate-100">{action.name}</div>
+                    <div className="mt-0.5 text-[11px] leading-5 text-slate-400">{action.desc}</div>
+                    {renderBadge(action)}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      <p className="mb-5 text-sm leading-relaxed text-slate-400 flex-1">{m.desc}</p>
-
-      <WhatsAppButton
-        tipo={m.waTipo}
-        label={m.key === "hogar" ? "Consultar hogar y regreso seguro" : "Consultar este módulo"}
-        variant="compact"
-        className="w-full"
-      />
-    </div>
+      {activeTimer && (
+        <TimerModal action={activeTimer} moduleColor={m} onClose={() => setActiveTimer(null)} />
+      )}
+    </>
   );
 }
 
@@ -197,7 +633,17 @@ function PlanCard({ plan }) {
         ))}
       </div>
 
-      <WhatsAppButton tipo="planes" label={plan.cta} variant={plan.highlight ? "primary" : "compact"} className="w-full" />
+      <button
+        onClick={() => openWhatsAppWithMessage(`Hola, quiero consultar el plan ${plan.name} de Traza 360.`)}
+        className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-200 w-full ${
+          plan.highlight
+            ? "bg-[#25D366] text-white hover:bg-[#20BD5A] shadow-lg shadow-[#25D366]/20"
+            : "bg-[#25D366]/10 border border-[#25D366]/20 text-[#25D366] hover:bg-[#25D366]/15"
+        }`}
+      >
+        <WhatsAppIcon size={18} />
+        <span>{plan.cta}</span>
+      </button>
     </div>
   );
 }
@@ -211,7 +657,7 @@ function Field({ label, type = "text", placeholder, value, onChange }) {
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors duration-200 placeholder:text-slate-500 focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20"
+        className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20"
       />
     </label>
   );
@@ -225,7 +671,7 @@ function AccessCard({ children }) {
   );
 }
 
-// ─── SECTIONS ──────────────────────────────
+// ─── SECTIONS ───────────────────────────────
 function Hero() {
   return (
     <section className="px-5 pt-16 pb-12 text-center">
@@ -251,7 +697,7 @@ function Hero() {
         </h2>
 
         <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-400 md:text-base">
-          Protección, seguimiento y asistencia para personas en situación de riesgo o vulnerabilidad. Diseñada para familias, cuidadores, trabajadores y contextos de emergencia.
+          Protección, seguimiento y asistencia para personas en situación de riesgo o vulnerabilidad. Diseñada para familias, cuidadores y contextos de emergencia.
         </p>
       </div>
     </section>
@@ -263,24 +709,30 @@ function LandingActions({ onScreen }) {
     <div className="mx-auto flex w-full max-w-sm flex-col gap-3">
       <button
         onClick={() => onScreen("login")}
-        className="w-full rounded-2xl bg-gradient-to-r from-purple-500 to-sky-500 px-4 py-4 font-semibold text-white shadow-lg shadow-purple-500/20 transition-shadow duration-200 hover:shadow-xl hover:shadow-purple-500/30"
+        className="w-full rounded-2xl bg-gradient-to-r from-purple-500 to-sky-500 px-4 py-4 font-semibold text-white shadow-lg shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/30"
       >
         Ingresar con mi cuenta
       </button>
 
       <button
         onClick={() => onScreen("register")}
-        className="w-full rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-4 font-semibold text-white transition-colors duration-200 hover:bg-slate-800/60"
+        className="w-full rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-4 font-semibold text-white hover:bg-slate-800/60"
       >
         Crear cuenta
       </button>
 
-      <WhatsAppButton tipo="demo" label="Solicitar demo por WhatsApp" variant="compact" className="w-full" />
+      <button
+        onClick={() => openWhatsAppWithMessage("Hola, quiero solicitar una demo de Traza 360.")}
+        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#25D366]/10 border border-[#25D366]/20 text-[#25D366] px-4 py-3 text-sm font-semibold hover:bg-[#25D366]/15"
+      >
+        <WhatsAppIcon size={18} />
+        <span>Solicitar demo por WhatsApp</span>
+      </button>
     </div>
   );
 }
 
-// ─── SCREENS ───────────────────────────────
+// ─── SCREENS ────────────────────────────────
 function LandingScreen({ onScreen }) {
   return (
     <div className="min-h-screen bg-[#05080f] text-slate-100">
@@ -290,24 +742,18 @@ function LandingScreen({ onScreen }) {
         <LandingActions onScreen={onScreen} />
       </div>
 
-      {/* Módulos */}
+      {/* 4 Módulos */}
       <section className="px-5 py-12">
         <div className="mx-auto max-w-5xl">
           <h3 className="mb-2 text-center text-xl font-bold md:text-2xl">Soluciones según tu necesidad</h3>
           <p className="mb-10 text-center text-sm text-slate-400">
-            Cada situación necesita una respuesta distinta.
+            Hacé clic en "Ver opciones" para desplegar el menú completo de cada módulo.
           </p>
 
-          {/* Primeros 4 módulos en grid 2x2 */}
           <div className="grid gap-4 sm:grid-cols-2">
-            {MODULES.slice(0, 4).map((m) => (
+            {MODULES.map((m) => (
               <ModuleCard key={m.key} m={m} />
             ))}
-          </div>
-
-          {/* Trabajo seguro ancho completo */}
-          <div className="mt-4">
-            <ModuleCard m={MODULES[4]} />
           </div>
         </div>
       </section>
@@ -334,7 +780,13 @@ function LandingScreen({ onScreen }) {
       <section className="border-t border-slate-800/50 px-5 py-12 text-center">
         <div className="mx-auto max-w-2xl">
           <p className="mb-6 text-sm text-slate-400">¿Tenés dudas? Hablá con nosotros.</p>
-          <WhatsAppButton tipo="general" label="Hablar por WhatsApp" variant="primary" className="mx-auto" />
+          <button
+            onClick={() => openWhatsAppWithMessage("Hola, quiero información sobre Traza 360.")}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] text-white px-6 py-3 text-sm font-semibold shadow-lg shadow-[#25D366]/20 hover:bg-[#20BD5A]"
+          >
+            <WhatsAppIcon size={18} />
+            <span>Hablar por WhatsApp</span>
+          </button>
 
           <div className="mt-8 flex items-center justify-center gap-2">
             <span className="text-sm font-bold text-red-400">📞 911</span>
@@ -357,7 +809,7 @@ function LoginScreen({ onBack, onSuccess }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#07111f] px-5 py-8 text-white">
       <AccessCard>
-        <button onClick={onBack} className="text-sm font-medium text-cyan-300 transition-colors duration-200 hover:text-cyan-200">
+        <button onClick={onBack} className="text-sm font-medium text-cyan-300 hover:text-cyan-200">
           ← Volver
         </button>
 
@@ -371,7 +823,7 @@ function LoginScreen({ onBack, onSuccess }) {
           <Field label="Contraseña" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
           <button
             onClick={onSuccess}
-            className="w-full rounded-2xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 py-3.5 font-semibold text-white shadow-lg transition-shadow duration-200 hover:shadow-xl hover:shadow-fuchsia-500/20"
+            className="w-full rounded-2xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 py-3.5 font-semibold text-white shadow-lg"
           >
             Ingresar
           </button>
@@ -390,7 +842,7 @@ function RegisterScreen({ onBack, onSuccess }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#07111f] px-5 py-8 text-white">
       <AccessCard>
-        <button onClick={onBack} className="text-sm font-medium text-cyan-300 transition-colors duration-200 hover:text-cyan-200">
+        <button onClick={onBack} className="text-sm font-medium text-cyan-300 hover:text-cyan-200">
           ← Volver
         </button>
 
@@ -410,7 +862,7 @@ function RegisterScreen({ onBack, onSuccess }) {
                 key={opt.key}
                 type="button"
                 onClick={() => setMode(opt.key)}
-                className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${
+                className={`rounded-2xl px-4 py-3 text-sm font-semibold ${
                   mode === opt.key
                     ? "bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/20"
                     : "border border-white/10 bg-white/5 text-white hover:bg-white/10"
@@ -428,7 +880,7 @@ function RegisterScreen({ onBack, onSuccess }) {
           <Field label="Contraseña" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
           <button
             onClick={onSuccess}
-            className="w-full rounded-2xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 py-3.5 font-semibold text-white shadow-lg transition-shadow duration-200 hover:shadow-xl hover:shadow-fuchsia-500/20"
+            className="w-full rounded-2xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 py-3.5 font-semibold text-white shadow-lg"
           >
             Crear cuenta
           </button>
@@ -441,10 +893,10 @@ function RegisterScreen({ onBack, onSuccess }) {
 function HomeScreen({ onLogout }) {
   const quickCards = useMemo(
     () => [
-      { emoji: "🛡️", title: "Violencia de género", text: "Acceso rápido a red de apoyo y resguardo preventivo." },
-      { emoji: "🫶", title: "Adulto mayor", text: "Seguimiento, avisos y coordinación con contactos de confianza." },
-      { emoji: "🏠", title: "Adolescentes seguros", text: "Salida, regreso, ingreso sensible y alerta inmediata." },
-      { emoji: "💼", title: "Trabajo seguro", text: "Resguardo para acompañantes, visitas y domicilios desconocidos." },
+      { emoji: "🛡️", title: "Violencia de género", text: "Botón de pánico, grabación, transporte y red de apoyo." },
+      { emoji: "🧑‍🎓", title: "Adolescente seguro", text: "Salida, regreso, GPS a casa y transporte de confianza." },
+      { emoji: "🫶", title: "Adulto mayor seguro", text: "Medicamentos, caídas, GPS a casa y llamar familiar." },
+      { emoji: "🏠", title: "Hogar seguro", text: "Intrusos, vecinos, accidentes y resguardo preventivo." },
     ],
     []
   );
@@ -458,12 +910,12 @@ function HomeScreen({ onLogout }) {
               <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Panel inicial</p>
               <h2 className="mt-2 text-2xl font-bold md:text-3xl">Bienvenido a Traza 360</h2>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">
-                Versión reconstruida desde cero con landing pública, login, registro y módulos premium listos para seguir creciendo.
+                Accedé a los 4 módulos desde la landing. Cada uno tiene su abanico completo de acciones.
               </p>
             </div>
             <button
               onClick={onLogout}
-              className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-white/10"
+              className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10"
             >
               Cerrar sesión
             </button>
@@ -472,7 +924,7 @@ function HomeScreen({ onLogout }) {
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {quickCards.map((card) => (
-            <div key={card.title} className="rounded-2xl border border-white/10 bg-white/5 p-5 transition-colors duration-200 hover:bg-white/10">
+            <div key={card.title} className="rounded-2xl border border-white/10 bg-white/5 p-5 hover:bg-white/10">
               <div className="mb-2 text-2xl">{card.emoji}</div>
               <div className="text-base font-semibold text-slate-100">{card.title}</div>
               <p className="mt-2 text-sm leading-6 text-slate-400">{card.text}</p>
@@ -486,7 +938,7 @@ function HomeScreen({ onLogout }) {
   );
 }
 
-// ─── APP ROOT ──────────────────────────────
+// ─── APP ROOT ───────────────────────────────
 export default function App() {
   const [screen, setScreen] = useState("landing");
 
