@@ -2,13 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /* ═══════════════════════════════════════════════════════════════
    TRAZA 360 — App completa
-   Versión: 8.0 · Abril 2026
+   Versión: 9.0 · Abril 2026
    ═══════════════════════════════════════════════════════════════
-   NOVEDAD v8: Módulo "Tercero Remoto"
-   - Vinculación con timer (6h/12h/24h gratis · 30 días/permanente Premium)
-   - Persona vulnerable activa escucha y ubicación cuando quiere
-   - Control total del usuario vulnerable sobre duración
-   - Notificación visible cada vez que tercero accede
+   NOVEDAD v9: "Tercero Remoto" ahora es un MÓDULO INDEPENDIENTE
+   - Sacado de los otros 5 módulos para mayor visibilidad
+   - Card destacada ancho completo con diseño distintivo
+   - Badge "⭐ Función estrella" para resaltar
    ═══════════════════════════════════════════════════════════════ */
 
 // ─── CONFIG ─────────────────────────────────
@@ -16,7 +15,6 @@ const WHATSAPP_NUMBER = "549XXXXXXXXXX";
 const PIN_DEFAULT = "1234";
 const HOME_ADDRESS_DEFAULT = "Mi casa";
 
-// Límites por plan
 const PLAN_LIMITS = {
   gratis: { terceros: 1, vinculacionMax: "24h", audioContinuo: false },
   premium_personal: { terceros: 3, vinculacionMax: "30dias", audioContinuo: true },
@@ -96,7 +94,7 @@ async function geocodeAddress(address) {
   return null;
 }
 
-// ─── TERCERO REMOTO: Gestión de vinculaciones ──
+// ─── TERCERO REMOTO ─────────────────────────
 function saveTerceros(terceros) {
   try { window.sessionStorage?.setItem("traza360_terceros", JSON.stringify(terceros)); } catch (e) {}
 }
@@ -108,21 +106,18 @@ function loadTerceros() {
   return [];
 }
 
-// Genera código de 6 dígitos para vinculación
 function generarCodigoVinculacion() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Opciones de duración de vinculación según plan
 const DURACIONES = [
-  { key: "6h", label: "6 horas", minutos: 360, plan: "gratis", gancho: false },
-  { key: "12h", label: "12 horas", minutos: 720, plan: "gratis", gancho: false },
-  { key: "24h", label: "24 horas", minutos: 1440, plan: "gratis", gancho: false },
-  { key: "30dias", label: "30 días", minutos: 43200, plan: "premium_personal", gancho: true },
-  { key: "permanente", label: "Permanente", minutos: -1, plan: "premium_familiar", gancho: true },
+  { key: "6h", label: "6 horas", minutos: 360, plan: "gratis" },
+  { key: "12h", label: "12 horas", minutos: 720, plan: "gratis" },
+  { key: "24h", label: "24 horas", minutos: 1440, plan: "gratis" },
+  { key: "30dias", label: "30 días", minutos: 43200, plan: "premium_personal" },
+  { key: "permanente", label: "Permanente", minutos: -1, plan: "premium_familiar" },
 ];
 
-// Opciones de duración de audio que activa la persona vulnerable
 const DURACIONES_AUDIO = [
   { key: "5min", label: "5 minutos", segundos: 300, plan: "gratis" },
   { key: "15min", label: "15 minutos", segundos: 900, plan: "gratis" },
@@ -186,11 +181,10 @@ function WhatsAppFloatingButton() {
 // ─── ACCIONES COMPARTIDAS ───────────────────
 const SHARE_LOCATION_ACTION = { key: "compartir_ubicacion", icon: "📡", name: "Compartir ubicación en tiempo real", desc: "Envío mi ubicación y activo seguimiento continuo.", type: "share_location" };
 const GEOFENCING_ACTION = { key: "geofencing", icon: "🗺️", name: "Alertas de lugares (Geofencing)", desc: "Aviso automático al entrar/salir de lugares predefinidos.", type: "geofencing" };
-const TERCERO_REMOTO_ACTION = { key: "tercero_remoto", icon: "👁️", name: "Tercero Remoto", desc: "Vinculá un cuidador que pueda escuchar audio y ver ubicación cuando vos lo actives.", type: "tercero_remoto" };
 
 // ─── MODAL: TERCERO REMOTO ──────────────────
-function TerceroRemotoModal({ module, onClose }) {
-  const [vista, setVista] = useState("menu"); // menu | vincular | lista | audio
+function TerceroRemotoModal({ onClose }) {
+  const [vista, setVista] = useState("menu");
   const [terceros, setTerceros] = useState(loadTerceros());
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
@@ -198,19 +192,24 @@ function TerceroRemotoModal({ module, onClose }) {
   const [codigoGenerado, setCodigoGenerado] = useState("");
   const [error, setError] = useState("");
 
-  // Estado de escucha activa
   const [audioActivo, setAudioActivo] = useState(false);
   const [audioDuracion, setAudioDuracion] = useState("15min");
   const [audioRestante, setAudioRestante] = useState(0);
   const [terceroSeleccionado, setTerceroSeleccionado] = useState(null);
 
-  const plan = "gratis"; // ← Cambiar según plan real del usuario
+  const plan = "gratis";
   const limites = PLAN_LIMITS[plan];
   const maxTerceros = limites.terceros;
 
+  // Colores del módulo Tercero Remoto
+  const colors = {
+    accentBorder: "border-pink-500/30",
+    accentBg: "bg-pink-500/10",
+    accentText: "text-pink-300",
+  };
+
   useEffect(() => { saveTerceros(terceros); }, [terceros]);
 
-  // Countdown del audio activo
   useEffect(() => {
     if (!audioActivo || audioRestante <= 0) return;
     const id = setInterval(() => {
@@ -276,10 +275,9 @@ function TerceroRemotoModal({ module, onClose }) {
       return;
     }
     setError("");
-    setAudioRestante(duracionData.segundos === -1 ? 86400 : duracionData.segundos); // continuo = 24h max
+    setAudioRestante(duracionData.segundos === -1 ? 86400 : duracionData.segundos);
     setAudioActivo(true);
 
-    // Aviso al tercero por WhatsApp
     const mensaje = `🎙️ AUDIO REMOTO ACTIVADO · ${terceroSeleccionado.nombre} puede escuchar mi entorno durante ${duracionData.label}. Ubicación compartida en tiempo real: ${buildMapLink(loadLastLocation()) || "(sin datos)"}`;
     openWhatsAppWithMessage(mensaje);
   }
@@ -312,7 +310,6 @@ function TerceroRemotoModal({ module, onClose }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm overflow-y-auto py-8">
       <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0d1426] p-6 shadow-2xl my-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <span className="text-2xl">👁️</span>
@@ -321,7 +318,6 @@ function TerceroRemotoModal({ module, onClose }) {
           <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl leading-none">×</button>
         </div>
 
-        {/* VISTA: MENU PRINCIPAL */}
         {vista === "menu" && (
           <>
             <p className="mb-5 text-xs leading-5 text-slate-400">
@@ -337,7 +333,7 @@ function TerceroRemotoModal({ module, onClose }) {
 
             <div className="space-y-2">
               <button onClick={() => setVista("vincular")} disabled={terceros.length >= maxTerceros}
-                className={`w-full rounded-xl border ${module.accentBorder} ${module.accentBg} ${module.accentText} px-4 py-3 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed`}>
+                className={`w-full rounded-xl border ${colors.accentBorder} ${colors.accentBg} ${colors.accentText} px-4 py-3 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed`}>
                 ➕ Vincular nuevo tercero
               </button>
 
@@ -360,7 +356,6 @@ function TerceroRemotoModal({ module, onClose }) {
           </>
         )}
 
-        {/* VISTA: VINCULAR NUEVO */}
         {vista === "vincular" && (
           <>
             <button onClick={() => { setVista("menu"); setCodigoGenerado(""); setError(""); }} className="text-xs text-slate-400 mb-3">← Volver</button>
@@ -403,7 +398,7 @@ function TerceroRemotoModal({ module, onClose }) {
                           <button key={d.key} onClick={() => !bloqueado && setDuracion(d.key)}
                             className={`rounded-xl border px-3 py-2 text-xs font-semibold relative ${
                               duracion === d.key && !bloqueado
-                                ? `${module.accentBorder} ${module.accentBg} ${module.accentText}`
+                                ? `${colors.accentBorder} ${colors.accentBg} ${colors.accentText}`
                                 : "border-white/10 bg-white/5 text-slate-300"
                             } ${bloqueado ? "opacity-50" : ""}`}>
                             {d.label}
@@ -417,7 +412,7 @@ function TerceroRemotoModal({ module, onClose }) {
                   {error && <p className="text-xs text-red-400">{error}</p>}
 
                   <button onClick={handleVincular}
-                    className="w-full rounded-xl bg-gradient-to-r from-cyan-400 to-sky-500 py-3 text-sm font-semibold text-white shadow-lg">
+                    className="w-full rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 py-3 text-sm font-semibold text-white shadow-lg">
                     Generar código y enviar por WhatsApp
                   </button>
                 </div>
@@ -426,7 +421,6 @@ function TerceroRemotoModal({ module, onClose }) {
           </>
         )}
 
-        {/* VISTA: LISTA DE TERCEROS */}
         {vista === "lista" && (
           <>
             <button onClick={() => setVista("menu")} className="text-xs text-slate-400 mb-3">← Volver</button>
@@ -436,7 +430,7 @@ function TerceroRemotoModal({ module, onClose }) {
                 <div className="text-4xl mb-2">👁️</div>
                 <p className="text-sm text-slate-400">No tenés terceros vinculados todavía.</p>
                 <button onClick={() => setVista("vincular")}
-                  className={`mt-4 rounded-xl border ${module.accentBorder} ${module.accentBg} ${module.accentText} px-4 py-2 text-sm font-semibold`}>
+                  className={`mt-4 rounded-xl border ${colors.accentBorder} ${colors.accentBg} ${colors.accentText} px-4 py-2 text-sm font-semibold`}>
                   Vincular primer tercero
                 </button>
               </div>
@@ -445,7 +439,7 @@ function TerceroRemotoModal({ module, onClose }) {
                 {terceros.map((t) => {
                   const expirado = t.expira !== null && t.expira < Date.now();
                   return (
-                    <div key={t.id} className={`rounded-xl border p-3 ${expirado ? "border-red-500/20 bg-red-500/5" : `${module.accentBorder} ${module.accentBg}`}`}>
+                    <div key={t.id} className={`rounded-xl border p-3 ${expirado ? "border-red-500/20 bg-red-500/5" : `${colors.accentBorder} ${colors.accentBg}`}`}>
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-semibold text-slate-100">{t.nombre}</div>
@@ -463,7 +457,7 @@ function TerceroRemotoModal({ module, onClose }) {
 
                       {!expirado && (
                         <button onClick={() => iniciarAudioRemoto(t)}
-                          className="w-full rounded-lg bg-gradient-to-r from-fuchsia-500 to-rose-500 py-2 text-xs font-semibold text-white">
+                          className="w-full rounded-lg bg-gradient-to-r from-pink-500 to-rose-500 py-2 text-xs font-semibold text-white">
                           🎙️ Activar audio remoto para {t.nombre.split(" ")[0]}
                         </button>
                       )}
@@ -475,7 +469,6 @@ function TerceroRemotoModal({ module, onClose }) {
           </>
         )}
 
-        {/* VISTA: CONTROL DE AUDIO */}
         {vista === "audio" && terceroSeleccionado && (
           <>
             <button onClick={() => { setVista("lista"); setError(""); }} className="text-xs text-slate-400 mb-3">← Volver</button>
@@ -514,7 +507,7 @@ function TerceroRemotoModal({ module, onClose }) {
                       <button key={d.key} onClick={() => !bloqueado && setAudioDuracion(d.key)}
                         className={`rounded-xl border px-3 py-3 text-xs font-semibold relative ${
                           audioDuracion === d.key && !bloqueado
-                            ? `${module.accentBorder} ${module.accentBg} ${module.accentText}`
+                            ? `${colors.accentBorder} ${colors.accentBg} ${colors.accentText}`
                             : "border-white/10 bg-white/5 text-slate-300"
                         } ${bloqueado ? "opacity-50" : ""}`}>
                         {d.label}
@@ -527,7 +520,7 @@ function TerceroRemotoModal({ module, onClose }) {
                 {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
 
                 <button onClick={activarAudio}
-                  className="w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-rose-500 py-3 text-sm font-semibold text-white shadow-lg mb-2">
+                  className="w-full rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 py-3 text-sm font-semibold text-white shadow-lg mb-2">
                   🎙️ Activar audio ahora
                 </button>
 
@@ -540,6 +533,62 @@ function TerceroRemotoModal({ module, onClose }) {
         )}
       </div>
     </div>
+  );
+}
+
+// ─── CARD DESTACADO: TERCERO REMOTO ─────────
+function TerceroRemotoCard() {
+  const [showModal, setShowModal] = useState(false);
+
+  return (
+    <>
+      <div className="relative rounded-2xl border-2 border-pink-500/40 bg-gradient-to-br from-pink-500/10 via-rose-500/5 to-transparent p-6 overflow-hidden">
+        {/* Badge destacado */}
+        <div className="absolute top-0 right-0 rounded-bl-2xl bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-1.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-white">⭐ Función estrella</span>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+          {/* Icono grande */}
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg shadow-pink-500/30">
+            <span className="text-3xl">👁️</span>
+          </div>
+
+          {/* Contenido */}
+          <div className="flex-1 min-w-0">
+            <div className="mb-2">
+              <h4 className="text-xl font-bold text-slate-100">Tercero Remoto</h4>
+              <p className="text-xs text-pink-300 font-semibold">Cuidadores conectados a distancia</p>
+            </div>
+
+            <p className="text-sm leading-relaxed text-slate-400 mb-4">
+              Vinculá a un cuidador de confianza (hija, hijo, pareja, familiar) que pueda acceder a tu audio y ubicación cuando <strong className="text-slate-200">vos</strong> lo activás. Vos controlás cuándo y por cuánto tiempo.
+            </p>
+
+            {/* Features rápidas */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <div className="inline-flex items-center gap-1 rounded-full bg-pink-500/10 border border-pink-500/20 px-2.5 py-1 text-[11px] text-pink-300">
+                🎙️ Audio remoto
+              </div>
+              <div className="inline-flex items-center gap-1 rounded-full bg-pink-500/10 border border-pink-500/20 px-2.5 py-1 text-[11px] text-pink-300">
+                📍 Ubicación en vivo
+              </div>
+              <div className="inline-flex items-center gap-1 rounded-full bg-pink-500/10 border border-pink-500/20 px-2.5 py-1 text-[11px] text-pink-300">
+                🔒 Vos controlás
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Botón principal */}
+        <button onClick={() => setShowModal(true)}
+          className="w-full rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 py-4 font-semibold text-white shadow-lg shadow-pink-500/30 hover:shadow-xl hover:shadow-pink-500/40 transition-shadow">
+          👁️ Gestionar mis terceros remotos
+        </button>
+      </div>
+
+      {showModal && <TerceroRemotoModal onClose={() => setShowModal(false)} />}
+    </>
   );
 }
 
@@ -635,7 +684,7 @@ function GeofencingModal({ module, onClose }) {
   );
 }
 
-// ─── DATOS: 5 MÓDULOS ───────────────────────
+// ─── DATOS: 5 MÓDULOS (sin Tercero Remoto, va aparte) ───────────
 const MODULES = [
   {
     key: "violencia", emoji: "🛡️", title: "Violencia de género",
@@ -645,7 +694,6 @@ const MODULES = [
     actions: [
       { key: "panico", icon: "🚨", name: "Botón de pánico", desc: "Alerta inmediata + ubicación + red de apoyo.", type: "alert", message: "🚨 ALERTA · Botón de pánico activado. Necesito ayuda urgente." },
       SHARE_LOCATION_ACTION,
-      TERCERO_REMOTO_ACTION,
       { key: "grabar_audio", icon: "🎙️", name: "Grabar sonido ambiente", desc: "Graba audio del entorno como evidencia.", type: "whatsapp", message: "🎙️ Inicié grabación de sonido ambiente como evidencia." },
       { key: "grabar_video", icon: "🎥", name: "Grabar video", desc: "Activa grabación de video como respaldo.", type: "whatsapp", message: "🎥 Activé grabación de video como evidencia." },
       { key: "archivos", icon: "📁", name: "Carpeta de archivos", desc: "Accedé a tus evidencias guardadas.", type: "whatsapp", message: "📁 Quiero consultar mis archivos en Traza 360." },
@@ -663,7 +711,6 @@ const MODULES = [
     actions: [
       { key: "peligro", icon: "🚨", name: "Estoy en peligro (SOS)", desc: "Alerta inmediata + ubicación.", type: "alert", message: "🚨 SOS · Estoy en peligro." },
       SHARE_LOCATION_ACTION,
-      TERCERO_REMOTO_ACTION,
       GEOFENCING_ACTION,
       { key: "sali_voy_a", icon: "🚶", name: "Salí de casa, voy a lo de...", desc: "Aviso con ubicación.", type: "alert", message: "🚶 Salí de casa. Voy a lo de [completar]." },
       { key: "vuelvo_a_las", icon: "🕐", name: "Vuelvo a las...", desc: "Indico hora de regreso.", type: "whatsapp", message: "🕐 Vuelvo a casa a las [completar]." },
@@ -682,7 +729,6 @@ const MODULES = [
     actions: [
       { key: "me_cai", icon: "🆘", name: "Me caí", desc: "Alerta inmediata + ubicación.", type: "alert", message: "🆘 ALERTA · Me caí." },
       SHARE_LOCATION_ACTION,
-      TERCERO_REMOTO_ACTION,
       GEOFENCING_ACTION,
       { key: "medicamentos", icon: "💊", name: "Tomé la medicación", desc: "Confirmación de toma.", type: "whatsapp", message: "💊 Tomé la medicación del horario." },
       { key: "recordatorio_meds", icon: "⏰", name: "Recordatorio de medicamentos", desc: "Configurar avisos.", type: "whatsapp", message: "⏰ Quiero configurar recordatorios de medicamentos." },
@@ -701,7 +747,6 @@ const MODULES = [
     actions: [
       { key: "intruso", icon: "🚨", name: "Intruso en domicilio", desc: "Alerta inmediata + ubicación.", type: "alert", message: "🚨 ALERTA · Posible intruso." },
       SHARE_LOCATION_ACTION,
-      TERCERO_REMOTO_ACTION,
       { key: "ruido_sospechoso", icon: "👂", name: "Ruido sospechoso", desc: "Aviso preventivo.", type: "alert", message: "👂 Ruido sospechoso en mi domicilio." },
       { key: "llamar_vecino", icon: "🏘️", name: "Llamar a vecino", desc: "Contactar vecino de confianza.", type: "whatsapp", message: "🏘️ Necesito contactar a mi vecino." },
       { key: "problema_vecino", icon: "⚠️", name: "Problema con vecino", desc: "Reportar conflicto.", type: "alert", message: "⚠️ Tengo un problema con un vecino." },
@@ -719,7 +764,6 @@ const MODULES = [
       { key: "ingreso_domicilio_desconocido", icon: "⏱️", name: "Ingreso a domicilio desconocido", desc: "Timer con PIN al entrar a trabajar.", type: "timer", minutes: 60, triggerMessage: "⚠️ ALERTA · Timer laboral vencido." },
       { key: "peligro", icon: "🚨", name: "Estoy en peligro (SOS)", desc: "Alerta inmediata + ubicación.", type: "alert", message: "🚨 SOS · En peligro durante mi trabajo." },
       SHARE_LOCATION_ACTION,
-      TERCERO_REMOTO_ACTION,
       GEOFENCING_ACTION,
       { key: "salgo_con_desconocido", icon: "🧑‍🤝‍🧑", name: "Salgo con desconocido/a", desc: "Aviso + ubicación.", type: "alert", message: "🧑‍🤝‍🧑 Salgo con cliente desconocido/a." },
       { key: "cliente_sospechoso", icon: "⚠️", name: "Cliente sospechoso", desc: "Aviso preventivo.", type: "alert", message: "⚠️ Cliente con actitud sospechosa." },
@@ -810,7 +854,6 @@ function ModuleCard({ m }) {
   const [expanded, setExpanded] = useState(false);
   const [activeTimer, setActiveTimer] = useState(null);
   const [showGeofencing, setShowGeofencing] = useState(false);
-  const [showTerceroRemoto, setShowTerceroRemoto] = useState(false);
 
   function handleAction(action) {
     switch (action.type) {
@@ -819,7 +862,6 @@ function ModuleCard({ m }) {
       case "uber": openUber(action.destination); return;
       case "share_location": shareLiveLocation(); return;
       case "geofencing": setShowGeofencing(true); return;
-      case "tercero_remoto": setShowTerceroRemoto(true); return;
       case "alert": sendAlertWithLocation(action.message); return;
       case "whatsapp":
       default: openWhatsAppWithMessage(action.message); return;
@@ -832,7 +874,6 @@ function ModuleCard({ m }) {
     if (a.type === "uber") return <div className="mt-1.5 inline-block rounded-full bg-slate-700/50 text-slate-200 px-2 py-0.5 text-[10px] font-semibold">🚗 Abre Uber</div>;
     if (a.type === "share_location") return <div className="mt-1.5 inline-block rounded-full bg-cyan-500/10 text-cyan-300 px-2 py-0.5 text-[10px] font-semibold">📡 Tracking en vivo</div>;
     if (a.type === "geofencing") return <div className="mt-1.5 inline-block rounded-full bg-purple-500/10 text-purple-300 px-2 py-0.5 text-[10px] font-semibold">🗺️ Geocercas</div>;
-    if (a.type === "tercero_remoto") return <div className="mt-1.5 inline-block rounded-full bg-pink-500/10 text-pink-300 px-2 py-0.5 text-[10px] font-semibold">👁️ Cuidador remoto</div>;
     if (a.type === "alert") return <div className="mt-1.5 inline-block rounded-full bg-red-500/10 text-red-300 px-2 py-0.5 text-[10px] font-semibold">🚨 Alerta + Ubicación</div>;
     return null;
   }
@@ -874,7 +915,6 @@ function ModuleCard({ m }) {
 
       {activeTimer && <TimerModal action={activeTimer} moduleColor={m} onClose={() => setActiveTimer(null)} />}
       {showGeofencing && <GeofencingModal module={m} onClose={() => setShowGeofencing(false)} />}
-      {showTerceroRemoto && <TerceroRemotoModal module={m} onClose={() => setShowTerceroRemoto(false)} />}
     </>
   );
 }
@@ -959,6 +999,16 @@ function LandingScreen({ onScreen }) {
       <Hero />
       <div className="px-5 pb-12"><LandingActions onScreen={onScreen} /></div>
 
+      {/* MÓDULO DESTACADO: TERCERO REMOTO */}
+      <section className="px-5 py-12">
+        <div className="mx-auto max-w-5xl">
+          <h3 className="mb-2 text-center text-xl font-bold md:text-2xl">Función destacada</h3>
+          <p className="mb-8 text-center text-sm text-slate-400">El cuidador remoto que marca la diferencia.</p>
+          <TerceroRemotoCard />
+        </div>
+      </section>
+
+      {/* 5 MÓDULOS */}
       <section className="px-5 py-12">
         <div className="mx-auto max-w-5xl">
           <h3 className="mb-2 text-center text-xl font-bold md:text-2xl">Soluciones según tu necesidad</h3>
@@ -970,6 +1020,7 @@ function LandingScreen({ onScreen }) {
         </div>
       </section>
 
+      {/* PLANES */}
       <section className="px-5 py-12">
         <div className="mx-auto max-w-5xl">
           <h3 className="mb-2 text-center text-xl font-bold md:text-2xl">Elegí cómo querés usar Traza 360</h3>
@@ -978,6 +1029,7 @@ function LandingScreen({ onScreen }) {
         </div>
       </section>
 
+      {/* FOOTER */}
       <section className="border-t border-slate-800/50 px-5 py-12 text-center">
         <div className="mx-auto max-w-2xl">
           <p className="mb-6 text-sm text-slate-400">¿Tenés dudas? Hablá con nosotros.</p>
@@ -1055,6 +1107,7 @@ function RegisterScreen({ onBack, onSuccess }) {
 
 function HomeScreen({ onLogout }) {
   const quickCards = useMemo(() => [
+    { emoji: "👁️", title: "Tercero Remoto", text: "Cuidadores con audio y ubicación en vivo." },
     { emoji: "🛡️", title: "Violencia de género", text: "Pánico, grabación y red de apoyo." },
     { emoji: "🧑‍🎓", title: "Adolescente seguro", text: "Salida, regreso, GPS y geocercas." },
     { emoji: "🫶", title: "Adulto mayor seguro", text: "Medicamentos, caídas y geocercas." },
@@ -1069,7 +1122,7 @@ function HomeScreen({ onLogout }) {
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Panel inicial</p>
               <h2 className="mt-2 text-2xl font-bold md:text-3xl">Bienvenido a Traza 360</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">5 módulos con Tercero Remoto, geocercas, timers y ubicación automática.</p>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">Tercero Remoto como función destacada + 5 módulos especializados.</p>
             </div>
             <button onClick={onLogout} className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10">Cerrar sesión</button>
           </div>
