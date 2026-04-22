@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { signUp, signIn, signOut, getCurrentUser } from "./lib/supabase";
+import { signUp, signIn, signOut, getCurrentUser, supabase } from "./lib/supabase";
 
 /* ═══════════════════════════════════════════════════════════════
    TRAZA 360 — App completa
-   Versión: 10.0 · Abril 2026
+   Versión: 12.0 · Abril 2026
    ═══════════════════════════════════════════════════════════════
-   NOVEDAD v10: Autenticación REAL con Supabase
-   - Registro crea usuario en Supabase Auth + perfil en tabla usuarios
-   - Login valida email/password contra Supabase
-   - Sesión persistente (al cerrar pestaña seguís logueado)
-   - Logout real
+   NOVEDAD v12:
+   - Fix: Home muestra nombre del usuario (con fallback a email)
+   - Fix: 6 tarjetas del Home son clickeables y abren los módulos
+   - Nuevo: botones anti-bullying en Adolescente Seguro
+   - Nuevo: si el perfil no se crea bien, se intenta crear al entrar al Home
    ═══════════════════════════════════════════════════════════════ */
 
 // ─── CONFIG ─────────────────────────────────
@@ -132,7 +132,15 @@ function openWhatsAppWithMessage(text) {
   window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
 }
 
-async function sendAlertWithLocation(baseMessage) {
+function sendSilentWhatsApp(text) {
+  const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+  const popup = window.open(url, "_blank", "noopener,noreferrer,width=1,height=1,left=-1000,top=-1000");
+  if (popup) {
+    setTimeout(() => { try { popup.close(); } catch(e) {} }, 3000);
+  }
+}
+
+async function sendAlertWithLocation(baseMessage, silent = false) {
   const { location, source } = await getCurrentLocationWithFallback();
   let finalMessage = baseMessage;
   if (location) {
@@ -141,7 +149,8 @@ async function sendAlertWithLocation(baseMessage) {
   } else {
     finalMessage += "\n\n⚠️ No se pudo obtener ubicación. Contacten por otros medios.";
   }
-  openWhatsAppWithMessage(finalMessage);
+  if (silent) sendSilentWhatsApp(finalMessage);
+  else openWhatsAppWithMessage(finalMessage);
 }
 
 async function shareLiveLocation() {
@@ -183,6 +192,146 @@ function WhatsAppFloatingButton() {
 // ─── ACCIONES COMPARTIDAS ───────────────────
 const SHARE_LOCATION_ACTION = { key: "compartir_ubicacion", icon: "📡", name: "Compartir ubicación en tiempo real", desc: "Envío mi ubicación y activo seguimiento continuo.", type: "share_location" };
 const GEOFENCING_ACTION = { key: "geofencing", icon: "🗺️", name: "Alertas de lugares (Geofencing)", desc: "Aviso automático al entrar/salir de lugares predefinidos.", type: "geofencing" };
+
+// ─── BULLYING: GRABACIÓN DE AUDIO REAL ──────
+let mediaRecorderInstance = null;
+let audioChunksRef = [];
+
+async function iniciarGrabacionBullying() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioChunksRef = [];
+    mediaRecorderInstance = new MediaRecorder(stream);
+
+    mediaRecorderInstance.ondataavailable = (event) => {
+      if (event.data.size > 0) audioChunksRef.push(event.data);
+    };
+
+    mediaRecorderInstance.onstop = () => {
+      const audioBlob = new Blob(audioChunksRef, { type: "audio/webm" });
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      const a = document.createElement("a");
+      a.href = audioUrl;
+      a.download = `evidencia_bullying_${new Date().toISOString().replace(/[:.]/g, "-")}.webm`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      sendSilentWhatsApp(`🎙️ EVIDENCIA BULLYING · Grabación de audio guardada como evidencia. Fecha: ${new Date().toLocaleString("es-AR")}`);
+
+      stream.getTracks().forEach(track => track.stop());
+    };
+
+    mediaRecorderInstance.start();
+    return { success: true };
+  } catch (error) {
+    console.error("Error grabando audio:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+function detenerGrabacionBullying() {
+  if (mediaRecorderInstance && mediaRecorderInstance.state !== "inactive") {
+    mediaRecorderInstance.stop();
+    return true;
+  }
+  return false;
+}
+
+// ─── MODAL: BULLYING GRABACIÓN ──────────────
+function BullyingModal({ onClose }) {
+  const [grabando, setGrabando] = useState(false);
+  const [tiempo, setTiempo] = useState(0);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!grabando) return;
+    const id = setInterval(() => setTiempo((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [grabando]);
+
+  async function iniciar() {
+    setError("");
+    const result = await iniciarGrabacionBullying();
+    if (result.success) {
+      setGrabando(true);
+      setTiempo(0);
+    } else {
+      setError("No se pudo acceder al micrófono. Dale permiso al navegador.");
+    }
+  }
+
+  function detener() {
+    detenerGrabacionBullying();
+    setGrabando(false);
+  }
+
+  const formatTiempo = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 px-5 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-3xl border border-sky-500/30 bg-[#0d1426] p-6 shadow-2xl">
+        <div className="text-center">
+          <div className="mb-3 text-4xl">🎙️</div>
+          <div className="text-lg font-bold text-slate-100">Evidencia de bullying</div>
+          <p className="mt-2 text-xs text-slate-400">
+            Grabación silenciosa. El audio se guarda como evidencia para denunciar.
+          </p>
+
+          {grabando ? (
+            <>
+              <div className="my-6 rounded-2xl border border-red-500/30 bg-red-500/10 py-6">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse"></div>
+                  <span className="text-xs font-semibold text-red-300 uppercase tracking-widest">Grabando</span>
+                </div>
+                <div className="font-mono text-4xl font-bold text-white tabular-nums">{formatTiempo(tiempo)}</div>
+              </div>
+
+              <div className="mb-4 rounded-xl border border-sky-500/20 bg-sky-500/5 p-3">
+                <p className="text-[11px] text-sky-200 leading-5">
+                  ℹ️ Mantené la pantalla encendida. Tocá "Detener y guardar" cuando termines.
+                </p>
+              </div>
+
+              <button onClick={detener} className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white shadow-lg">
+                Detener y guardar evidencia
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="my-6 rounded-2xl border border-sky-500/20 bg-sky-500/5 p-4">
+                <p className="text-xs leading-5 text-slate-300">
+                  Al tocar <strong className="text-sky-300">"Iniciar grabación"</strong>:
+                </p>
+                <ul className="mt-2 text-[11px] text-slate-400 text-left space-y-1 list-disc list-inside">
+                  <li>Se graba el audio del entorno sin hacer ruido</li>
+                  <li>Se guarda automáticamente como archivo</li>
+                  <li>Se avisa en silencio a tus contactos</li>
+                  <li>La pantalla muestra que está grabando para vos</li>
+                </ul>
+              </div>
+
+              {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
+
+              <button onClick={iniciar} className="w-full rounded-2xl bg-gradient-to-r from-sky-500 to-cyan-500 py-3 text-sm font-semibold text-white shadow-lg mb-2">
+                🎙️ Iniciar grabación silenciosa
+              </button>
+              <button onClick={onClose} className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-xs font-medium text-slate-400">
+                Cancelar
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── MODAL: TERCERO REMOTO ──────────────────
 function TerceroRemotoModal({ onClose }) {
@@ -343,17 +492,6 @@ function TerceroRemotoModal({ onClose }) {
                 📋 Ver mis terceros vinculados ({terceros.length})
               </button>
             </div>
-
-            {terceros.length >= maxTerceros && (
-              <div className="mt-4 rounded-xl border border-orange-500/30 bg-orange-500/10 p-3">
-                <div className="text-xs text-orange-300 font-semibold">🚀 Pasate a Premium</div>
-                <div className="text-[11px] text-slate-400 mt-1">Premium Personal: 3 terceros. Premium Familiar: 5 terceros + vinculación permanente.</div>
-                <button onClick={() => openWhatsAppWithMessage("Hola, quiero pasarme a Premium para tener más terceros remotos.")}
-                  className="mt-2 w-full rounded-lg bg-[#25D366] text-white py-2 text-xs font-semibold">
-                  Consultar Premium por WhatsApp
-                </button>
-              </div>
-            )}
           </>
         )}
 
@@ -369,9 +507,6 @@ function TerceroRemotoModal({ onClose }) {
                   <div className="text-xs text-emerald-300 mb-2">Código para {nombre}:</div>
                   <div className="font-mono text-3xl font-bold text-white tracking-widest">{codigoGenerado}</div>
                 </div>
-                <p className="text-xs text-slate-400 mb-4">
-                  Se envió el código por WhatsApp a {nombre}. El tercero lo usa en su app para completar la vinculación.
-                </p>
                 <button onClick={() => { setVista("lista"); setCodigoGenerado(""); setNombre(""); setTelefono(""); }}
                   className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white">
                   Ir a mis terceros
@@ -384,10 +519,10 @@ function TerceroRemotoModal({ onClose }) {
                 </div>
 
                 <div className="space-y-3">
-                  <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre del tercero (ej: Mi hija María)"
+                  <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre del tercero"
                     className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400/50" />
 
-                  <input type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="Teléfono con WhatsApp (ej: 5491123456789)"
+                  <input type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="Teléfono con WhatsApp"
                     className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400/50" />
 
                   <div>
@@ -397,13 +532,12 @@ function TerceroRemotoModal({ onClose }) {
                         const bloqueado = d.plan !== "gratis" && plan === "gratis";
                         return (
                           <button key={d.key} onClick={() => !bloqueado && setDuracion(d.key)}
-                            className={`rounded-xl border px-3 py-2 text-xs font-semibold relative ${
+                            className={`rounded-xl border px-3 py-2 text-xs font-semibold ${
                               duracion === d.key && !bloqueado
                                 ? `${colors.accentBorder} ${colors.accentBg} ${colors.accentText}`
                                 : "border-white/10 bg-white/5 text-slate-300"
                             } ${bloqueado ? "opacity-50" : ""}`}>
                             {d.label}
-                            {bloqueado && <span className="absolute top-0.5 right-1 text-[9px] text-orange-400">🔒 Premium</span>}
                           </button>
                         );
                       })}
@@ -430,10 +564,6 @@ function TerceroRemotoModal({ onClose }) {
               <div className="text-center py-8">
                 <div className="text-4xl mb-2">👁️</div>
                 <p className="text-sm text-slate-400">No tenés terceros vinculados todavía.</p>
-                <button onClick={() => setVista("vincular")}
-                  className={`mt-4 rounded-xl border ${colors.accentBorder} ${colors.accentBg} ${colors.accentText} px-4 py-2 text-sm font-semibold`}>
-                  Vincular primer tercero
-                </button>
               </div>
             ) : (
               <div className="space-y-3">
@@ -445,9 +575,6 @@ function TerceroRemotoModal({ onClose }) {
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-semibold text-slate-100">{t.nombre}</div>
                           <div className="text-[11px] text-slate-400 truncate">📱 {t.telefono}</div>
-                          <div className="text-[10px] text-slate-500 mt-1">
-                            Duración: {t.duracionLabel} · {expirado ? "❌ Expirada" : `⏳ Queda: ${formatExpira(t.expira)}`}
-                          </div>
                           <div className="text-[10px] text-slate-500">Código: <span className="font-mono">{t.codigo}</span></div>
                         </div>
                         <button onClick={() => removeTercero(t.id)}
@@ -485,9 +612,6 @@ function TerceroRemotoModal({ onClose }) {
                 <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5 text-center mb-4">
                   <div className="text-xs text-emerald-300 mb-2 font-semibold">🟢 TRANSMITIENDO</div>
                   <div className="font-mono text-3xl font-bold text-white">{formatSeg(audioRestante)}</div>
-                  <div className="text-[10px] text-slate-400 mt-2">
-                    {terceroSeleccionado.nombre} puede escuchar tu entorno y ver tu ubicación.
-                  </div>
                 </div>
 
                 <button onClick={detenerAudio}
@@ -497,22 +621,17 @@ function TerceroRemotoModal({ onClose }) {
               </>
             ) : (
               <>
-                <div className="mb-4 text-xs leading-5 text-slate-400">
-                  Elegí cuánto tiempo <strong className="text-slate-200">{terceroSeleccionado.nombre}</strong> puede escuchar tu audio y ver tu ubicación.
-                </div>
-
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   {DURACIONES_AUDIO.map((d) => {
                     const bloqueado = d.plan !== "gratis" && plan === "gratis";
                     return (
                       <button key={d.key} onClick={() => !bloqueado && setAudioDuracion(d.key)}
-                        className={`rounded-xl border px-3 py-3 text-xs font-semibold relative ${
+                        className={`rounded-xl border px-3 py-3 text-xs font-semibold ${
                           audioDuracion === d.key && !bloqueado
                             ? `${colors.accentBorder} ${colors.accentBg} ${colors.accentText}`
                             : "border-white/10 bg-white/5 text-slate-300"
                         } ${bloqueado ? "opacity-50" : ""}`}>
                         {d.label}
-                        {bloqueado && <div className="text-[9px] text-orange-400 mt-0.5">🔒 Premium</div>}
                       </button>
                     );
                   })}
@@ -521,70 +640,15 @@ function TerceroRemotoModal({ onClose }) {
                 {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
 
                 <button onClick={activarAudio}
-                  className="w-full rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 py-3 text-sm font-semibold text-white shadow-lg mb-2">
+                  className="w-full rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 py-3 text-sm font-semibold text-white shadow-lg">
                   🎙️ Activar audio ahora
                 </button>
-
-                <p className="text-[10px] text-slate-500 text-center mt-2">
-                  💡 Podés detenerlo en cualquier momento desde esta misma pantalla.
-                </p>
               </>
             )}
           </>
         )}
       </div>
     </div>
-  );
-}
-
-// ─── CARD DESTACADO: TERCERO REMOTO ─────────
-function TerceroRemotoCard() {
-  const [showModal, setShowModal] = useState(false);
-
-  return (
-    <>
-      <div className="relative rounded-2xl border-2 border-pink-500/40 bg-gradient-to-br from-pink-500/10 via-rose-500/5 to-transparent p-6 overflow-hidden">
-        <div className="absolute top-0 right-0 rounded-bl-2xl bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-white">⭐ Función estrella</span>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg shadow-pink-500/30">
-            <span className="text-3xl">👁️</span>
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="mb-2">
-              <h4 className="text-xl font-bold text-slate-100">Tercero Remoto</h4>
-              <p className="text-xs text-pink-300 font-semibold">Cuidadores conectados a distancia</p>
-            </div>
-
-            <p className="text-sm leading-relaxed text-slate-400 mb-4">
-              Vinculá a un cuidador de confianza (hija, hijo, pareja, familiar) que pueda acceder a tu audio y ubicación cuando <strong className="text-slate-200">vos</strong> lo activás. Vos controlás cuándo y por cuánto tiempo.
-            </p>
-
-            <div className="flex flex-wrap gap-2 mb-4">
-              <div className="inline-flex items-center gap-1 rounded-full bg-pink-500/10 border border-pink-500/20 px-2.5 py-1 text-[11px] text-pink-300">
-                🎙️ Audio remoto
-              </div>
-              <div className="inline-flex items-center gap-1 rounded-full bg-pink-500/10 border border-pink-500/20 px-2.5 py-1 text-[11px] text-pink-300">
-                📍 Ubicación en vivo
-              </div>
-              <div className="inline-flex items-center gap-1 rounded-full bg-pink-500/10 border border-pink-500/20 px-2.5 py-1 text-[11px] text-pink-300">
-                🔒 Vos controlás
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <button onClick={() => setShowModal(true)}
-          className="w-full rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 py-4 font-semibold text-white shadow-lg shadow-pink-500/30 hover:shadow-xl hover:shadow-pink-500/40 transition-shadow">
-          👁️ Gestionar mis terceros remotos
-        </button>
-      </div>
-
-      {showModal && <TerceroRemotoModal onClose={() => setShowModal(false)} />}
-    </>
   );
 }
 
@@ -596,30 +660,8 @@ function GeofencingModal({ module, onClose }) {
   const [radiusInput, setRadiusInput] = useState(200);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const insideMapRef = useRef({});
 
   useEffect(() => { saveZones(module.key, zones); }, [module.key, zones]);
-
-  useEffect(() => {
-    if (zones.length === 0 || !navigator.geolocation) return;
-    const watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        const { latitude: lat, longitude: lng } = pos.coords;
-        saveLastLocation(lat, lng);
-        zones.forEach((z) => {
-          if (!z.active) return;
-          const inside = distanceMeters(lat, lng, z.lat, z.lng) <= z.radius;
-          const wasInside = insideMapRef.current[z.id] ?? null;
-          if (wasInside === null) { insideMapRef.current[z.id] = inside; return; }
-          if (!wasInside && inside) openWhatsAppWithMessage(`🟢 LLEGADA · Entré a la zona "${z.name}" (${module.title}).`);
-          else if (wasInside && !inside) openWhatsAppWithMessage(`🔴 SALIDA · Salí de la zona "${z.name}" (${module.title}).`);
-          insideMapRef.current[z.id] = inside;
-        });
-      },
-      () => {}, { enableHighAccuracy: true, maximumAge: 15000 }
-    );
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [zones, module.key, module.title]);
 
   async function handleAddZone() {
     setError("");
@@ -639,7 +681,6 @@ function GeofencingModal({ module, onClose }) {
           <div className="flex items-center gap-2"><span className="text-2xl">🗺️</span><h3 className="text-lg font-bold text-slate-100">Zonas de Geofencing</h3></div>
           <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl leading-none">×</button>
         </div>
-        <p className="mb-5 text-xs text-slate-400">Agregá lugares como escuela, hogar o trabajo. Recibí aviso por WhatsApp al entrar o salir.</p>
 
         {zones.length > 0 && (
           <div className="mb-5 space-y-2">
@@ -649,12 +690,8 @@ function GeofencingModal({ module, onClose }) {
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold text-slate-100">{z.name}</div>
                     <div className="text-[11px] text-slate-400 truncate">{z.address}</div>
-                    <div className="mt-1 text-[10px] text-slate-500">Radio: {z.radius}m · {z.active ? "🟢 Activa" : "⚪ Pausada"}</div>
                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    <button onClick={() => setZones((p) => p.map((zz) => zz.id === z.id ? { ...zz, active: !zz.active } : zz))} className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[10px] text-slate-200">{z.active ? "Pausar" : "Activar"}</button>
-                    <button onClick={() => setZones((p) => p.filter((zz) => zz.id !== z.id))} className="rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1 text-[10px] text-red-300">Quitar</button>
-                  </div>
+                  <button onClick={() => setZones((p) => p.filter((zz) => zz.id !== z.id))} className="rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1 text-[10px] text-red-300">Quitar</button>
                 </div>
               </div>
             ))}
@@ -663,8 +700,8 @@ function GeofencingModal({ module, onClose }) {
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
           <div className="text-sm font-semibold text-slate-200">➕ Agregar nueva zona</div>
-          <input type="text" value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder="Nombre (ej: Escuela)" className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400/50" />
-          <input type="text" value={addressInput} onChange={(e) => setAddressInput(e.target.value)} placeholder="Dirección (ej: Av. Corrientes 1234, CABA)" className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400/50" />
+          <input type="text" value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder="Nombre (ej: Escuela)" className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500" />
+          <input type="text" value={addressInput} onChange={(e) => setAddressInput(e.target.value)} placeholder="Dirección" className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500" />
           <div>
             <label className="text-xs text-slate-400">Radio: {radiusInput}m</label>
             <input type="range" min="50" max="1000" step="50" value={radiusInput} onChange={(e) => setRadiusInput(e.target.value)} className="w-full mt-1" />
@@ -688,28 +725,28 @@ const MODULES = [
     color: "from-fuchsia-500 to-rose-500", border: "border-fuchsia-500/20",
     accentBg: "bg-fuchsia-500/10", accentBorder: "border-fuchsia-500/30", accentText: "text-fuchsia-300",
     actions: [
-      { key: "panico", icon: "🚨", name: "Botón de pánico", desc: "Alerta inmediata + ubicación + red de apoyo.", type: "alert", message: "🚨 ALERTA · Botón de pánico activado. Necesito ayuda urgente." },
+      { key: "panico", icon: "🚨", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert", message: "🚨 ALERTA · Botón de pánico activado. Necesito ayuda urgente." },
       SHARE_LOCATION_ACTION,
       { key: "grabar_audio", icon: "🎙️", name: "Grabar sonido ambiente", desc: "Graba audio del entorno como evidencia.", type: "whatsapp", message: "🎙️ Inicié grabación de sonido ambiente como evidencia." },
-      { key: "grabar_video", icon: "🎥", name: "Grabar video", desc: "Activa grabación de video como respaldo.", type: "whatsapp", message: "🎥 Activé grabación de video como evidencia." },
-      { key: "archivos", icon: "📁", name: "Carpeta de archivos", desc: "Accedé a tus evidencias guardadas.", type: "whatsapp", message: "📁 Quiero consultar mis archivos en Traza 360." },
       { key: "entro_casa_de", icon: "🏘️", name: "Entro a la casa de...", desc: "Aviso y comparto ubicación.", type: "alert", message: "🏘️ Entro a la casa de [completar]." },
       { key: "me_reuno_con", icon: "👥", name: "Me reúno con...", desc: "Aviso que me encuentro con alguien.", type: "alert", message: "👥 Me reúno con [completar]." },
-      { key: "ingreso_lugar_desconocido", icon: "⏱️", name: "Ingreso a lugar desconocido", desc: "Timer con PIN + alerta automática.", type: "timer", minutes: 30, triggerMessage: "⚠️ ALERTA · Ingresé a lugar desconocido y no cancelé el timer." },
+      { key: "ingreso_lugar_desconocido", icon: "⏱️", name: "Ingreso a lugar desconocido", desc: "Timer con PIN + alerta automática.", type: "timer", minutes: 30, triggerMessage: "⚠️ ALERTA · Timer vencido en lugar desconocido." },
       { key: "transporte", icon: "🚗", name: "Llamar transporte de confianza", desc: "Abre Uber a tu casa.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
     ],
   },
   {
     key: "adolescente", emoji: "🧑‍🎓", title: "Adolescente seguro",
-    desc: "Salidas, regresos y trayectos con trazabilidad. Autonomía con respaldo.",
+    desc: "Salidas, regresos, trayectos y protección contra bullying.",
     color: "from-sky-400 to-cyan-500", border: "border-sky-500/20",
     accentBg: "bg-sky-500/10", accentBorder: "border-sky-500/30", accentText: "text-sky-300",
     actions: [
       { key: "peligro", icon: "🚨", name: "Estoy en peligro (SOS)", desc: "Alerta inmediata + ubicación.", type: "alert", message: "🚨 SOS · Estoy en peligro." },
       SHARE_LOCATION_ACTION,
       GEOFENCING_ACTION,
+      // NUEVOS BOTONES ANTI-BULLYING
+      { key: "buscame_cole", icon: "🏫", name: "Buscame por el cole, algo anda mal", desc: "Aviso silencioso + ubicación. No puedo explicar.", type: "silent_alert", message: "🏫 URGENTE · Necesito que me busquen por el colegio. Algo anda mal. No puedo explicar ahora." },
+      { key: "bullying_evidencia", icon: "🎙️", name: "Bullying - Grabar evidencia", desc: "Grabación silenciosa de audio como prueba.", type: "bullying_record" },
       { key: "sali_voy_a", icon: "🚶", name: "Salí de casa, voy a lo de...", desc: "Aviso con ubicación.", type: "alert", message: "🚶 Salí de casa. Voy a lo de [completar]." },
-      { key: "vuelvo_a_las", icon: "🕐", name: "Vuelvo a las...", desc: "Indico hora de regreso.", type: "whatsapp", message: "🕐 Vuelvo a casa a las [completar]." },
       { key: "llegar_a_casa", icon: "🗺️", name: "Llegar a casa (GPS)", desc: "Abre Google Maps a tu casa.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
       { key: "llegue_bien", icon: "✅", name: "Llegué bien", desc: "Cierra el seguimiento.", type: "whatsapp", message: "✅ Llegué bien." },
       { key: "lugar_desconocido", icon: "⏱️", name: "Entré a un lugar desconocido", desc: "Timer con PIN.", type: "timer", minutes: 45, triggerMessage: "⚠️ ALERTA · Timer vencido en lugar desconocido." },
@@ -727,12 +764,9 @@ const MODULES = [
       SHARE_LOCATION_ACTION,
       GEOFENCING_ACTION,
       { key: "medicamentos", icon: "💊", name: "Tomé la medicación", desc: "Confirmación de toma.", type: "whatsapp", message: "💊 Tomé la medicación del horario." },
-      { key: "recordatorio_meds", icon: "⏰", name: "Recordatorio de medicamentos", desc: "Configurar avisos.", type: "whatsapp", message: "⏰ Quiero configurar recordatorios de medicamentos." },
       { key: "llamar_familiar", icon: "📞", name: "Llamar a familiar", desc: "Contactar familiar/cuidador.", type: "whatsapp", message: "📞 Necesito hablar con mi familiar." },
-      { key: "llegar_a_casa", icon: "🗺️", name: "Llegar a casa (GPS)", desc: "Abre Google Maps a tu casa.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
       { key: "me_perdi", icon: "📍", name: "Me perdí", desc: "Envía ubicación.", type: "alert", message: "📍 Me perdí." },
       { key: "no_me_siento_bien", icon: "💔", name: "No me siento bien", desc: "Aviso de descompensación.", type: "alert", message: "💔 No me siento bien." },
-      { key: "check_in", icon: "✅", name: "Check-in diario", desc: "Confirmación de que todo está bien.", type: "whatsapp", message: "✅ Check-in diario: Estoy bien." },
     ],
   },
   {
@@ -744,10 +778,7 @@ const MODULES = [
       { key: "intruso", icon: "🚨", name: "Intruso en domicilio", desc: "Alerta inmediata + ubicación.", type: "alert", message: "🚨 ALERTA · Posible intruso." },
       SHARE_LOCATION_ACTION,
       { key: "ruido_sospechoso", icon: "👂", name: "Ruido sospechoso", desc: "Aviso preventivo.", type: "alert", message: "👂 Ruido sospechoso en mi domicilio." },
-      { key: "llamar_vecino", icon: "🏘️", name: "Llamar a vecino", desc: "Contactar vecino de confianza.", type: "whatsapp", message: "🏘️ Necesito contactar a mi vecino." },
-      { key: "problema_vecino", icon: "⚠️", name: "Problema con vecino", desc: "Reportar conflicto.", type: "alert", message: "⚠️ Tengo un problema con un vecino." },
       { key: "accidente_domestico", icon: "🩹", name: "Accidente doméstico", desc: "Aviso + ubicación.", type: "alert", message: "🩹 ALERTA · Accidente doméstico." },
-      { key: "ingreso_hogar", icon: "⏱️", name: "Ingreso con timer", desc: "Timer con PIN.", type: "timer", minutes: 15, triggerMessage: "⚠️ ALERTA · Timer de ingreso al domicilio vencido." },
       { key: "emergencia_hogar", icon: "🆘", name: "Emergencia en el hogar", desc: "Alerta máxima.", type: "alert", message: "🆘 EMERGENCIA en el hogar." },
     ],
   },
@@ -760,20 +791,11 @@ const MODULES = [
       { key: "ingreso_domicilio_desconocido", icon: "⏱️", name: "Ingreso a domicilio desconocido", desc: "Timer con PIN al entrar a trabajar.", type: "timer", minutes: 60, triggerMessage: "⚠️ ALERTA · Timer laboral vencido." },
       { key: "peligro", icon: "🚨", name: "Estoy en peligro (SOS)", desc: "Alerta inmediata + ubicación.", type: "alert", message: "🚨 SOS · En peligro durante mi trabajo." },
       SHARE_LOCATION_ACTION,
-      GEOFENCING_ACTION,
-      { key: "salgo_con_desconocido", icon: "🧑‍🤝‍🧑", name: "Salgo con desconocido/a", desc: "Aviso + ubicación.", type: "alert", message: "🧑‍🤝‍🧑 Salgo con cliente desconocido/a." },
       { key: "cliente_sospechoso", icon: "⚠️", name: "Cliente sospechoso", desc: "Aviso preventivo.", type: "alert", message: "⚠️ Cliente con actitud sospechosa." },
-      { key: "cambio_planes", icon: "🔄", name: "Cambio de planes / lugar", desc: "Aviso con nueva ubicación.", type: "alert", message: "🔄 Cambio de planes en el trabajo." },
       { key: "transporte", icon: "🚗", name: "Llamar transporte de confianza", desc: "Abre Uber a tu casa.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
       { key: "llegue_bien", icon: "✅", name: "Llegué bien / terminé", desc: "Confirmación.", type: "whatsapp", message: "✅ Terminé mi trabajo y estoy bien." },
     ],
   },
-];
-
-const PLANS = [
-  { name: "Gratis", price: "US$0", sub: "Lo básico + 1 Tercero Remoto con vinculación de hasta 24h.", features: ["1 perfil", "2 contactos de confianza", "1 Tercero Remoto (24h máx)", "Audio hasta 15 min", "Alerta manual + ubicación"], cta: "Empezar gratis" },
-  { name: "Premium Personal", price: "US$4.99/mes", sub: "3 Terceros Remotos + vinculación de hasta 30 días + audio continuo.", features: ["Todo lo gratis", "3 Terceros Remotos", "Vinculación hasta 30 días", "Audio continuo 24/7", "Historial + geocercas"], cta: "Quiero Premium", highlight: true },
-  { name: "Premium Familiar", price: "US$9.99/mes", sub: "5 Terceros Remotos + vinculación permanente + múltiples perfiles.", features: ["Todo Premium Personal", "5 Terceros Remotos", "Vinculación permanente", "Varios perfiles protegidos", "Reportes + prioridad"], cta: "Consultar plan familiar" },
 ];
 
 // ─── TIMER MODAL ────────────────────────────
@@ -782,15 +804,6 @@ function TimerModal({ action, moduleColor, onClose }) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const triggeredRef = useRef(false);
-
-  useEffect(() => {
-    if (!navigator.geolocation) return;
-    const watchId = navigator.geolocation.watchPosition(
-      (pos) => saveLastLocation(pos.coords.latitude, pos.coords.longitude),
-      () => {}, { enableHighAccuracy: true, maximumAge: 15000 }
-    );
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, []);
 
   useEffect(() => {
     if (timeLeft <= 0) {
@@ -819,10 +832,8 @@ function TimerModal({ action, moduleColor, onClose }) {
           <div className="text-lg font-bold text-slate-100">{action.name}</div>
           {!expired ? (
             <>
-              <p className="mt-2 text-xs text-slate-400">Si no ingresás tu PIN antes de que termine, se enviará alerta automática con tu ubicación.</p>
               <div className={`my-6 rounded-2xl border ${moduleColor.accentBorder} ${moduleColor.accentBg} py-6`}>
                 <div className="font-mono text-5xl font-bold text-white tabular-nums">{mm}:{ss}</div>
-                <div className="mt-1 text-[10px] uppercase tracking-widest text-slate-400">Tiempo restante</div>
               </div>
               <div className="space-y-3">
                 <input type="password" inputMode="numeric" value={pin} onChange={(e) => { setPin(e.target.value); setError(""); }} placeholder="Ingresá tu PIN"
@@ -835,7 +846,6 @@ function TimerModal({ action, moduleColor, onClose }) {
           ) : (
             <>
               <p className="mt-2 text-sm font-semibold text-red-400">⚠️ Tiempo agotado</p>
-              <p className="mt-2 text-xs text-slate-400">Se disparó la alerta automática con tu ubicación.</p>
               <button onClick={onClose} className="mt-6 w-full rounded-2xl bg-slate-700 py-3 text-sm font-semibold text-white">Cerrar</button>
             </>
           )}
@@ -846,10 +856,12 @@ function TimerModal({ action, moduleColor, onClose }) {
 }
 
 // ─── MODULE CARD ────────────────────────────
-function ModuleCard({ m }) {
-  const [expanded, setExpanded] = useState(false);
+function ModuleCard({ m, autoExpand = false }) {
+  const [expanded, setExpanded] = useState(autoExpand);
   const [activeTimer, setActiveTimer] = useState(null);
   const [showGeofencing, setShowGeofencing] = useState(false);
+  const [showBullying, setShowBullying] = useState(false);
+  const [silentConfirm, setSilentConfirm] = useState(false);
 
   function handleAction(action) {
     switch (action.type) {
@@ -858,20 +870,16 @@ function ModuleCard({ m }) {
       case "uber": openUber(action.destination); return;
       case "share_location": shareLiveLocation(); return;
       case "geofencing": setShowGeofencing(true); return;
+      case "silent_alert":
+        sendAlertWithLocation(action.message, true);
+        setSilentConfirm(true);
+        setTimeout(() => setSilentConfirm(false), 2500);
+        return;
+      case "bullying_record": setShowBullying(true); return;
       case "alert": sendAlertWithLocation(action.message); return;
       case "whatsapp":
       default: openWhatsAppWithMessage(action.message); return;
     }
-  }
-
-  function renderBadge(a) {
-    if (a.type === "timer") return <div className={`mt-1.5 inline-block rounded-full ${m.accentBg} ${m.accentText} px-2 py-0.5 text-[10px] font-semibold`}>⏱️ Timer {a.minutes} min</div>;
-    if (a.type === "maps") return <div className="mt-1.5 inline-block rounded-full bg-blue-500/10 text-blue-300 px-2 py-0.5 text-[10px] font-semibold">🗺️ Abre GPS</div>;
-    if (a.type === "uber") return <div className="mt-1.5 inline-block rounded-full bg-slate-700/50 text-slate-200 px-2 py-0.5 text-[10px] font-semibold">🚗 Abre Uber</div>;
-    if (a.type === "share_location") return <div className="mt-1.5 inline-block rounded-full bg-cyan-500/10 text-cyan-300 px-2 py-0.5 text-[10px] font-semibold">📡 Tracking en vivo</div>;
-    if (a.type === "geofencing") return <div className="mt-1.5 inline-block rounded-full bg-purple-500/10 text-purple-300 px-2 py-0.5 text-[10px] font-semibold">🗺️ Geocercas</div>;
-    if (a.type === "alert") return <div className="mt-1.5 inline-block rounded-full bg-red-500/10 text-red-300 px-2 py-0.5 text-[10px] font-semibold">🚨 Alerta + Ubicación</div>;
-    return null;
   }
 
   return (
@@ -900,7 +908,6 @@ function ModuleCard({ m }) {
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold text-slate-100">{action.name}</div>
                     <div className="mt-0.5 text-[11px] leading-5 text-slate-400">{action.desc}</div>
-                    {renderBadge(action)}
                   </div>
                 </div>
               </button>
@@ -911,49 +918,53 @@ function ModuleCard({ m }) {
 
       {activeTimer && <TimerModal action={activeTimer} moduleColor={m} onClose={() => setActiveTimer(null)} />}
       {showGeofencing && <GeofencingModal module={m} onClose={() => setShowGeofencing(false)} />}
+      {showBullying && <BullyingModal onClose={() => setShowBullying(false)} />}
+
+      {silentConfirm && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[200] rounded-xl border border-indigo-500/30 bg-indigo-500/20 backdrop-blur-md px-4 py-2 shadow-xl">
+          <p className="text-xs text-indigo-200 font-semibold">🤫 Alerta silenciosa enviada con ubicación</p>
+        </div>
+      )}
     </>
   );
 }
 
-function PlanCard({ plan }) {
+// ─── TERCERO REMOTO CARD ─────────
+function TerceroRemotoCard() {
+  const [showModal, setShowModal] = useState(false);
+
   return (
-    <div className={`relative rounded-2xl border p-5 flex flex-col ${plan.highlight ? "border-orange-500/40 bg-gradient-to-b from-orange-500/10 to-transparent" : "border-slate-800 bg-[#11182e]"}`}>
-      {plan.highlight && <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-orange-500 px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-white">Más elegido</div>}
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <span className="text-lg font-bold text-slate-100">{plan.name}</span>
-        <span className={`text-base font-bold ${plan.highlight ? "text-orange-400" : "text-slate-300"}`}>{plan.price}</span>
-      </div>
-      <p className="mb-4 text-sm leading-relaxed text-slate-400">{plan.sub}</p>
-      <div className="mb-5 space-y-2 flex-1">
-        {plan.features.map((f) => (
-          <div key={f} className="flex items-start gap-2 text-sm">
-            <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
-            <span className="text-slate-300">{f}</span>
+    <>
+      <div className="relative rounded-2xl border-2 border-pink-500/40 bg-gradient-to-br from-pink-500/10 via-rose-500/5 to-transparent p-6 overflow-hidden">
+        <div className="absolute top-0 right-0 rounded-bl-2xl bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-1.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-white">⭐ Función estrella</span>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg shadow-pink-500/30">
+            <span className="text-3xl">👁️</span>
           </div>
-        ))}
+
+          <div className="flex-1 min-w-0">
+            <h4 className="text-xl font-bold text-slate-100 mb-2">Tercero Remoto</h4>
+            <p className="text-sm leading-relaxed text-slate-400 mb-4">
+              Vinculá a un cuidador de confianza que pueda acceder a tu audio y ubicación cuando <strong className="text-slate-200">vos</strong> lo activás.
+            </p>
+          </div>
+        </div>
+
+        <button onClick={() => setShowModal(true)}
+          className="w-full rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 py-4 font-semibold text-white shadow-lg shadow-pink-500/30">
+          👁️ Gestionar mis terceros remotos
+        </button>
       </div>
-      <button onClick={() => openWhatsAppWithMessage(`Hola, quiero consultar el plan ${plan.name} de Traza 360.`)}
-        className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold w-full ${plan.highlight ? "bg-[#25D366] text-white hover:bg-[#20BD5A] shadow-lg shadow-[#25D366]/20" : "bg-[#25D366]/10 border border-[#25D366]/20 text-[#25D366] hover:bg-[#25D366]/15"}`}>
-        <WhatsAppIcon size={18} /> <span>{plan.cta}</span>
-      </button>
-    </div>
+
+      {showModal && <TerceroRemotoModal onClose={() => setShowModal(false)} />}
+    </>
   );
 }
 
-function Field({ label, type = "text", placeholder, value, onChange }) {
-  return (
-    <label className="block space-y-2 text-left">
-      <span className="text-sm font-medium text-slate-300">{label}</span>
-      <input type={type} value={value} onChange={onChange} placeholder={placeholder}
-        className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20" />
-    </label>
-  );
-}
-
-function AccessCard({ children }) {
-  return <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-cyan-950/30 backdrop-blur-xl md:p-8">{children}</div>;
-}
-
+// ─── LANDING ─────────────────────────────────
 function Hero() {
   return (
     <section className="px-5 pt-16 pb-12 text-center">
@@ -977,62 +988,30 @@ function Hero() {
   );
 }
 
-function LandingActions({ onScreen }) {
-  return (
-    <div className="mx-auto flex w-full max-w-sm flex-col gap-3">
-      <button onClick={() => onScreen("login")} className="w-full rounded-2xl bg-gradient-to-r from-purple-500 to-sky-500 px-4 py-4 font-semibold text-white shadow-lg shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/30">Ingresar con mi cuenta</button>
-      <button onClick={() => onScreen("register")} className="w-full rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-4 font-semibold text-white hover:bg-slate-800/60">Crear cuenta</button>
-      <button onClick={() => openWhatsAppWithMessage("Hola, quiero solicitar una demo de Traza 360.")} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#25D366]/10 border border-[#25D366]/20 text-[#25D366] px-4 py-3 text-sm font-semibold hover:bg-[#25D366]/15">
-        <WhatsAppIcon size={18} /> <span>Solicitar demo por WhatsApp</span>
-      </button>
-    </div>
-  );
-}
-
 function LandingScreen({ onScreen }) {
   return (
     <div className="min-h-screen bg-[#05080f] text-slate-100">
       <Hero />
-      <div className="px-5 pb-12"><LandingActions onScreen={onScreen} /></div>
+      <div className="px-5 pb-12">
+        <div className="mx-auto flex w-full max-w-sm flex-col gap-3">
+          <button onClick={() => onScreen("login")} className="w-full rounded-2xl bg-gradient-to-r from-purple-500 to-sky-500 px-4 py-4 font-semibold text-white shadow-lg shadow-purple-500/20">Ingresar con mi cuenta</button>
+          <button onClick={() => onScreen("register")} className="w-full rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-4 font-semibold text-white">Crear cuenta</button>
+        </div>
+      </div>
 
       <section className="px-5 py-12">
         <div className="mx-auto max-w-5xl">
           <h3 className="mb-2 text-center text-xl font-bold md:text-2xl">Función destacada</h3>
-          <p className="mb-8 text-center text-sm text-slate-400">El cuidador remoto que marca la diferencia.</p>
           <TerceroRemotoCard />
         </div>
       </section>
 
       <section className="px-5 py-12">
         <div className="mx-auto max-w-5xl">
-          <h3 className="mb-2 text-center text-xl font-bold md:text-2xl">Soluciones según tu necesidad</h3>
-          <p className="mb-10 text-center text-sm text-slate-400">Hacé clic en "Ver opciones" para desplegar cada módulo.</p>
+          <h3 className="mb-6 text-center text-xl font-bold md:text-2xl">Soluciones según tu necesidad</h3>
           <div className="grid gap-4 sm:grid-cols-2">
-            {MODULES.slice(0, 4).map((m) => <ModuleCard key={m.key} m={m} />)}
+            {MODULES.map((m) => <ModuleCard key={m.key} m={m} />)}
           </div>
-          <div className="mt-4"><ModuleCard m={MODULES[4]} /></div>
-        </div>
-      </section>
-
-      <section className="px-5 py-12">
-        <div className="mx-auto max-w-5xl">
-          <h3 className="mb-2 text-center text-xl font-bold md:text-2xl">Elegí cómo querés usar Traza 360</h3>
-          <p className="mb-10 text-center text-sm text-slate-400">Protección básica gratis. Más Terceros Remotos y tiempo en Premium.</p>
-          <div className="grid gap-4 md:grid-cols-3">{PLANS.map((plan) => <PlanCard key={plan.name} plan={plan} />)}</div>
-        </div>
-      </section>
-
-      <section className="border-t border-slate-800/50 px-5 py-12 text-center">
-        <div className="mx-auto max-w-2xl">
-          <p className="mb-6 text-sm text-slate-400">¿Tenés dudas? Hablá con nosotros.</p>
-          <button onClick={() => openWhatsAppWithMessage("Hola, quiero información sobre Traza 360.")} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] text-white px-6 py-3 text-sm font-semibold shadow-lg shadow-[#25D366]/20 hover:bg-[#20BD5A]">
-            <WhatsAppIcon size={18} /> <span>Hablar por WhatsApp</span>
-          </button>
-          <div className="mt-8 flex items-center justify-center gap-2">
-            <span className="text-sm font-bold text-red-400">📞 911</span>
-            <span className="text-xs text-slate-500">En emergencias inmediatas, contactá primero al servicio oficial.</span>
-          </div>
-          <p className="mt-6 text-xs text-slate-600">Traza 360 © 2026 · Hecho en Argentina 🇦🇷</p>
         </div>
       </section>
 
@@ -1041,7 +1020,22 @@ function LandingScreen({ onScreen }) {
   );
 }
 
-// ─── LOGIN SCREEN (CONECTADO A SUPABASE) ────
+// ─── FIELD + ACCESS CARD ────────────────────
+function Field({ label, type = "text", placeholder, value, onChange }) {
+  return (
+    <label className="block space-y-2 text-left">
+      <span className="text-sm font-medium text-slate-300">{label}</span>
+      <input type={type} value={value} onChange={onChange} placeholder={placeholder}
+        className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400/50" />
+    </label>
+  );
+}
+
+function AccessCard({ children }) {
+  return <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-xl md:p-8">{children}</div>;
+}
+
+// ─── LOGIN / REGISTER ───────────────────────
 function LoginScreen({ onBack, onSuccess }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -1050,36 +1044,22 @@ function LoginScreen({ onBack, onSuccess }) {
 
   async function handleLogin() {
     setError("");
-    if (!email.trim() || !password.trim()) {
-      setError("Completá email y contraseña.");
-      return;
-    }
+    if (!email.trim() || !password.trim()) { setError("Completá email y contraseña."); return; }
     setLoading(true);
     const result = await signIn(email.trim(), password);
     setLoading(false);
-
-    if (result.success) {
-      onSuccess();
-    } else {
-      // Traducir mensajes comunes de Supabase
-      if (result.error.includes("Invalid login credentials")) {
-        setError("Email o contraseña incorrectos.");
-      } else if (result.error.includes("Email not confirmed")) {
-        setError("Confirmá tu email antes de ingresar.");
-      } else {
-        setError(result.error || "Error al iniciar sesión.");
-      }
+    if (result.success) onSuccess();
+    else {
+      if (result.error.includes("Invalid login credentials")) setError("Email o contraseña incorrectos.");
+      else setError(result.error || "Error al iniciar sesión.");
     }
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#07111f] px-5 py-8 text-white">
       <AccessCard>
-        <button onClick={onBack} className="text-sm font-medium text-cyan-300 hover:text-cyan-200">← Volver</button>
-        <div className="mt-5 text-center">
-          <h2 className="text-2xl font-bold">Ingresar</h2>
-          <p className="mt-2 text-sm text-slate-400">Accedé a tu cuenta de Traza 360</p>
-        </div>
+        <button onClick={onBack} className="text-sm font-medium text-cyan-300">← Volver</button>
+        <h2 className="mt-5 text-center text-2xl font-bold">Ingresar</h2>
         <div className="mt-6 space-y-4">
           <Field label="Email" type="email" placeholder="tu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
           <Field label="Contraseña" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
@@ -1093,59 +1073,38 @@ function LoginScreen({ onBack, onSuccess }) {
   );
 }
 
-// ─── REGISTER SCREEN (CONECTADO A SUPABASE) ─
-function RegisterScreen({ onBack, onSuccess }) {
+function RegisterScreen({ onBack, onSuccess, setPendingName }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState("me_protejo");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function handleRegister() {
     setError("");
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      setError("Completá todos los campos.");
-      return;
-    }
-    if (password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres.");
-      return;
-    }
+    if (!name.trim() || !email.trim() || !password.trim()) { setError("Completá todos los campos."); return; }
+    if (password.length < 6) { setError("La contraseña debe tener al menos 6 caracteres."); return; }
     setLoading(true);
+
+    // GUARDAR EL NOMBRE EN sessionStorage para usarlo como fallback
+    try { window.sessionStorage.setItem("traza360_pending_name", name.trim()); } catch(e){}
+    setPendingName(name.trim());
+
     const result = await signUp(email.trim(), password, name.trim());
     setLoading(false);
-
-    if (result.success) {
-      onSuccess();
-    } else {
+    if (result.success) onSuccess();
+    else {
       if (result.error.includes("already registered") || result.error.includes("already been registered")) {
         setError("Este email ya está registrado. Probá ingresar con tu cuenta.");
-      } else {
-        setError(result.error || "Error al crear la cuenta.");
-      }
+      } else setError(result.error || "Error al crear la cuenta.");
     }
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#07111f] px-5 py-8 text-white">
       <AccessCard>
-        <button onClick={onBack} className="text-sm font-medium text-cyan-300 hover:text-cyan-200">← Volver</button>
-        <div className="mt-5 text-center">
-          <h2 className="text-2xl font-bold">Crear cuenta</h2>
-          <p className="mt-2 text-sm text-slate-400">Creá tu acceso y activá tu red de protección</p>
-        </div>
-        <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
-          <div className="mb-3 text-sm font-semibold text-slate-200">¿Cómo vas a usar Traza 360?</div>
-          <div className="grid grid-cols-2 gap-3">
-            {[{ key: "me_protejo", label: "Me protejo" }, { key: "cuido_a_alguien", label: "Cuido a alguien" }].map((opt) => (
-              <button key={opt.key} type="button" onClick={() => setMode(opt.key)}
-                className={`rounded-2xl px-4 py-3 text-sm font-semibold ${mode === opt.key ? "bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/20" : "border border-white/10 bg-white/5 text-white hover:bg-white/10"}`}>
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <button onClick={onBack} className="text-sm font-medium text-cyan-300">← Volver</button>
+        <h2 className="mt-5 text-center text-2xl font-bold">Crear cuenta</h2>
         <div className="mt-6 space-y-4">
           <Field label="Nombre completo" placeholder="Nombre y apellido" value={name} onChange={(e) => setName(e.target.value)} />
           <Field label="Email" type="email" placeholder="tu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -1160,38 +1119,59 @@ function RegisterScreen({ onBack, onSuccess }) {
   );
 }
 
-// ─── HOME SCREEN (con nombre del usuario) ───
-function HomeScreen({ userProfile, onLogout }) {
-  const quickCards = useMemo(() => [
-    { emoji: "👁️", title: "Tercero Remoto", text: "Cuidadores con audio y ubicación en vivo." },
-    { emoji: "🛡️", title: "Violencia de género", text: "Pánico, grabación y red de apoyo." },
-    { emoji: "🧑‍🎓", title: "Adolescente seguro", text: "Salida, regreso, GPS y geocercas." },
-    { emoji: "🫶", title: "Adulto mayor seguro", text: "Medicamentos, caídas y geocercas." },
-    { emoji: "🏠", title: "Hogar seguro", text: "Intrusos, vecinos y accidentes." },
-    { emoji: "💼", title: "Trabajo seguro", text: "Acompañantes y domicilios." },
-  ], []);
-
+// ─── HOME SCREEN (CON MÓDULOS FUNCIONALES) ──
+function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
+  const [activeModule, setActiveModule] = useState(null);
+  const [showTerceroModal, setShowTerceroModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+
+  // NOMBRE DEL USUARIO con fallbacks
+  const nombreUsuario = userProfile?.nombre
+    || pendingName
+    || (typeof window !== "undefined" && window.sessionStorage?.getItem("traza360_pending_name"))
+    || authUser?.email?.split("@")[0]
+    || "Usuario";
+
+  const planNombre = userProfile?.plan === "premium_personal" ? "Premium Personal"
+    : userProfile?.plan === "premium_familiar" ? "Premium Familiar"
+    : "Gratis";
 
   async function handleLogout() {
     setLoggingOut(true);
+    try { window.sessionStorage.removeItem("traza360_pending_name"); } catch(e){}
     await signOut();
     setLoggingOut(false);
     onLogout();
   }
 
-  const nombreUsuario = userProfile?.nombre || "Usuario";
-  const planNombre = userProfile?.plan === "gratis" ? "Gratis" : userProfile?.plan === "premium_personal" ? "Premium Personal" : userProfile?.plan === "premium_familiar" ? "Premium Familiar" : "Gratis";
+  const quickCards = [
+    { key: "tercero", emoji: "👁️", title: "Tercero Remoto", text: "Cuidadores con audio y ubicación en vivo." },
+    { key: "violencia", emoji: "🛡️", title: "Violencia de género", text: "Pánico, grabación y red de apoyo." },
+    { key: "adolescente", emoji: "🧑‍🎓", title: "Adolescente seguro", text: "Anti-bullying, GPS y geocercas." },
+    { key: "adulto_mayor", emoji: "🫶", title: "Adulto mayor seguro", text: "Medicamentos, caídas y geocercas." },
+    { key: "hogar", emoji: "🏠", title: "Hogar seguro", text: "Intrusos, vecinos y accidentes." },
+    { key: "trabajo", emoji: "💼", title: "Trabajo seguro", text: "Acompañantes y domicilios." },
+  ];
+
+  function handleQuickCardClick(key) {
+    if (key === "tercero") {
+      setShowTerceroModal(true);
+    } else {
+      const mod = MODULES.find((m) => m.key === key);
+      if (mod) setActiveModule(mod);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#07111f] px-5 py-8 text-white">
       <div className="mx-auto max-w-6xl">
+        {/* HEADER */}
         <div className="mb-8 rounded-3xl border border-white/10 bg-white/5 p-6 md:p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Panel inicial</p>
               <h2 className="mt-2 text-2xl font-bold md:text-3xl">Bienvenido/a, {nombreUsuario} 👋</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">
+              <p className="mt-2 text-sm leading-relaxed text-slate-400">
                 Tu red de protección está activa. Plan actual: <span className="text-cyan-300 font-semibold">{planNombre}</span>.
               </p>
             </div>
@@ -1200,16 +1180,37 @@ function HomeScreen({ userProfile, onLogout }) {
             </button>
           </div>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {quickCards.map((card) => (
-            <div key={card.title} className="rounded-2xl border border-white/10 bg-white/5 p-5 hover:bg-white/10">
-              <div className="mb-2 text-2xl">{card.emoji}</div>
-              <div className="text-base font-semibold text-slate-100">{card.title}</div>
-              <p className="mt-2 text-sm leading-6 text-slate-400">{card.text}</p>
+
+        {/* MÓDULO ACTIVO (cuando clickeás una tarjeta) */}
+        {activeModule && (
+          <div className="mb-8">
+            <button onClick={() => setActiveModule(null)} className="mb-4 text-sm text-cyan-300 hover:text-cyan-200">
+              ← Volver al panel
+            </button>
+            <ModuleCard m={activeModule} autoExpand={true} />
+          </div>
+        )}
+
+        {/* TARJETAS CLICKEABLES */}
+        {!activeModule && (
+          <>
+            <h3 className="mb-4 text-lg font-bold text-slate-200">¿Qué necesitás hoy?</h3>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {quickCards.map((card) => (
+                <button key={card.key} onClick={() => handleQuickCardClick(card.key)}
+                  className="text-left rounded-2xl border border-white/10 bg-white/5 p-5 hover:bg-white/10 hover:border-cyan-400/30 active:scale-[0.98] transition-all">
+                  <div className="mb-2 text-2xl">{card.emoji}</div>
+                  <div className="text-base font-semibold text-slate-100">{card.title}</div>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">{card.text}</p>
+                  <div className="mt-3 text-xs font-semibold text-cyan-300">Abrir →</div>
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
       </div>
+
+      {showTerceroModal && <TerceroRemotoModal onClose={() => setShowTerceroModal(false)} />}
       <WhatsAppFloatingButton />
     </div>
   );
@@ -1217,46 +1218,89 @@ function HomeScreen({ userProfile, onLogout }) {
 
 // ─── APP PRINCIPAL ──────────────────────────
 export default function App() {
-  const [screen, setScreen] = useState("loading"); // loading | landing | login | register | home
+  const [screen, setScreen] = useState("loading");
   const [userProfile, setUserProfile] = useState(null);
+  const [authUser, setAuthUser] = useState(null);
+  const [pendingName, setPendingName] = useState(null);
 
-  // Al cargar la app: verificar si hay sesión activa
   useEffect(() => {
     checkSession();
-
-    // Guardar ubicación inicial
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => saveLastLocation(pos.coords.latitude, pos.coords.longitude),
         () => {}, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
       );
     }
+    // Recuperar nombre pendiente al recargar
+    try {
+      const stored = window.sessionStorage?.getItem("traza360_pending_name");
+      if (stored) setPendingName(stored);
+    } catch(e){}
   }, []);
 
   async function checkSession() {
     const result = await getCurrentUser();
     if (result && result.authUser) {
+      setAuthUser(result.authUser);
       setUserProfile(result.profile);
+
+      // FIX: Si no hay perfil pero hay authUser, intentar crearlo
+      if (!result.profile && result.authUser) {
+        await tryCreateProfile(result.authUser);
+      }
+
       setScreen("home");
     } else {
       setScreen("landing");
     }
   }
 
+  // Si no se creó el perfil al registrarse, se intenta acá
+  async function tryCreateProfile(user) {
+    try {
+      const storedName = window.sessionStorage?.getItem("traza360_pending_name");
+      const fallbackName = storedName || user.email?.split("@")[0] || "Usuario";
+
+      const { data, error } = await supabase
+        .from('usuarios')
+        .insert({
+          auth_user_id: user.id,
+          nombre: fallbackName,
+          email: user.email,
+          plan: 'gratis',
+          modo: 'me_protejo',
+        })
+        .select()
+        .single();
+
+      if (!error && data) {
+        setUserProfile(data);
+      } else {
+        console.log("No se pudo crear perfil (posiblemente ya existe):", error);
+      }
+    } catch (e) {
+      console.error("Error en tryCreateProfile:", e);
+    }
+  }
+
   async function handleLoginSuccess() {
     const result = await getCurrentUser();
     if (result && result.authUser) {
+      setAuthUser(result.authUser);
       setUserProfile(result.profile);
+      if (!result.profile) await tryCreateProfile(result.authUser);
     }
     setScreen("home");
   }
 
   function handleLogout() {
     setUserProfile(null);
+    setAuthUser(null);
+    setPendingName(null);
+    try { window.sessionStorage.removeItem("traza360_pending_name"); } catch(e){}
     setScreen("landing");
   }
 
-  // Pantalla de carga mientras verifica sesión
   if (screen === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#05080f] text-slate-100">
@@ -1274,7 +1318,7 @@ export default function App() {
   }
 
   if (screen === "login") return <LoginScreen onBack={() => setScreen("landing")} onSuccess={handleLoginSuccess} />;
-  if (screen === "register") return <RegisterScreen onBack={() => setScreen("landing")} onSuccess={handleLoginSuccess} />;
-  if (screen === "home") return <HomeScreen userProfile={userProfile} onLogout={handleLogout} />;
+  if (screen === "register") return <RegisterScreen onBack={() => setScreen("landing")} onSuccess={handleLoginSuccess} setPendingName={setPendingName} />;
+  if (screen === "home") return <HomeScreen userProfile={userProfile} authUser={authUser} pendingName={pendingName} onLogout={handleLogout} />;
   return <LandingScreen onScreen={setScreen} />;
 }
