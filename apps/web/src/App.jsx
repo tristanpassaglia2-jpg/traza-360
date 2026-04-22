@@ -1,13 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { signUp, signIn, signOut, getCurrentUser } from "./lib/supabase";
 
 /* ═══════════════════════════════════════════════════════════════
    TRAZA 360 — App completa
-   Versión: 9.0 · Abril 2026
+   Versión: 10.0 · Abril 2026
    ═══════════════════════════════════════════════════════════════
-   NOVEDAD v9: "Tercero Remoto" ahora es un MÓDULO INDEPENDIENTE
-   - Sacado de los otros 5 módulos para mayor visibilidad
-   - Card destacada ancho completo con diseño distintivo
-   - Badge "⭐ Función estrella" para resaltar
+   NOVEDAD v10: Autenticación REAL con Supabase
+   - Registro crea usuario en Supabase Auth + perfil en tabla usuarios
+   - Login valida email/password contra Supabase
+   - Sesión persistente (al cerrar pestaña seguís logueado)
+   - Logout real
    ═══════════════════════════════════════════════════════════════ */
 
 // ─── CONFIG ─────────────────────────────────
@@ -201,7 +203,6 @@ function TerceroRemotoModal({ onClose }) {
   const limites = PLAN_LIMITS[plan];
   const maxTerceros = limites.terceros;
 
-  // Colores del módulo Tercero Remoto
   const colors = {
     accentBorder: "border-pink-500/30",
     accentBg: "bg-pink-500/10",
@@ -543,18 +544,15 @@ function TerceroRemotoCard() {
   return (
     <>
       <div className="relative rounded-2xl border-2 border-pink-500/40 bg-gradient-to-br from-pink-500/10 via-rose-500/5 to-transparent p-6 overflow-hidden">
-        {/* Badge destacado */}
         <div className="absolute top-0 right-0 rounded-bl-2xl bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-1.5">
           <span className="text-[10px] font-bold uppercase tracking-wider text-white">⭐ Función estrella</span>
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-          {/* Icono grande */}
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg shadow-pink-500/30">
             <span className="text-3xl">👁️</span>
           </div>
 
-          {/* Contenido */}
           <div className="flex-1 min-w-0">
             <div className="mb-2">
               <h4 className="text-xl font-bold text-slate-100">Tercero Remoto</h4>
@@ -565,7 +563,6 @@ function TerceroRemotoCard() {
               Vinculá a un cuidador de confianza (hija, hijo, pareja, familiar) que pueda acceder a tu audio y ubicación cuando <strong className="text-slate-200">vos</strong> lo activás. Vos controlás cuándo y por cuánto tiempo.
             </p>
 
-            {/* Features rápidas */}
             <div className="flex flex-wrap gap-2 mb-4">
               <div className="inline-flex items-center gap-1 rounded-full bg-pink-500/10 border border-pink-500/20 px-2.5 py-1 text-[11px] text-pink-300">
                 🎙️ Audio remoto
@@ -580,7 +577,6 @@ function TerceroRemotoCard() {
           </div>
         </div>
 
-        {/* Botón principal */}
         <button onClick={() => setShowModal(true)}
           className="w-full rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 py-4 font-semibold text-white shadow-lg shadow-pink-500/30 hover:shadow-xl hover:shadow-pink-500/40 transition-shadow">
           👁️ Gestionar mis terceros remotos
@@ -684,7 +680,7 @@ function GeofencingModal({ module, onClose }) {
   );
 }
 
-// ─── DATOS: 5 MÓDULOS (sin Tercero Remoto, va aparte) ───────────
+// ─── DATOS: 5 MÓDULOS ───────────
 const MODULES = [
   {
     key: "violencia", emoji: "🛡️", title: "Violencia de género",
@@ -999,7 +995,6 @@ function LandingScreen({ onScreen }) {
       <Hero />
       <div className="px-5 pb-12"><LandingActions onScreen={onScreen} /></div>
 
-      {/* MÓDULO DESTACADO: TERCERO REMOTO */}
       <section className="px-5 py-12">
         <div className="mx-auto max-w-5xl">
           <h3 className="mb-2 text-center text-xl font-bold md:text-2xl">Función destacada</h3>
@@ -1008,7 +1003,6 @@ function LandingScreen({ onScreen }) {
         </div>
       </section>
 
-      {/* 5 MÓDULOS */}
       <section className="px-5 py-12">
         <div className="mx-auto max-w-5xl">
           <h3 className="mb-2 text-center text-xl font-bold md:text-2xl">Soluciones según tu necesidad</h3>
@@ -1020,7 +1014,6 @@ function LandingScreen({ onScreen }) {
         </div>
       </section>
 
-      {/* PLANES */}
       <section className="px-5 py-12">
         <div className="mx-auto max-w-5xl">
           <h3 className="mb-2 text-center text-xl font-bold md:text-2xl">Elegí cómo querés usar Traza 360</h3>
@@ -1029,7 +1022,6 @@ function LandingScreen({ onScreen }) {
         </div>
       </section>
 
-      {/* FOOTER */}
       <section className="border-t border-slate-800/50 px-5 py-12 text-center">
         <div className="mx-auto max-w-2xl">
           <p className="mb-6 text-sm text-slate-400">¿Tenés dudas? Hablá con nosotros.</p>
@@ -1049,9 +1041,37 @@ function LandingScreen({ onScreen }) {
   );
 }
 
+// ─── LOGIN SCREEN (CONECTADO A SUPABASE) ────
 function LoginScreen({ onBack, onSuccess }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleLogin() {
+    setError("");
+    if (!email.trim() || !password.trim()) {
+      setError("Completá email y contraseña.");
+      return;
+    }
+    setLoading(true);
+    const result = await signIn(email.trim(), password);
+    setLoading(false);
+
+    if (result.success) {
+      onSuccess();
+    } else {
+      // Traducir mensajes comunes de Supabase
+      if (result.error.includes("Invalid login credentials")) {
+        setError("Email o contraseña incorrectos.");
+      } else if (result.error.includes("Email not confirmed")) {
+        setError("Confirmá tu email antes de ingresar.");
+      } else {
+        setError(result.error || "Error al iniciar sesión.");
+      }
+    }
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#07111f] px-5 py-8 text-white">
       <AccessCard>
@@ -1063,18 +1083,50 @@ function LoginScreen({ onBack, onSuccess }) {
         <div className="mt-6 space-y-4">
           <Field label="Email" type="email" placeholder="tu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
           <Field label="Contraseña" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <button onClick={onSuccess} className="w-full rounded-2xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 py-3.5 font-semibold text-white shadow-lg">Ingresar</button>
+          {error && <p className="text-xs text-red-400 text-center">{error}</p>}
+          <button onClick={handleLogin} disabled={loading} className="w-full rounded-2xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 py-3.5 font-semibold text-white shadow-lg disabled:opacity-50">
+            {loading ? "Ingresando..." : "Ingresar"}
+          </button>
         </div>
       </AccessCard>
     </div>
   );
 }
 
+// ─── REGISTER SCREEN (CONECTADO A SUPABASE) ─
 function RegisterScreen({ onBack, onSuccess }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState("me_protejo");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleRegister() {
+    setError("");
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      setError("Completá todos los campos.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+    setLoading(true);
+    const result = await signUp(email.trim(), password, name.trim());
+    setLoading(false);
+
+    if (result.success) {
+      onSuccess();
+    } else {
+      if (result.error.includes("already registered") || result.error.includes("already been registered")) {
+        setError("Este email ya está registrado. Probá ingresar con tu cuenta.");
+      } else {
+        setError(result.error || "Error al crear la cuenta.");
+      }
+    }
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#07111f] px-5 py-8 text-white">
       <AccessCard>
@@ -1097,15 +1149,19 @@ function RegisterScreen({ onBack, onSuccess }) {
         <div className="mt-6 space-y-4">
           <Field label="Nombre completo" placeholder="Nombre y apellido" value={name} onChange={(e) => setName(e.target.value)} />
           <Field label="Email" type="email" placeholder="tu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <Field label="Contraseña" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <button onClick={onSuccess} className="w-full rounded-2xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 py-3.5 font-semibold text-white shadow-lg">Crear cuenta</button>
+          <Field label="Contraseña" type="password" placeholder="Mínimo 6 caracteres" value={password} onChange={(e) => setPassword(e.target.value)} />
+          {error && <p className="text-xs text-red-400 text-center">{error}</p>}
+          <button onClick={handleRegister} disabled={loading} className="w-full rounded-2xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 py-3.5 font-semibold text-white shadow-lg disabled:opacity-50">
+            {loading ? "Creando cuenta..." : "Crear cuenta"}
+          </button>
         </div>
       </AccessCard>
     </div>
   );
 }
 
-function HomeScreen({ onLogout }) {
+// ─── HOME SCREEN (con nombre del usuario) ───
+function HomeScreen({ userProfile, onLogout }) {
   const quickCards = useMemo(() => [
     { emoji: "👁️", title: "Tercero Remoto", text: "Cuidadores con audio y ubicación en vivo." },
     { emoji: "🛡️", title: "Violencia de género", text: "Pánico, grabación y red de apoyo." },
@@ -1114,6 +1170,19 @@ function HomeScreen({ onLogout }) {
     { emoji: "🏠", title: "Hogar seguro", text: "Intrusos, vecinos y accidentes." },
     { emoji: "💼", title: "Trabajo seguro", text: "Acompañantes y domicilios." },
   ], []);
+
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    await signOut();
+    setLoggingOut(false);
+    onLogout();
+  }
+
+  const nombreUsuario = userProfile?.nombre || "Usuario";
+  const planNombre = userProfile?.plan === "gratis" ? "Gratis" : userProfile?.plan === "premium_personal" ? "Premium Personal" : userProfile?.plan === "premium_familiar" ? "Premium Familiar" : "Gratis";
+
   return (
     <div className="min-h-screen bg-[#07111f] px-5 py-8 text-white">
       <div className="mx-auto max-w-6xl">
@@ -1121,10 +1190,14 @@ function HomeScreen({ onLogout }) {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Panel inicial</p>
-              <h2 className="mt-2 text-2xl font-bold md:text-3xl">Bienvenido a Traza 360</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">Tercero Remoto como función destacada + 5 módulos especializados.</p>
+              <h2 className="mt-2 text-2xl font-bold md:text-3xl">Bienvenido/a, {nombreUsuario} 👋</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">
+                Tu red de protección está activa. Plan actual: <span className="text-cyan-300 font-semibold">{planNombre}</span>.
+              </p>
             </div>
-            <button onClick={onLogout} className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10">Cerrar sesión</button>
+            <button onClick={handleLogout} disabled={loggingOut} className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-50">
+              {loggingOut ? "Cerrando..." : "Cerrar sesión"}
+            </button>
           </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -1142,8 +1215,16 @@ function HomeScreen({ onLogout }) {
   );
 }
 
+// ─── APP PRINCIPAL ──────────────────────────
 export default function App() {
+  const [screen, setScreen] = useState("loading"); // loading | landing | login | register | home
+  const [userProfile, setUserProfile] = useState(null);
+
+  // Al cargar la app: verificar si hay sesión activa
   useEffect(() => {
+    checkSession();
+
+    // Guardar ubicación inicial
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => saveLastLocation(pos.coords.latitude, pos.coords.longitude),
@@ -1151,9 +1232,49 @@ export default function App() {
       );
     }
   }, []);
-  const [screen, setScreen] = useState("landing");
-  if (screen === "login") return <LoginScreen onBack={() => setScreen("landing")} onSuccess={() => setScreen("home")} />;
-  if (screen === "register") return <RegisterScreen onBack={() => setScreen("landing")} onSuccess={() => setScreen("home")} />;
-  if (screen === "home") return <HomeScreen onLogout={() => setScreen("landing")} />;
+
+  async function checkSession() {
+    const result = await getCurrentUser();
+    if (result && result.authUser) {
+      setUserProfile(result.profile);
+      setScreen("home");
+    } else {
+      setScreen("landing");
+    }
+  }
+
+  async function handleLoginSuccess() {
+    const result = await getCurrentUser();
+    if (result && result.authUser) {
+      setUserProfile(result.profile);
+    }
+    setScreen("home");
+  }
+
+  function handleLogout() {
+    setUserProfile(null);
+    setScreen("landing");
+  }
+
+  // Pantalla de carga mientras verifica sesión
+  if (screen === "loading") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#05080f] text-slate-100">
+        <div className="text-center">
+          <div className="mb-4 flex items-center justify-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-sky-500 shadow-lg shadow-purple-500/20 animate-pulse">
+              <span className="text-3xl">🛡️</span>
+            </div>
+          </div>
+          <div className="text-lg font-bold">TRAZA 360</div>
+          <div className="text-xs text-slate-400 mt-1">Cargando...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (screen === "login") return <LoginScreen onBack={() => setScreen("landing")} onSuccess={handleLoginSuccess} />;
+  if (screen === "register") return <RegisterScreen onBack={() => setScreen("landing")} onSuccess={handleLoginSuccess} />;
+  if (screen === "home") return <HomeScreen userProfile={userProfile} onLogout={handleLogout} />;
   return <LandingScreen onScreen={setScreen} />;
 }
