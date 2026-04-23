@@ -333,12 +333,67 @@ function BullyingModal({ onClose }) {
   );
 }
 
+// ─── PREFIJOS TELEFÓNICOS ────────────────────
+const PAISES = [
+  { code: "AR", flag: "🇦🇷", prefix: "54",  label: "+54 Argentina" },
+  { code: "MX", flag: "🇲🇽", prefix: "52",  label: "+52 México" },
+  { code: "CO", flag: "🇨🇴", prefix: "57",  label: "+57 Colombia" },
+  { code: "CL", flag: "🇨🇱", prefix: "56",  label: "+56 Chile" },
+  { code: "UY", flag: "🇺🇾", prefix: "598", label: "+598 Uruguay" },
+  { code: "PY", flag: "🇵🇾", prefix: "595", label: "+595 Paraguay" },
+  { code: "BO", flag: "🇧🇴", prefix: "591", label: "+591 Bolivia" },
+  { code: "PE", flag: "🇵🇪", prefix: "51",  label: "+51 Perú" },
+  { code: "BR", flag: "🇧🇷", prefix: "55",  label: "+55 Brasil" },
+  { code: "US", flag: "🇺🇸", prefix: "1",   label: "+1 USA" },
+  { code: "ES", flag: "🇪🇸", prefix: "34",  label: "+34 España" },
+];
+
+// Selector de código de país reutilizable
+function PhoneInput({ value, onChange, prefix, onPrefixChange, placeholder }) {
+  const [open, setOpen] = useState(false);
+  const pais = PAISES.find((p) => p.prefix === prefix) || PAISES[0];
+
+  return (
+    <div className="relative">
+      <div className="flex gap-2">
+        {/* Selector de país */}
+        <button type="button" onClick={() => setOpen(!open)}
+          className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white whitespace-nowrap hover:bg-white/10 shrink-0">
+          <span>{pais.flag}</span>
+          <span className="text-slate-300">+{pais.prefix}</span>
+          <span className="text-slate-500 text-xs">▼</span>
+        </button>
+
+        {/* Campo de número */}
+        <input type="tel" value={value} onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder || "Número sin 0 ni 15"}
+          className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400/50 min-w-0" />
+      </div>
+
+      {/* Dropdown de países */}
+      {open && (
+        <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-xl border border-white/10 bg-[#0d1426] shadow-2xl overflow-hidden">
+          {PAISES.map((p) => (
+            <button key={p.code} type="button"
+              onClick={() => { onPrefixChange(p.prefix); setOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/10 text-left ${p.prefix === prefix ? "bg-white/10 text-cyan-300" : "text-slate-200"}`}>
+              <span className="text-lg">{p.flag}</span>
+              <span>{p.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MODAL: TERCERO REMOTO ──────────────────
 function TerceroRemotoModal({ onClose }) {
   const [vista, setVista] = useState("menu");
   const [terceros, setTerceros] = useState(loadTerceros());
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
+  const [prefijo, setPrefijo] = useState("54"); // Argentina por defecto
   const [duracion, setDuracion] = useState("24h");
   const [codigoGenerado, setCodigoGenerado] = useState("");
   const [error, setError] = useState("");
@@ -388,6 +443,10 @@ function TerceroRemotoModal({ onClose }) {
       return;
     }
 
+    // Armar número completo (elimina 0 inicial y 15 si es Argentina)
+    const numLimpio = telefono.trim().replace(/\s/g, '').replace(/^0+/, '').replace(/^15/, '');
+    const telefonoCompleto = prefijo + numLimpio;
+
     const codigo = generarCodigoVinculacion();
     setCodigoGenerado(codigo);
 
@@ -395,7 +454,7 @@ function TerceroRemotoModal({ onClose }) {
     const nuevoTercero = {
       id: Date.now().toString(),
       nombre: nombre.trim(),
-      telefono: telefono.trim(),
+      telefono: telefonoCompleto,
       codigo,
       duracionKey: duracion,
       duracionLabel: duracionData.label,
@@ -406,7 +465,8 @@ function TerceroRemotoModal({ onClose }) {
     setTerceros((prev) => [...prev, nuevoTercero]);
 
     const mensaje = `Hola ${nombre}! Te vinculaste como Tercero Remoto en Traza 360. Tu código es: ${codigo}. Vinculación activa por ${duracionData.label}. Instalá la app: https://traza360.com`;
-    openWhatsAppWithMessage(mensaje);
+    // Envía el código directo al número del tercero por WhatsApp
+    window.open(`https://wa.me/${telefonoCompleto}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
   }
 
   function removeTercero(id) {
@@ -522,8 +582,13 @@ function TerceroRemotoModal({ onClose }) {
                   <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre del tercero"
                     className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400/50" />
 
-                  <input type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="Teléfono con WhatsApp"
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400/50" />
+                  <PhoneInput
+                    value={telefono}
+                    onChange={setTelefono}
+                    prefix={prefijo}
+                    onPrefixChange={setPrefijo}
+                    placeholder="Número sin 0 ni 15 (ej: 1123456789)"
+                  />
 
                   <div>
                     <label className="text-xs text-slate-400 block mb-2">Duración de la vinculación</label>
