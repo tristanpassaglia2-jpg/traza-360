@@ -13,7 +13,7 @@ import { signUp, signIn, signOut, getCurrentUser, supabase } from "./lib/supabas
    ═══════════════════════════════════════════════════════════════ */
 
 // ─── CONFIG ─────────────────────────────────
-const WHATSAPP_NUMBER = "549XXXXXXXXXX";
+const WHATSAPP_NUMBER = "5493513956879";
 const PIN_DEFAULT = "1234";
 const HOME_ADDRESS_DEFAULT = "Mi casa";
 
