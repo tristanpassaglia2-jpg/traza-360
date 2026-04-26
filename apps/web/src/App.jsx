@@ -5,7 +5,7 @@ import { signUp, signIn, signOut, getCurrentUser, supabase, getContactos, addCon
    TRAZA 360 — App completa v14
    Versión: 14.0 · Abril 2026
    ═══════════════════════════════════════════════════════════════
-   CAMBIOS v14:
+   CAMBIOS v14:A
    1. PASTILLERO VIRTUAL completo (agregar meds, horarios, dias,
       boton "tome", calendario semanal, notificaciones, sonido,
       WhatsApp al familiar si no confirma en 10 min)
@@ -289,6 +289,113 @@ function GrabacionModal({ onClose }) {
             {error && <p className="text-xs text-red-400 my-2">{error}</p>}
             <button onClick={iniciar} className="mt-4 w-full rounded-2xl bg-gradient-to-r from-sky-500 to-cyan-500 py-3 text-sm font-semibold text-white shadow-lg mb-2">Iniciar grabación silenciosa</button>
             <button onClick={onClose} className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-xs text-slate-400">Cancelar</button></>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── TIMER LUGAR DESCONOCIDO ────────────────
+function TimerLugarModal({ onClose, contactos }) {
+  const [minutos, setMinutos] = useState(30);
+  const [activo, setActivo] = useState(false);
+  const [tiempoRestante, setTiempoRestante] = useState(0);
+  const [alertaEnviada, setAlertaEnviada] = useState(false);
+  const timerRef = useRef(null);
+
+  function iniciar() {
+    setTiempoRestante(minutos * 60);
+    setActivo(true);
+    // Avisar a contactos que entró a lugar desconocido
+    if (contactos.length > 0) {
+      getCurrentLocationWithFallback().then(({ location }) => {
+        const msg = buildMessageWithReply(`Entro a un lugar desconocido. Si no aviso en ${minutos} minutos, necesito ayuda.`, location);
+        openWhatsAppToContact(contactos[0].telefono, msg);
+      });
+    }
+  }
+
+  useEffect(() => {
+    if (!activo) return;
+    timerRef.current = setInterval(() => {
+      setTiempoRestante(t => {
+        if (t <= 1) {
+          clearInterval(timerRef.current);
+          // ALERTA AUTOMÁTICA
+          enviarNotificacion("ALERTA TRAZA 360", "No confirmaste que estás bien. Se alertó a tus contactos.");
+          reproducirSonido();
+          if (contactos.length > 0) {
+            getCurrentLocationWithFallback().then(({ location }) => {
+              const msg = buildMessageWithReply("ALERTA AUTOMATICA - No confirmó que está bien después de entrar a un lugar desconocido. Verificar urgente.", location);
+              openWhatsAppToContact(contactos[0].telefono, msg);
+            });
+          }
+          setAlertaEnviada(true);
+          setActivo(false);
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [activo]);
+
+  function cancelar() {
+    clearInterval(timerRef.current);
+    setActivo(false);
+    setTiempoRestante(0);
+  }
+
+  function estoyBien() {
+    clearInterval(timerRef.current);
+    setActivo(false);
+    if (contactos.length > 0) {
+      openWhatsAppToContact(contactos[0].telefono, "Estoy bien. Salí del lugar sin problemas.");
+    }
+    onClose();
+  }
+
+  const fmt = (s) => `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 px-5 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-3xl border border-orange-500/30 bg-[#0d1426] p-6 shadow-2xl">
+        <div className="text-center">
+          {alertaEnviada ? (
+            <>
+              <div className="text-5xl mb-3">{"\u{1F6A8}"}</div>
+              <div className="text-lg font-bold text-red-300">Alerta enviada</div>
+              <p className="mt-2 text-xs text-slate-400">Se alertó a tus contactos porque no confirmaste.</p>
+              <button onClick={onClose} className="mt-4 w-full rounded-2xl bg-white/10 border border-white/10 py-3 text-sm text-white">Cerrar</button>
+            </>
+          ) : activo ? (
+            <>
+              <div className="text-4xl mb-3">{"\u23F1\u{FE0F}"}</div>
+              <div className="text-lg font-bold text-slate-100">Timer activo</div>
+              <p className="mt-2 text-xs text-slate-400">Si no tocás "Estoy bien" antes de que termine, se alerta a tus contactos.</p>
+              <div className="my-6 rounded-2xl border border-orange-500/30 bg-orange-500/10 py-6">
+                <div className="font-mono text-4xl font-bold text-white tabular-nums">{fmt(tiempoRestante)}</div>
+              </div>
+              <button onClick={estoyBien} className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white shadow-lg mb-2">Estoy bien</button>
+              <button onClick={cancelar} className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-xs text-slate-400">Cancelar timer</button>
+            </>
+          ) : (
+            <>
+              <div className="text-4xl mb-3">{"\u23F1\u{FE0F}"}</div>
+              <div className="text-lg font-bold text-slate-100">Entro a lugar desconocido</div>
+              <p className="mt-2 text-xs text-slate-400">Elegí cuánto tiempo vas a estar. Si no confirmás, se alerta automáticamente.</p>
+              <div className="my-4 grid grid-cols-3 gap-2">
+                {[15, 30, 60].map(m => (
+                  <button key={m} onClick={() => setMinutos(m)}
+                    className={`rounded-xl border py-3 text-sm font-semibold ${minutos === m ? "border-orange-400/50 bg-orange-500/10 text-orange-300" : "border-white/10 bg-white/5 text-slate-400"}`}>
+                    {m} min
+                  </button>
+                ))}
+              </div>
+              <button onClick={iniciar} className="w-full rounded-2xl bg-gradient-to-r from-orange-400 to-amber-500 py-3 text-sm font-semibold text-white shadow-lg mb-2">Iniciar timer ({minutos} min)</button>
+              <button onClick={onClose} className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-xs text-slate-400">Cancelar</button>
+            </>
           )}
         </div>
       </div>
@@ -863,52 +970,160 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
 }
 
 // ─── TERCERO REMOTO MODAL ───────────────────
-function TerceroRemotoModal({ onClose }) {
+function CuidadoModal({ onClose, contactos = [] }) {
+  const [paso, setPaso] = useState("inicio"); // inicio | vincular | permisos | activo | codigo
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
   const [prefijo, setPrefijo] = useState("54");
   const [duracion, setDuracion] = useState("24h");
   const [codigo, setCodigo] = useState("");
   const [error, setError] = useState("");
+  const [permisos, setPermisos] = useState({ ubicacion: true, audio: false, video: false });
+  const [cuidadorActivo, setCuidadorActivo] = useState(null);
+
+  function togglePermiso(key) { setPermisos({ ...permisos, [key]: !permisos[key] }); }
 
   function handleVincular() {
     setError("");
     if (!nombre.trim() || !telefono.trim()) { setError("Completá todos los campos."); return; }
+    setPaso("permisos");
+  }
+
+  function handleConfirmarPermisos() {
     const num = prefijo + limpiarNumero(telefono);
     const c = Math.floor(100000 + Math.random() * 900000).toString();
     setCodigo(c);
-    openWhatsAppToContact(num, `Hola ${nombre}! Te vinculaste como Tercero Remoto en Traza 360. Tu código es: ${c}. Vinculación activa por ${duracion}. App: https://traza-360-web.vercel.app`);
+
+    const permisosTexto = [];
+    if (permisos.ubicacion) permisosTexto.push("Ver ubicacion");
+    if (permisos.audio) permisosTexto.push("Escuchar entorno");
+    if (permisos.video) permisosTexto.push("Ver camara");
+
+    const msg = `Hola ${nombre}! Te invito a cuidarme con Traza 360.\n\nPermisos que te di:\n${permisosTexto.map(p => "- " + p).join("\n")}\n\nCodigo: ${c}\nDuracion: ${duracion}\nApp: https://traza-360-web.vercel.app\n\nResponder con:\nRECIBI = Confirmo\nVOY = Voy en camino si necesitas`;
+
+    openWhatsAppToContact(num, msg);
+    setCuidadorActivo({ nombre, permisos });
+    setPaso("activo");
+  }
+
+  function handleEstoyBien() {
+    if (contactos.length > 0) {
+      openWhatsAppToContact(contactos[0].telefono, "Estoy bien. Todo en orden.");
+    }
+  }
+
+  function handleAyuda() {
+    if (contactos.length > 0) {
+      getCurrentLocationWithFallback().then(({ location }) => {
+        const msg = buildMessageWithReply("AYUDA URGENTE - Necesito ayuda ahora.", location);
+        openWhatsAppToContact(contactos[0].telefono, msg);
+      });
+    }
+  }
+
+  function handleTerminar() {
+    const num = prefijo + limpiarNumero(telefono);
+    if (num) openWhatsAppToContact(num, `El cuidado de Traza 360 ha finalizado. Gracias ${nombre}!`);
+    onClose();
   }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm overflow-y-auto py-8">
       <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0d1426] p-6 shadow-2xl my-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold">{"\u{1F441}\u{FE0F}"} Tercero Remoto</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl">×</button>
+          <h3 className="text-lg font-bold">{"\u{1FAC2}"} Estoy a tu cuidado</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl">{"\u00D7"}</button>
         </div>
-        {codigo ? (
-          <div className="text-center">
-            <div className="text-3xl mb-2">{"\u2705"}</div><div className="text-lg font-bold mb-2">Vinculación creada</div>
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5 my-4">
-              <div className="text-xs text-emerald-300 mb-2">Código:</div>
-              <div className="font-mono text-3xl font-bold text-white tracking-widest">{codigo}</div>
-            </div>
-            <button onClick={onClose} className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white">Listo</button>
-          </div>
-        ) : (
+
+        {paso === "inicio" && (
           <div className="space-y-3">
-            <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Nombre del tercero"
+            <p className="text-xs text-slate-400 mb-3">Invitá a alguien de confianza a cuidarte. Vos elegís qué puede ver.</p>
+            <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Nombre (ej: Mamá, Juan)"
               className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500" />
             <PhoneInput value={telefono} onChange={setTelefono} prefix={prefijo} onPrefixChange={setPrefijo} />
-            <div><label className="text-xs text-slate-400 block mb-2">Duración</label>
+            <div><label className="text-xs text-slate-400 block mb-2">Duración del cuidado</label>
               <div className="grid grid-cols-4 gap-2">
-                {["6h","12h","24h","30d"].map(d => (
-                  <button key={d} onClick={() => setDuracion(d)} className={`rounded-xl border px-3 py-2 text-xs font-semibold ${duracion === d ? "border-pink-500/50 bg-pink-500/10 text-pink-300" : "border-white/10 bg-white/5 text-slate-300"}`}>{d}</button>
+                {["1h","6h","12h","24h"].map(d => (
+                  <button key={d} onClick={() => setDuracion(d)} className={`rounded-xl border px-3 py-2 text-xs font-semibold ${duracion === d ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-300" : "border-white/10 bg-white/5 text-slate-300"}`}>{d}</button>
                 ))}
               </div></div>
             {error && <p className="text-xs text-red-400">{error}</p>}
-            <button onClick={handleVincular} className="w-full rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 py-3 text-sm font-semibold text-white shadow-lg">Generar código y enviar</button>
+            <button onClick={handleVincular} className="w-full rounded-xl bg-gradient-to-r from-cyan-400 to-sky-500 py-3 text-sm font-semibold text-white shadow-lg">Siguiente</button>
+          </div>
+        )}
+
+        {paso === "permisos" && (
+          <div className="space-y-3">
+            <p className="text-xs text-slate-400 mb-2">{nombre} quiere cuidarte. Elegí qué le permitís:</p>
+
+            <button onClick={() => togglePermiso("ubicacion")}
+              className={`w-full rounded-xl border px-4 py-3 text-left ${permisos.ubicacion ? "border-cyan-400/50 bg-cyan-500/10" : "border-white/10 bg-white/5"}`}>
+              <div className="flex items-center gap-3">
+                <span className="text-xl">{"\u{1F4CD}"}</span>
+                <div className="flex-1"><div className="text-sm font-semibold text-slate-100">Que vea mi ubicación</div><div className="text-[11px] text-slate-400">Ve dónde estás en tiempo real</div></div>
+                <div className={`h-5 w-5 rounded-full border-2 ${permisos.ubicacion ? "border-cyan-400 bg-cyan-400" : "border-slate-500"}`}>
+                  {permisos.ubicacion && <div className="text-slate-950 text-xs text-center leading-4">{"\u2713"}</div>}
+                </div>
+              </div>
+            </button>
+
+            <button onClick={() => togglePermiso("audio")}
+              className={`w-full rounded-xl border px-4 py-3 text-left ${permisos.audio ? "border-cyan-400/50 bg-cyan-500/10" : "border-white/10 bg-white/5"}`}>
+              <div className="flex items-center gap-3">
+                <span className="text-xl">{"\u{1F3A7}"}</span>
+                <div className="flex-1"><div className="text-sm font-semibold text-slate-100">Que escuche mi entorno</div><div className="text-[11px] text-slate-400">Audio en vivo de tu micrófono</div></div>
+                <div className={`h-5 w-5 rounded-full border-2 ${permisos.audio ? "border-cyan-400 bg-cyan-400" : "border-slate-500"}`}>
+                  {permisos.audio && <div className="text-slate-950 text-xs text-center leading-4">{"\u2713"}</div>}
+                </div>
+              </div>
+            </button>
+
+            <button onClick={() => togglePermiso("video")}
+              className={`w-full rounded-xl border px-4 py-3 text-left ${permisos.video ? "border-amber-400/50 bg-amber-500/10" : "border-white/10 bg-white/5"}`}>
+              <div className="flex items-center gap-3">
+                <span className="text-xl">{"\u{1F4F9}"}</span>
+                <div className="flex-1"><div className="text-sm font-semibold text-slate-100">Que vea mi cámara</div><div className="text-[11px] text-amber-300">Premium</div></div>
+                <div className={`h-5 w-5 rounded-full border-2 ${permisos.video ? "border-amber-400 bg-amber-400" : "border-slate-500"}`}>
+                  {permisos.video && <div className="text-slate-950 text-xs text-center leading-4">{"\u2713"}</div>}
+                </div>
+              </div>
+            </button>
+
+            <div className="flex gap-2 mt-2">
+              <button onClick={() => setPaso("inicio")} className="flex-1 rounded-xl border border-white/10 bg-white/5 py-3 text-sm text-slate-400">Volver</button>
+              <button onClick={handleConfirmarPermisos} className="flex-1 rounded-xl bg-gradient-to-r from-cyan-400 to-sky-500 py-3 text-sm font-semibold text-white shadow-lg">Confirmar y enviar</button>
+            </div>
+          </div>
+        )}
+
+        {paso === "activo" && (
+          <div className="text-center space-y-4">
+            <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-5">
+              <div className="text-2xl mb-2">{"\u{1FAC2}"}</div>
+              <div className="text-sm font-semibold text-cyan-300">{cuidadorActivo?.nombre} te está cuidando</div>
+              <div className="text-[11px] text-slate-400 mt-1">Duración: {duracion}</div>
+              <div className="mt-3 flex flex-wrap justify-center gap-2">
+                {cuidadorActivo?.permisos?.ubicacion && <span className="rounded-lg bg-white/10 px-2 py-1 text-[11px] text-slate-300">{"\u{1F4CD}"} Ubicación</span>}
+                {cuidadorActivo?.permisos?.audio && <span className="rounded-lg bg-white/10 px-2 py-1 text-[11px] text-slate-300">{"\u{1F3A7}"} Audio</span>}
+                {cuidadorActivo?.permisos?.video && <span className="rounded-lg bg-white/10 px-2 py-1 text-[11px] text-slate-300">{"\u{1F4F9}"} Video</span>}
+              </div>
+              <div className="mt-3 rounded-xl bg-white/5 p-3">
+                <div className="text-xs text-slate-400">Código para {cuidadorActivo?.nombre}:</div>
+                <div className="font-mono text-2xl font-bold text-white tracking-widest mt-1">{codigo}</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <button onClick={handleEstoyBien} className="rounded-xl bg-emerald-500/20 border border-emerald-500/30 py-3 text-center">
+                <div className="text-xl">{"\u{1F44D}"}</div><div className="text-[10px] text-emerald-300 mt-1">Estoy bien</div>
+              </button>
+              <button onClick={handleAyuda} className="rounded-xl bg-red-500/20 border border-red-500/30 py-3 text-center">
+                <div className="text-xl">{"\u{1F198}"}</div><div className="text-[10px] text-red-300 mt-1">Ayuda</div>
+              </button>
+              <button onClick={handleTerminar} className="rounded-xl bg-white/5 border border-white/10 py-3 text-center">
+                <div className="text-xl">{"\u23F9\u{FE0F}"}</div><div className="text-[10px] text-slate-400 mt-1">Terminar</div>
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -927,6 +1142,7 @@ const MODULES = [
       { key: "evidencias", icon: "\u{1F4C1}", name: "Mis Evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
       { key: "entro", icon: "\u{1F3D8}\u{FE0F}", name: "Entro a la casa de...", desc: "Aviso con ubicación.", type: "alert_contacts", message: "Entro a la casa de [completar]." },
       { key: "reuno", icon: "\u{1F465}", name: "Me reúno con...", desc: "Aviso.", type: "alert_contacts", message: "Me reúno con [completar]." },
+      { key: "lugar_desc", icon: "\u23F1\u{FE0F}", name: "Entro a lugar desconocido", desc: "Timer: si no avisás, se alerta.", type: "timer_lugar" },
       { key: "uber", icon: "\u{1F697}", name: "Llamar transporte", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
     ]},
   { key: "adolescente", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente seguro", desc: "Salidas, regresos y protección anti-bullying.",
@@ -938,6 +1154,7 @@ const MODULES = [
       { key: "bullying", icon: "\u{1F399}\u{FE0F}", name: "Bullying - Grabar evidencia", desc: "Grabación silenciosa.", type: "record_audio" },
       { key: "evidencias", icon: "\u{1F4C1}", name: "Mis Evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
       { key: "sali", icon: "\u{1F6B6}", name: "Salí de casa, voy a lo de...", desc: "Aviso.", type: "alert_contacts", message: "Salí de casa. Voy a lo de [completar]." },
+      { key: "lugar_desc", icon: "\u23F1\u{FE0F}", name: "Entro a lugar desconocido", desc: "Timer: si no avisás, se alerta.", type: "timer_lugar" },
       { key: "maps", icon: "\u{1F5FA}\u{FE0F}", name: "Llegar a casa (GPS)", desc: "Abre Maps.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
       { key: "llegue", icon: "\u2705", name: "Llegué bien", desc: "Confirmación.", type: "alert_contacts", message: "Llegué bien." },
       { key: "perdido", icon: "\u{1F4CD}", name: "Estoy perdido", desc: "Envía ubicación.", type: "alert_contacts", message: "Estoy perdido." },
@@ -962,6 +1179,8 @@ const MODULES = [
       { key: "intruso", icon: "\u{1F6A8}", name: "Intruso en domicilio", desc: "Alerta inmediata.", type: "alert_contacts", message: "ALERTA - Posible intruso." },
       { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
       { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido ambiente", desc: "Grabación silenciosa.", type: "record_audio" },
+      { key: "maps_casa", icon: "\u{1F5FA}\u{FE0F}", name: "Llegar a casa (GPS)", desc: "Abre Google Maps.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
+      { key: "camaras", icon: "\u{1F4F9}", name: "Ver mis cámaras", desc: "Abre tu app de cámaras.", type: "camaras" },
       { key: "ruido", icon: "\u{1F442}", name: "Ruido sospechoso", desc: "Aviso preventivo.", type: "alert_contacts", message: "Ruido sospechoso en mi domicilio." },
       { key: "accidente", icon: "\u{1FA79}", name: "Accidente doméstico", desc: "Aviso.", type: "alert_contacts", message: "ALERTA - Accidente doméstico." },
       { key: "emergencia", icon: "\u{1F198}", name: "Emergencia en el hogar", desc: "Alerta máxima.", type: "alert_contacts", message: "EMERGENCIA en el hogar." },
@@ -986,6 +1205,7 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [currentMessage, setCurrentMessage] = useState("");
   const [showGrabacion, setShowGrabacion] = useState(false);
+  const [showTimerLugar, setShowTimerLugar] = useState(false);
 
   function handleAction(action) {
     switch (action.type) {
@@ -997,6 +1217,12 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
       case "uber": openUber(action.destination); return;
       case "pastillero": if (onOpenPastillero) onOpenPastillero(); return;
       case "evidencias": if (onOpenEvidencias) onOpenEvidencias(); return;
+      case "timer_lugar":
+        if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza."); return; }
+        setShowTimerLugar(true); return;
+      case "camaras":
+        alert("Abrí la app de tus cámaras de seguridad (Ej: Ring, Xiaomi Home, TP-Link Tapo, Alfred). Próximamente integración directa.");
+        return;
       default: return;
     }
   }
@@ -1029,6 +1255,7 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
       </div>
       {selectorOpen && <SelectorContactoModal contactos={contactos} mensaje={currentMessage} onClose={() => setSelectorOpen(false)} />}
       {showGrabacion && <GrabacionModal onClose={() => setShowGrabacion(false)} />}
+      {showTimerLugar && <TimerLugarModal contactos={contactos} onClose={() => setShowTimerLugar(false)} />}
     </>
   );
 }
@@ -1128,7 +1355,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
 
   const quickCards = [
     { key: "contactos", emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} configurados` },
-    { key: "tercero", emoji: "\u{1F441}\u{FE0F}", title: "Tercero Remoto", text: "Cuidadores con audio y ubicación." },
+    { key: "cuidado", emoji: "\u{1FAC2}", title: "Estoy a tu cuidado", text: "Alguien te cuida. Vos elegís qué ve." },
     { key: "violencia", emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de género", text: "Pánico, grabación y red de apoyo." },
     { key: "adolescente", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente seguro", text: "Anti-bullying, GPS y geocercas." },
     { key: "adulto_mayor", emoji: "\u{1FAF6}", title: "Adulto mayor seguro", text: "Medicamentos, caídas y geocercas." },
@@ -1140,7 +1367,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
     if (key === "contactos") setActiveScreen("contactos");
     else if (key === "pastillero") setActiveScreen("pastillero");
     else if (key === "evidencias") setActiveScreen("evidencias");
-    else if (key === "tercero") setShowTerceroModal(true);
+    else if (key === "cuidado") setShowTerceroModal(true);
     else { const mod = MODULES.find(m => m.key === key); if (mod) setActiveModule(mod); }
   }
 
@@ -1184,7 +1411,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
           </>
         )}
       </div>
-      {showTerceroModal && <TerceroRemotoModal onClose={() => setShowTerceroModal(false)} />}
+      {showTerceroModal && <CuidadoModal contactos={contactos} onClose={() => setShowTerceroModal(false)} />}
       <WhatsAppFloatingButton />
     </div>
   );
