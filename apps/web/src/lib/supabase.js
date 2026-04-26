@@ -557,3 +557,197 @@ export function subscribeToAlertas(usuarioId, callback) {
     )
     .subscribe();
 }
+
+// =========================================================
+// PASTILLERO VIRTUAL - Funciones agregadas Abril 2026
+// Tablas: medicamentos, tomas_medicamento, historial_tomas
+// =========================================================
+
+// Helper interno: obtiene el perfil del usuario logueado
+async function getPerfilUsuario() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  
+  const { data: perfil } = await supabase
+    .from('usuarios')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+  
+  return perfil;
+}
+
+// 1. LISTAR MEDICAMENTOS del usuario logueado
+export async function getMedicamentos() {
+  try {
+    const perfil = await getPerfilUsuario();
+    if (!perfil) return { success: false, error: 'Usuario no encontrado' };
+    
+    const { data, error } = await supabase
+      .from('medicamentos')
+      .select('*')
+      .eq('usuario_id', perfil.id)
+      .eq('activo', true)
+      .order('creado_en', { ascending: false });
+    
+    if (error) return { success: false, error: error.message };
+    return { success: true, medicamentos: data };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+// 2. AGREGAR MEDICAMENTO nuevo
+export async function addMedicamento(medicamento) {
+  try {
+    const perfil = await getPerfilUsuario();
+    if (!perfil) return { success: false, error: 'Usuario no encontrado' };
+    
+    const { data, error } = await supabase
+      .from('medicamentos')
+      .insert({
+        usuario_id: perfil.id,
+        nombre: medicamento.nombre,
+        dosis: medicamento.dosis || null,
+        unidad: medicamento.unidad || 'comprimido',
+        indicaciones: medicamento.indicaciones || null
+      })
+      .select()
+      .single();
+    
+    if (error) return { success: false, error: error.message };
+    return { success: true, medicamento: data };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+// 3. EDITAR MEDICAMENTO existente
+export async function updateMedicamento(id, cambios) {
+  try {
+    const { data, error } = await supabase
+      .from('medicamentos')
+      .update(cambios)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) return { success: false, error: error.message };
+    return { success: true, medicamento: data };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+// 4. BORRAR MEDICAMENTO (soft delete)
+export async function deleteMedicamento(id) {
+  try {
+    const { error } = await supabase
+      .from('medicamentos')
+      .update({ activo: false })
+      .eq('id', id);
+    
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+// 5. LISTAR TOMAS de un medicamento (o de todos)
+export async function getTomas(medicamentoId = null) {
+  try {
+    const perfil = await getPerfilUsuario();
+    if (!perfil) return { success: false, error: 'Usuario no encontrado' };
+    
+    let query = supabase
+      .from('tomas_medicamento')
+      .select('*, medicamentos(nombre, dosis, unidad)')
+      .eq('usuario_id', perfil.id)
+      .eq('activo', true)
+      .order('hora', { ascending: true });
+    
+    if (medicamentoId) {
+      query = query.eq('medicamento_id', medicamentoId);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) return { success: false, error: error.message };
+    return { success: true, tomas: data };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+// 6. PROGRAMAR TOMA (horario para un medicamento)
+export async function addToma(toma) {
+  try {
+    const perfil = await getPerfilUsuario();
+    if (!perfil) return { success: false, error: 'Usuario no encontrado' };
+    
+    const { data, error } = await supabase
+      .from('tomas_medicamento')
+      .insert({
+        medicamento_id: toma.medicamento_id,
+        usuario_id: perfil.id,
+        hora: toma.hora,
+        dias_semana: toma.dias_semana || ['LUN','MAR','MIE','JUE','VIE','SAB','DOM']
+      })
+      .select()
+      .single();
+    
+    if (error) return { success: false, error: error.message };
+    return { success: true, toma: data };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+// 7. CONFIRMAR TOMA (marcar pastilla como tomada)
+export async function confirmarToma(tomaId, horaProgramada) {
+  try {
+    const perfil = await getPerfilUsuario();
+    if (!perfil) return { success: false, error: 'Usuario no encontrado' };
+    
+    const { data, error } = await supabase
+      .from('historial_tomas')
+      .insert({
+        toma_id: tomaId,
+        usuario_id: perfil.id,
+        fecha: new Date().toISOString().split('T')[0],
+        hora_programada: horaProgramada,
+        hora_confirmacion: new Date().toISOString(),
+        estado: 'confirmado'
+      })
+      .select()
+      .single();
+    
+    if (error) return { success: false, error: error.message };
+    return { success: true, registro: data };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+// 8. HISTORIAL del día (qué se tomó hoy)
+export async function getHistorialDia(fecha = null) {
+  try {
+    const perfil = await getPerfilUsuario();
+    if (!perfil) return { success: false, error: 'Usuario no encontrado' };
+    
+    const fechaConsulta = fecha || new Date().toISOString().split('T')[0];
+    
+    const { data, error } = await supabase
+      .from('historial_tomas')
+      .select('*, tomas_medicamento(hora, medicamentos(nombre, dosis))')
+      .eq('usuario_id', perfil.id)
+      .eq('fecha', fechaConsulta)
+      .order('hora_programada', { ascending: true });
+    
+    if (error) return { success: false, error: error.message };
+    return { success: true, historial: data };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
