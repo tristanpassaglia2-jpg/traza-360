@@ -1,753 +1,264 @@
-// =========================================================
-// TRAZA 360 — Cliente Supabase
-// Versión: 3.0 · Abril 2026
-// =========================================================
-// Funciones: Auth + Contactos + Terceros + Zonas + Alertas
-// =========================================================
+import { createClient } from "@supabase/supabase-js";
 
-import { createClient } from '@supabase/supabase-js';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  console.error(
-    '⚠️ ERROR: Faltan variables de entorno de Supabase. ' +
-    'Verificá VITE_SUPABASE_URL y VITE_SUPABASE_PUBLISHABLE_KEY en Vercel.'
-  );
-}
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10,
-    },
-  },
-});
-
-// =========================================================
-// AUTENTICACIÓN
-// =========================================================
-
+// ─── AUTH ────────────────────────────────────
 export async function signUp(email, password, nombre) {
   try {
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (authError) {
-      console.error('Error en signUp Auth:', authError);
-      return { success: false, error: authError.message };
-    }
-
-    if (!authData.user) {
-      return { success: false, error: 'No se pudo crear el usuario.' };
-    }
-
-    const { error: profileError } = await supabase
-      .from('usuarios')
-      .insert({
-        auth_user_id: authData.user.id,
-        nombre: nombre,
-        email: email,
-        plan: 'gratis',
-        modo: 'me_protejo',
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) return { success: false, error: error.message };
+    if (data.user) {
+      await supabase.from("usuarios").insert({
+        auth_user_id: data.user.id, nombre, email, plan: "gratis", modo: "me_protejo",
       });
-
-    if (profileError) {
-      console.error('Error creando perfil:', profileError);
     }
-
-    return { success: true, user: authData.user };
-  } catch (error) {
-    console.error('Error inesperado en signUp:', error);
-    return { success: false, error: error.message };
-  }
+    return { success: true, user: data.user };
+  } catch (e) { return { success: false, error: e.message }; }
 }
 
 export async function signIn(email, password) {
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      console.error('Error en signIn:', error);
-      return { success: false, error: error.message };
-    }
-
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { success: false, error: error.message };
     return { success: true, user: data.user };
-  } catch (error) {
-    console.error('Error inesperado en signIn:', error);
-    return { success: false, error: error.message };
-  }
+  } catch (e) { return { success: false, error: e.message }; }
 }
 
-export async function signOut() {
-  try {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Error en signOut:', error);
-      return { success: false, error: error.message };
-    }
-    return { success: true };
-  } catch (error) {
-    console.error('Error inesperado en signOut:', error);
-    return { success: false, error: error.message };
-  }
-}
+export async function signOut() { await supabase.auth.signOut(); }
 
 export async function getCurrentUser() {
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return null;
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .from('usuarios')
-      .select('*')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (profileError) {
-      console.error('Error obteniendo perfil:', profileError);
-      return { authUser: user, profile: null };
-    }
-
-    return { authUser: user, profile };
-  } catch (error) {
-    console.error('Error inesperado en getCurrentUser:', error);
-    return null;
-  }
-}
-
-export async function updateUserProfile(updates) {
-  try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: 'No autenticado' };
-
-    const { data, error } = await supabase
-      .from('usuarios')
-      .update(updates)
-      .eq('auth_user_id', user.id)
-      .select()
-      .single();
-
-    if (error) return { success: false, error: error.message };
-    return { success: true, profile: data };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
+    if (!user) return null;
+    const { data: profile } = await supabase.from("usuarios").select("*").eq("auth_user_id", user.id).single();
+    return { authUser: user, profile };
+  } catch (e) { return null; }
 }
 
-// =========================================================
-// CONTACTOS DE CONFIANZA
-// =========================================================
+export async function updateUserProfile(userId, updates) {
+  try {
+    const { data, error } = await supabase.from("usuarios").update(updates).eq("id", userId).select().single();
+    if (error) return { success: false, error: error.message };
+    return { success: true, data };
+  } catch (e) { return { success: false, error: e.message }; }
+}
 
-// Obtener todos los contactos del usuario
+// ─── CONTACTOS ───────────────────────────────
 export async function getContactos() {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return [];
-
-    // Primero obtener el ID del usuario en tabla usuarios
-    const { data: perfil } = await supabase
-      .from('usuarios')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!perfil) return [];
-
-    const { data, error } = await supabase
-      .from('contactos')
-      .select('*')
-      .eq('usuario_id', perfil.id)
-      .order('prioridad', { ascending: true });
-
-    if (error) {
-      console.error('Error obteniendo contactos:', error);
-      return [];
-    }
-
+    const user = await getCurrentUser();
+    if (!user?.profile) return [];
+    const { data } = await supabase.from("contactos").select("*").eq("usuario_id", user.profile.id).order("prioridad");
     return data || [];
-  } catch (error) {
-    console.error('Error inesperado en getContactos:', error);
-    return [];
-  }
+  } catch (e) { return []; }
 }
 
-// Agregar un contacto
 export async function addContacto(contacto) {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: 'No autenticado' };
-
-    const { data: perfil } = await supabase
-      .from('usuarios')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!perfil) return { success: false, error: 'Perfil no encontrado' };
-
-    const { data, error } = await supabase
-      .from('contactos')
-      .insert({
-        usuario_id: perfil.id,
-        nombre: contacto.nombre,
-        telefono: contacto.telefono,
-        relacion: contacto.relacion || null,
-        prioridad: contacto.prioridad || 1,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error agregando contacto:', error);
-      return { success: false, error: error.message };
-    }
-
-    return { success: true, contacto: data };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
+    const user = await getCurrentUser();
+    if (!user?.profile) return { success: false, error: "No autenticado" };
+    const { data, error } = await supabase.from("contactos").insert({ ...contacto, usuario_id: user.profile.id }).select().single();
+    if (error) return { success: false, error: error.message };
+    return { success: true, data };
+  } catch (e) { return { success: false, error: e.message }; }
 }
 
-// Eliminar un contacto
-export async function deleteContacto(contactoId) {
+export async function deleteContacto(id) {
   try {
-    const { error } = await supabase
-      .from('contactos')
-      .delete()
-      .eq('id', contactoId);
-
+    const { error } = await supabase.from("contactos").delete().eq("id", id);
     if (error) return { success: false, error: error.message };
     return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
+  } catch (e) { return { success: false, error: e.message }; }
 }
 
-// =========================================================
-// TERCEROS REMOTOS
-// =========================================================
-
-// Obtener terceros del usuario
+// ─── TERCEROS ────────────────────────────────
 export async function getTerceros() {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return [];
-
-    const { data: perfil } = await supabase
-      .from('usuarios')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!perfil) return [];
-
-    const { data, error } = await supabase
-      .from('terceros_remotos')
-      .select('*')
-      .eq('usuario_id', perfil.id)
-      .order('creado_en', { ascending: false });
-
-    if (error) {
-      console.error('Error obteniendo terceros:', error);
-      return [];
-    }
-
+    const user = await getCurrentUser();
+    if (!user?.profile) return [];
+    const { data } = await supabase.from("terceros_remotos").select("*").eq("usuario_id", user.profile.id);
     return data || [];
-  } catch (error) {
-    console.error('Error inesperado en getTerceros:', error);
-    return [];
-  }
+  } catch (e) { return []; }
 }
 
-// Agregar un tercero remoto
 export async function addTercero(tercero) {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: 'No autenticado' };
-
-    const { data: perfil } = await supabase
-      .from('usuarios')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!perfil) return { success: false, error: 'Perfil no encontrado' };
-
-    const { data, error } = await supabase
-      .from('terceros_remotos')
-      .insert({
-        usuario_id: perfil.id,
-        nombre: tercero.nombre,
-        telefono: tercero.telefono,
-        codigo_vinculacion: tercero.codigo,
-        duracion_key: tercero.duracionKey,
-        expira_en: tercero.expira ? new Date(tercero.expira).toISOString() : null,
-        activo: true,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error agregando tercero:', error);
-      return { success: false, error: error.message };
-    }
-
-    return { success: true, tercero: data };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
+    const user = await getCurrentUser();
+    if (!user?.profile) return { success: false, error: "No autenticado" };
+    const { data, error } = await supabase.from("terceros_remotos").insert({ ...tercero, usuario_id: user.profile.id }).select().single();
+    if (error) return { success: false, error: error.message };
+    return { success: true, data };
+  } catch (e) { return { success: false, error: e.message }; }
 }
 
-// Eliminar un tercero
-export async function deleteTercero(terceroId) {
+export async function deleteTercero(id) {
   try {
-    const { error } = await supabase
-      .from('terceros_remotos')
-      .delete()
-      .eq('id', terceroId);
-
+    const { error } = await supabase.from("terceros_remotos").delete().eq("id", id);
     if (error) return { success: false, error: error.message };
     return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
+  } catch (e) { return { success: false, error: e.message }; }
 }
 
-// =========================================================
-// ZONAS DE GEOFENCING
-// =========================================================
-
-// Obtener zonas del usuario para un módulo
-export async function getZonas(modulo) {
+// ─── ZONAS ───────────────────────────────────
+export async function getZonas() {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return [];
-
-    const { data: perfil } = await supabase
-      .from('usuarios')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!perfil) return [];
-
-    let query = supabase
-      .from('zonas_geofencing')
-      .select('*')
-      .eq('usuario_id', perfil.id);
-
-    if (modulo) {
-      query = query.eq('modulo', modulo);
-    }
-
-    const { data, error } = await query.order('creado_en', { ascending: false });
-
-    if (error) {
-      console.error('Error obteniendo zonas:', error);
-      return [];
-    }
-
+    const user = await getCurrentUser();
+    if (!user?.profile) return [];
+    const { data } = await supabase.from("zonas_geofencing").select("*").eq("usuario_id", user.profile.id);
     return data || [];
-  } catch (error) {
-    console.error('Error inesperado en getZonas:', error);
-    return [];
-  }
+  } catch (e) { return []; }
 }
 
-// Agregar una zona
 export async function addZona(zona) {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: 'No autenticado' };
-
-    const { data: perfil } = await supabase
-      .from('usuarios')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!perfil) return { success: false, error: 'Perfil no encontrado' };
-
-    const { data, error } = await supabase
-      .from('zonas_geofencing')
-      .insert({
-        usuario_id: perfil.id,
-        modulo: zona.modulo,
-        nombre: zona.nombre,
-        direccion: zona.direccion,
-        lat: zona.lat,
-        lng: zona.lng,
-        radio: zona.radio,
-        activa: true,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error agregando zona:', error);
-      return { success: false, error: error.message };
-    }
-
-    return { success: true, zona: data };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
+    const user = await getCurrentUser();
+    if (!user?.profile) return { success: false, error: "No autenticado" };
+    const { data, error } = await supabase.from("zonas_geofencing").insert({ ...zona, usuario_id: user.profile.id }).select().single();
+    if (error) return { success: false, error: error.message };
+    return { success: true, data };
+  } catch (e) { return { success: false, error: e.message }; }
 }
 
-// Eliminar una zona
-export async function deleteZona(zonaId) {
+export async function deleteZona(id) {
   try {
-    const { error } = await supabase
-      .from('zonas_geofencing')
-      .delete()
-      .eq('id', zonaId);
-
+    const { error } = await supabase.from("zonas_geofencing").delete().eq("id", id);
     if (error) return { success: false, error: error.message };
     return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
+  } catch (e) { return { success: false, error: e.message }; }
 }
 
-// =========================================================
-// ALERTAS
-// =========================================================
-
-// Registrar una alerta
+// ─── ALERTAS ─────────────────────────────────
 export async function registrarAlerta(alerta) {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: 'No autenticado' };
-
-    const { data: perfil } = await supabase
-      .from('usuarios')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!perfil) return { success: false, error: 'Perfil no encontrado' };
-
-    const { data, error } = await supabase
-      .from('alertas')
-      .insert({
-        usuario_id: perfil.id,
-        tipo: alerta.tipo,
-        modulo: alerta.modulo || null,
-        mensaje: alerta.mensaje,
-        lat: alerta.lat || null,
-        lng: alerta.lng || null,
-        link_mapa: alerta.linkMapa || null,
-        enviado_a: alerta.enviadoA || null,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error registrando alerta:', error);
-      return { success: false, error: error.message };
-    }
-
-    return { success: true, alerta: data };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-}
-
-// Obtener historial de alertas
-export async function getAlertas(limite = 50) {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return [];
-
-    const { data: perfil } = await supabase
-      .from('usuarios')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!perfil) return [];
-
-    const { data, error } = await supabase
-      .from('alertas')
-      .select('*')
-      .eq('usuario_id', perfil.id)
-      .order('creado_en', { ascending: false })
-      .limit(limite);
-
-    if (error) {
-      console.error('Error obteniendo alertas:', error);
-      return [];
-    }
-
-    return data || [];
-  } catch (error) {
-    console.error('Error inesperado en getAlertas:', error);
-    return [];
-  }
-}
-
-// =========================================================
-// UBICACIONES (Realtime)
-// =========================================================
-
-export async function saveUbicacion(lat, lng, precision) {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: 'No autenticado' };
-
-    const { data: perfil } = await supabase
-      .from('usuarios')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!perfil) return { success: false, error: 'Perfil no encontrado' };
-
-    const { data, error } = await supabase
-      .from('ubicaciones')
-      .insert({
-        usuario_id: perfil.id,
-        latitud: lat,
-        longitud: lng,
-        precision_metros: precision || null,
-      })
-      .select()
-      .single();
-
+    const user = await getCurrentUser();
+    if (!user?.profile) return { success: false, error: "No autenticado" };
+    const { data, error } = await supabase.from("alertas").insert({ ...alerta, usuario_id: user.profile.id }).select().single();
     if (error) return { success: false, error: error.message };
-    return { success: true, ubicacion: data };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
+    return { success: true, data };
+  } catch (e) { return { success: false, error: e.message }; }
 }
 
-// Suscribirse a cambios de ubicación en tiempo real
-export function subscribeToUbicaciones(usuarioId, callback) {
-  return supabase
-    .channel(`ubicaciones_${usuarioId}`)
-    .on('postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'ubicaciones', filter: `usuario_id=eq.${usuarioId}` },
-      (payload) => callback(payload.new)
-    )
-    .subscribe();
+export async function getAlertas() {
+  try {
+    const user = await getCurrentUser();
+    if (!user?.profile) return [];
+    const { data } = await supabase.from("alertas").select("*").eq("usuario_id", user.profile.id).order("creado_en", { ascending: false }).limit(50);
+    return data || [];
+  } catch (e) { return []; }
 }
 
-// Suscribirse a alertas en tiempo real
-export function subscribeToAlertas(usuarioId, callback) {
-  return supabase
-    .channel(`alertas_${usuarioId}`)
-    .on('postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'alertas', filter: `usuario_id=eq.${usuarioId}` },
-      (payload) => callback(payload.new)
-    )
-    .subscribe();
+// ─── UBICACIONES ─────────────────────────────
+export async function saveUbicacion(ubicacion) {
+  try {
+    const user = await getCurrentUser();
+    if (!user?.profile) return { success: false, error: "No autenticado" };
+    const { data, error } = await supabase.from("ubicaciones").insert({ ...ubicacion, usuario_id: user.profile.id }).select().single();
+    if (error) return { success: false, error: error.message };
+    return { success: true, data };
+  } catch (e) { return { success: false, error: e.message }; }
 }
 
-// =========================================================
-// PASTILLERO VIRTUAL - Funciones agregadas Abril 2026
-// Tablas: medicamentos, tomas_medicamento, historial_tomas
-// =========================================================
-
-// Helper interno: obtiene el perfil del usuario logueado
-async function getPerfilUsuario() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  
-  const { data: perfil } = await supabase
-    .from('usuarios')
-    .select('id')
-    .eq('auth_user_id', user.id)
-    .single();
-  
-  return perfil;
+export function subscribeToUbicaciones(userId, callback) {
+  return supabase.channel("ubicaciones_" + userId).on("postgres_changes", { event: "*", schema: "public", table: "ubicaciones", filter: `usuario_id=eq.${userId}` }, callback).subscribe();
 }
 
-// 1. LISTAR MEDICAMENTOS del usuario logueado
+export function subscribeToAlertas(userId, callback) {
+  return supabase.channel("alertas_" + userId).on("postgres_changes", { event: "*", schema: "public", table: "alertas", filter: `usuario_id=eq.${userId}` }, callback).subscribe();
+}
+
+// ═══════════════════════════════════════════════
+// MEDICAMENTOS (v4)
+// ═══════════════════════════════════════════════
+
 export async function getMedicamentos() {
   try {
-    const perfil = await getPerfilUsuario();
-    if (!perfil) return { success: false, error: 'Usuario no encontrado' };
-    
-    const { data, error } = await supabase
-      .from('medicamentos')
-      .select('*')
-      .eq('usuario_id', perfil.id)
-      .eq('activo', true)
-      .order('creado_en', { ascending: false });
-    
-    if (error) return { success: false, error: error.message };
-    return { success: true, medicamentos: data };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
+    const user = await getCurrentUser();
+    if (!user?.profile) return [];
+    const { data } = await supabase.from("medicamentos").select("*").eq("usuario_id", user.profile.id).eq("activo", true).order("creado_en");
+    return data || [];
+  } catch (e) { return []; }
 }
 
-// 2. AGREGAR MEDICAMENTO nuevo
-export async function addMedicamento(medicamento) {
+export async function addMedicamento(med) {
   try {
-    const perfil = await getPerfilUsuario();
-    if (!perfil) return { success: false, error: 'Usuario no encontrado' };
-    
-    const { data, error } = await supabase
-      .from('medicamentos')
-      .insert({
-        usuario_id: perfil.id,
-        nombre: medicamento.nombre,
-        dosis: medicamento.dosis || null,
-        unidad: medicamento.unidad || 'comprimido',
-        indicaciones: medicamento.indicaciones || null
-      })
-      .select()
-      .single();
-    
+    const user = await getCurrentUser();
+    if (!user?.profile) return { success: false, error: "No autenticado" };
+    const { data, error } = await supabase.from("medicamentos").insert({ ...med, usuario_id: user.profile.id }).select().single();
     if (error) return { success: false, error: error.message };
-    return { success: true, medicamento: data };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
+    return { success: true, data };
+  } catch (e) { return { success: false, error: e.message }; }
 }
 
-// 3. EDITAR MEDICAMENTO existente
-export async function updateMedicamento(id, cambios) {
+export async function updateMedicamento(id, updates) {
   try {
-    const { data, error } = await supabase
-      .from('medicamentos')
-      .update(cambios)
-      .eq('id', id)
-      .select()
-      .single();
-    
+    const { data, error } = await supabase.from("medicamentos").update(updates).eq("id", id).select().single();
     if (error) return { success: false, error: error.message };
-    return { success: true, medicamento: data };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
+    return { success: true, data };
+  } catch (e) { return { success: false, error: e.message }; }
 }
 
-// 4. BORRAR MEDICAMENTO (soft delete)
 export async function deleteMedicamento(id) {
   try {
-    const { error } = await supabase
-      .from('medicamentos')
-      .update({ activo: false })
-      .eq('id', id);
-    
+    const { error } = await supabase.from("medicamentos").update({ activo: false }).eq("id", id);
     if (error) return { success: false, error: error.message };
     return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
+  } catch (e) { return { success: false, error: e.message }; }
 }
 
-// 5. LISTAR TOMAS de un medicamento (o de todos)
-export async function getTomas(medicamentoId = null) {
+export async function getTomasHoy() {
   try {
-    const perfil = await getPerfilUsuario();
-    if (!perfil) return { success: false, error: 'Usuario no encontrado' };
-    
-    let query = supabase
-      .from('tomas_medicamento')
-      .select('*, medicamentos(nombre, dosis, unidad)')
-      .eq('usuario_id', perfil.id)
-      .eq('activo', true)
-      .order('hora', { ascending: true });
-    
-    if (medicamentoId) {
-      query = query.eq('medicamento_id', medicamentoId);
+    const user = await getCurrentUser();
+    if (!user?.profile) return [];
+    const hoy = new Date().toISOString().split("T")[0];
+    const { data } = await supabase.from("tomas_medicamento").select("*, medicamentos(nombre, dosis, color)").eq("usuario_id", user.profile.id).eq("fecha", hoy).order("horario_programado");
+    return data || [];
+  } catch (e) { return []; }
+}
+
+export async function getTomasSemana() {
+  try {
+    const user = await getCurrentUser();
+    if (!user?.profile) return [];
+    const hoy = new Date();
+    const hace7 = new Date(hoy);
+    hace7.setDate(hace7.getDate() - 6);
+    const { data } = await supabase.from("tomas_medicamento").select("*, medicamentos(nombre, dosis, color)").eq("usuario_id", user.profile.id).gte("fecha", hace7.toISOString().split("T")[0]).lte("fecha", hoy.toISOString().split("T")[0]).order("fecha").order("horario_programado");
+    return data || [];
+  } catch (e) { return []; }
+}
+
+export async function marcarTomado(tomaId) {
+  try {
+    const { data, error } = await supabase.from("tomas_medicamento").update({ tomado: true, tomado_en: new Date().toISOString() }).eq("id", tomaId).select().single();
+    if (error) return { success: false, error: error.message };
+    return { success: true, data };
+  } catch (e) { return { success: false, error: e.message }; }
+}
+
+export async function crearTomasDelDia(medicamentos) {
+  try {
+    const user = await getCurrentUser();
+    if (!user?.profile) return;
+    const hoy = new Date().toISOString().split("T")[0];
+    const diaHoy = new Date().getDay() || 7;
+
+    for (const med of medicamentos) {
+      if (!med.dias_semana.includes(diaHoy)) continue;
+      const { data: existentes } = await supabase.from("tomas_medicamento")
+        .select("id").eq("medicamento_id", med.id).eq("fecha", hoy);
+      if (existentes && existentes.length > 0) continue;
+
+      const inserts = (med.horarios || []).map(h => ({
+        usuario_id: user.profile.id,
+        medicamento_id: med.id,
+        horario_programado: h,
+        fecha: hoy,
+        tomado: false,
+      }));
+      if (inserts.length > 0) await supabase.from("tomas_medicamento").insert(inserts);
     }
-    
-    const { data, error } = await query;
-    
-    if (error) return { success: false, error: error.message };
-    return { success: true, tomas: data };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-}
-
-// 6. PROGRAMAR TOMA (horario para un medicamento)
-export async function addToma(toma) {
-  try {
-    const perfil = await getPerfilUsuario();
-    if (!perfil) return { success: false, error: 'Usuario no encontrado' };
-    
-    const { data, error } = await supabase
-      .from('tomas_medicamento')
-      .insert({
-        medicamento_id: toma.medicamento_id,
-        usuario_id: perfil.id,
-        hora: toma.hora,
-        dias_semana: toma.dias_semana || ['LUN','MAR','MIE','JUE','VIE','SAB','DOM']
-      })
-      .select()
-      .single();
-    
-    if (error) return { success: false, error: error.message };
-    return { success: true, toma: data };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-}
-
-// 7. CONFIRMAR TOMA (marcar pastilla como tomada)
-export async function confirmarToma(tomaId, horaProgramada) {
-  try {
-    const perfil = await getPerfilUsuario();
-    if (!perfil) return { success: false, error: 'Usuario no encontrado' };
-    
-    const { data, error } = await supabase
-      .from('historial_tomas')
-      .insert({
-        toma_id: tomaId,
-        usuario_id: perfil.id,
-        fecha: new Date().toISOString().split('T')[0],
-        hora_programada: horaProgramada,
-        hora_confirmacion: new Date().toISOString(),
-        estado: 'confirmado'
-      })
-      .select()
-      .single();
-    
-    if (error) return { success: false, error: error.message };
-    return { success: true, registro: data };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-}
-
-// 8. HISTORIAL del día (qué se tomó hoy)
-export async function getHistorialDia(fecha = null) {
-  try {
-    const perfil = await getPerfilUsuario();
-    if (!perfil) return { success: false, error: 'Usuario no encontrado' };
-    
-    const fechaConsulta = fecha || new Date().toISOString().split('T')[0];
-    
-    const { data, error } = await supabase
-      .from('historial_tomas')
-      .select('*, tomas_medicamento(hora, medicamentos(nombre, dosis))')
-      .eq('usuario_id', perfil.id)
-      .eq('fecha', fechaConsulta)
-      .order('hora_programada', { ascending: true });
-    
-    if (error) return { success: false, error: error.message };
-    return { success: true, historial: data };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
+  } catch (e) { console.error("Error creando tomas:", e); }
 }
