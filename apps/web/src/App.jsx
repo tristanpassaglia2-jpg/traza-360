@@ -5,7 +5,7 @@ import { signUp, signIn, signOut, getCurrentUser, supabase, getContactos, addCon
    TRAZA 360 — App completa v14
    Versión: 14.0 · Abril 2026
    ═══════════════════════════════════════════════════════════════
-   CAMBIOS v14:A
+   CAMBIOS v14:
    1. PASTILLERO VIRTUAL completo (agregar meds, horarios, dias,
       boton "tome", calendario semanal, notificaciones, sonido,
       WhatsApp al familiar si no confirma en 10 min)
@@ -971,61 +971,75 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
 
 // ─── TERCERO REMOTO MODAL ───────────────────
 function CuidadoModal({ onClose, contactos = [] }) {
-  const [paso, setPaso] = useState("inicio"); // inicio | vincular | permisos | activo | codigo
-  const [nombre, setNombre] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [prefijo, setPrefijo] = useState("54");
-  const [duracion, setDuracion] = useState("24h");
-  const [codigo, setCodigo] = useState("");
-  const [error, setError] = useState("");
-  const [permisos, setPermisos] = useState({ ubicacion: true, audio: false, video: false });
-  const [cuidadorActivo, setCuidadorActivo] = useState(null);
+  const [modo, setModo] = useState(null); // null | cuidador | victima
+  const [paso, setPaso] = useState("inicio");
+  // Cuidador
+  const [contactoSel, setContactoSel] = useState(null);
+  const [solicitudes, setSolicitudes] = useState({ ubicacion: false, audio: false, video: false });
+  // Víctima
+  const [solicitudesRecibidas, setSolicitudesRecibidas] = useState([]);
+  const [cuidadorNombre, setCuidadorNombre] = useState("");
+  const [permisosActivos, setPermisosActivos] = useState({});
 
-  function togglePermiso(key) { setPermisos({ ...permisos, [key]: !permisos[key] }); }
+  function toggleSolicitud(key) { setSolicitudes({ ...solicitudes, [key]: !solicitudes[key] }); }
 
-  function handleVincular() {
-    setError("");
-    if (!nombre.trim() || !telefono.trim()) { setError("Completá todos los campos."); return; }
-    setPaso("permisos");
+  // CUIDADOR envía solicitudes
+  function enviarSolicitudes() {
+    if (!contactoSel) return;
+    const items = [];
+    if (solicitudes.ubicacion) items.push("Te ubico? (ver tu ubicacion en tiempo real)");
+    if (solicitudes.audio) items.push("Te escucho? (escuchar tu entorno)");
+    if (solicitudes.video) items.push("Te grabo? (ver tu camara) [Premium]");
+    if (items.length === 0) { alert("Seleccioná al menos 1 solicitud."); return; }
+
+    getCurrentLocationWithFallback().then(({ location }) => {
+      const msg = `TRAZA 360 - SOLICITUD DE CUIDADO\n\nQuiero cuidarte. Te pido permiso para:\n\n${items.map((it, i) => `${i+1}. ${it}`).join("\n")}\n\nAbri la app Traza 360 y acepta o rechaza cada permiso.\nApp: https://traza-360-web.vercel.app\n\nResponder con:\nSI = Acepto todo\nNO = Rechazo`;
+      openWhatsAppToContact(contactoSel.telefono, msg);
+    });
+    setPaso("esperando");
   }
 
-  function handleConfirmarPermisos() {
-    const num = prefijo + limpiarNumero(telefono);
-    const c = Math.floor(100000 + Math.random() * 900000).toString();
-    setCodigo(c);
+  // VÍCTIMA simula recibir solicitudes (en producción viene por Supabase Realtime)
+  function simularRecepcion() {
+    setCuidadorNombre("Cuidador");
+    setSolicitudesRecibidas([
+      { key: "ubicacion", icon: "\u{1F4CD}", texto: "quiere ver tu ubicación", estado: null },
+      { key: "audio", icon: "\u{1F3A7}", texto: "quiere escuchar tu entorno", estado: null },
+      { key: "video", icon: "\u{1F4F9}", texto: "quiere ver tu cámara (Premium)", estado: null },
+    ]);
+    setPaso("solicitudes");
+  }
 
-    const permisosTexto = [];
-    if (permisos.ubicacion) permisosTexto.push("Ver ubicacion");
-    if (permisos.audio) permisosTexto.push("Escuchar entorno");
-    if (permisos.video) permisosTexto.push("Ver camara");
+  function responderSolicitud(key, aceptar) {
+    setSolicitudesRecibidas(prev => prev.map(s => s.key === key ? { ...s, estado: aceptar ? "aceptado" : "rechazado" } : s));
+    if (aceptar) setPermisosActivos(prev => ({ ...prev, [key]: true }));
+  }
 
-    const msg = `Hola ${nombre}! Te invito a cuidarme con Traza 360.\n\nPermisos que te di:\n${permisosTexto.map(p => "- " + p).join("\n")}\n\nCodigo: ${c}\nDuracion: ${duracion}\nApp: https://traza-360-web.vercel.app\n\nResponder con:\nRECIBI = Confirmo\nVOY = Voy en camino si necesitas`;
-
-    openWhatsAppToContact(num, msg);
-    setCuidadorActivo({ nombre, permisos });
-    setPaso("activo");
+  function confirmarPermisos() {
+    const aceptados = solicitudesRecibidas.filter(s => s.estado === "aceptado").map(s => s.key);
+    if (aceptados.length > 0 && contactos.length > 0) {
+      const textos = [];
+      if (aceptados.includes("ubicacion")) textos.push("Ver mi ubicacion");
+      if (aceptados.includes("audio")) textos.push("Escuchar mi entorno");
+      if (aceptados.includes("video")) textos.push("Ver mi camara");
+      openWhatsAppToContact(contactos[0].telefono, `TRAZA 360 - Acepte que me cuides.\n\nPermisos:\n${textos.map(t => "- " + t).join("\n")}\n\nEstoy protegido/a.`);
+    }
+    setPaso("cuidado_activo");
   }
 
   function handleEstoyBien() {
-    if (contactos.length > 0) {
-      openWhatsAppToContact(contactos[0].telefono, "Estoy bien. Todo en orden.");
-    }
+    if (contactos.length > 0) openWhatsAppToContact(contactos[0].telefono, "Estoy bien. Todo en orden.");
   }
 
   function handleAyuda() {
     if (contactos.length > 0) {
       getCurrentLocationWithFallback().then(({ location }) => {
-        const msg = buildMessageWithReply("AYUDA URGENTE - Necesito ayuda ahora.", location);
-        openWhatsAppToContact(contactos[0].telefono, msg);
+        openWhatsAppToContact(contactos[0].telefono, buildMessageWithReply("AYUDA URGENTE - Necesito ayuda ahora.", location));
       });
     }
   }
 
-  function handleTerminar() {
-    const num = prefijo + limpiarNumero(telefono);
-    if (num) openWhatsAppToContact(num, `El cuidado de Traza 360 ha finalizado. Gracias ${nombre}!`);
-    onClose();
-  }
+  function getRelEmoji(r) { return {"Madre":"\u{1F469}","Padre":"\u{1F468}","Hermana":"\u{1F46D}","Hermano":"\u{1F46C}","Pareja":"\u{1F491}","Amigo/a":"\u{1F91D}","Hija":"\u{1F467}","Hijo":"\u{1F466}","Vecino/a":"\u{1F3D8}\u{FE0F}","Otro":"\u{1F464}"}[r]||"\u{1F464}"; }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm overflow-y-auto py-8">
@@ -1035,81 +1049,159 @@ function CuidadoModal({ onClose, contactos = [] }) {
           <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl">{"\u00D7"}</button>
         </div>
 
-        {paso === "inicio" && (
+        {/* ELEGIR MODO */}
+        {!modo && (
           <div className="space-y-3">
-            <p className="text-xs text-slate-400 mb-3">Invitá a alguien de confianza a cuidarte. Vos elegís qué puede ver.</p>
-            <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Nombre (ej: Mamá, Juan)"
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500" />
-            <PhoneInput value={telefono} onChange={setTelefono} prefix={prefijo} onPrefixChange={setPrefijo} />
-            <div><label className="text-xs text-slate-400 block mb-2">Duración del cuidado</label>
-              <div className="grid grid-cols-4 gap-2">
-                {["1h","6h","12h","24h"].map(d => (
-                  <button key={d} onClick={() => setDuracion(d)} className={`rounded-xl border px-3 py-2 text-xs font-semibold ${duracion === d ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-300" : "border-white/10 bg-white/5 text-slate-300"}`}>{d}</button>
-                ))}
-              </div></div>
-            {error && <p className="text-xs text-red-400">{error}</p>}
-            <button onClick={handleVincular} className="w-full rounded-xl bg-gradient-to-r from-cyan-400 to-sky-500 py-3 text-sm font-semibold text-white shadow-lg">Siguiente</button>
+            <p className="text-xs text-slate-400 mb-3">Elegí tu rol en esta sesión.</p>
+            <button onClick={() => { setModo("cuidador"); setPaso("elegir_contacto"); }}
+              className="w-full rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-4 text-left">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{"\u{1F441}\u{FE0F}"}</span>
+                <div><div className="text-sm font-semibold text-cyan-300">Quiero cuidar a alguien</div>
+                  <div className="text-[11px] text-slate-400">Enviá solicitudes: te ubico? te escucho? te grabo?</div></div>
+              </div>
+            </button>
+            <button onClick={() => { setModo("victima"); simularRecepcion(); }}
+              className="w-full rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-4 text-left">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{"\u{1F6E1}\u{FE0F}"}</span>
+                <div><div className="text-sm font-semibold text-emerald-300">Alguien me está cuidando</div>
+                  <div className="text-[11px] text-slate-400">Ver solicitudes pendientes y aceptar/rechazar</div></div>
+              </div>
+            </button>
           </div>
         )}
 
-        {paso === "permisos" && (
+        {/* CUIDADOR: ELEGIR CONTACTO */}
+        {modo === "cuidador" && paso === "elegir_contacto" && (
           <div className="space-y-3">
-            <p className="text-xs text-slate-400 mb-2">{nombre} quiere cuidarte. Elegí qué le permitís:</p>
+            <p className="text-xs text-slate-400 mb-2">A quién querés cuidar?</p>
+            {contactos.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-4">Primero agregá contactos de confianza.</p>
+            ) : (
+              <>
+                {contactos.map(c => (
+                  <button key={c.id} onClick={() => { setContactoSel(c); setPaso("solicitudes_cuidador"); }}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left hover:bg-white/10">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{getRelEmoji(c.relacion)}</span>
+                      <div><div className="text-sm font-semibold text-slate-100">{c.nombre}</div>
+                        <div className="text-[11px] text-slate-400">{c.relacion} · +{c.telefono}</div></div>
+                    </div>
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
+        )}
 
-            <button onClick={() => togglePermiso("ubicacion")}
-              className={`w-full rounded-xl border px-4 py-3 text-left ${permisos.ubicacion ? "border-cyan-400/50 bg-cyan-500/10" : "border-white/10 bg-white/5"}`}>
+        {/* CUIDADOR: ELEGIR QUÉ SOLICITAR */}
+        {modo === "cuidador" && paso === "solicitudes_cuidador" && contactoSel && (
+          <div className="space-y-3">
+            <p className="text-xs text-slate-400 mb-2">Qué querés pedirle a {contactoSel.nombre}?</p>
+
+            <button onClick={() => toggleSolicitud("ubicacion")}
+              className={`w-full rounded-xl border px-4 py-3 text-left ${solicitudes.ubicacion ? "border-cyan-400/50 bg-cyan-500/10" : "border-white/10 bg-white/5"}`}>
               <div className="flex items-center gap-3">
                 <span className="text-xl">{"\u{1F4CD}"}</span>
-                <div className="flex-1"><div className="text-sm font-semibold text-slate-100">Que vea mi ubicación</div><div className="text-[11px] text-slate-400">Ve dónde estás en tiempo real</div></div>
-                <div className={`h-5 w-5 rounded-full border-2 ${permisos.ubicacion ? "border-cyan-400 bg-cyan-400" : "border-slate-500"}`}>
-                  {permisos.ubicacion && <div className="text-slate-950 text-xs text-center leading-4">{"\u2713"}</div>}
+                <div className="flex-1"><div className="text-sm font-semibold text-slate-100">Te ubico?</div><div className="text-[11px] text-slate-400">Ver su ubicación en tiempo real</div></div>
+                <div className={`h-5 w-5 rounded-full border-2 ${solicitudes.ubicacion ? "border-cyan-400 bg-cyan-400" : "border-slate-500"}`}>
+                  {solicitudes.ubicacion && <div className="text-slate-950 text-xs text-center leading-4">{"\u2713"}</div>}
                 </div>
               </div>
             </button>
 
-            <button onClick={() => togglePermiso("audio")}
-              className={`w-full rounded-xl border px-4 py-3 text-left ${permisos.audio ? "border-cyan-400/50 bg-cyan-500/10" : "border-white/10 bg-white/5"}`}>
+            <button onClick={() => toggleSolicitud("audio")}
+              className={`w-full rounded-xl border px-4 py-3 text-left ${solicitudes.audio ? "border-cyan-400/50 bg-cyan-500/10" : "border-white/10 bg-white/5"}`}>
               <div className="flex items-center gap-3">
                 <span className="text-xl">{"\u{1F3A7}"}</span>
-                <div className="flex-1"><div className="text-sm font-semibold text-slate-100">Que escuche mi entorno</div><div className="text-[11px] text-slate-400">Audio en vivo de tu micrófono</div></div>
-                <div className={`h-5 w-5 rounded-full border-2 ${permisos.audio ? "border-cyan-400 bg-cyan-400" : "border-slate-500"}`}>
-                  {permisos.audio && <div className="text-slate-950 text-xs text-center leading-4">{"\u2713"}</div>}
+                <div className="flex-1"><div className="text-sm font-semibold text-slate-100">Te escucho?</div><div className="text-[11px] text-slate-400">Escuchar su entorno en vivo</div></div>
+                <div className={`h-5 w-5 rounded-full border-2 ${solicitudes.audio ? "border-cyan-400 bg-cyan-400" : "border-slate-500"}`}>
+                  {solicitudes.audio && <div className="text-slate-950 text-xs text-center leading-4">{"\u2713"}</div>}
                 </div>
               </div>
             </button>
 
-            <button onClick={() => togglePermiso("video")}
-              className={`w-full rounded-xl border px-4 py-3 text-left ${permisos.video ? "border-amber-400/50 bg-amber-500/10" : "border-white/10 bg-white/5"}`}>
+            <button onClick={() => toggleSolicitud("video")}
+              className={`w-full rounded-xl border px-4 py-3 text-left ${solicitudes.video ? "border-amber-400/50 bg-amber-500/10" : "border-white/10 bg-white/5"}`}>
               <div className="flex items-center gap-3">
                 <span className="text-xl">{"\u{1F4F9}"}</span>
-                <div className="flex-1"><div className="text-sm font-semibold text-slate-100">Que vea mi cámara</div><div className="text-[11px] text-amber-300">Premium</div></div>
-                <div className={`h-5 w-5 rounded-full border-2 ${permisos.video ? "border-amber-400 bg-amber-400" : "border-slate-500"}`}>
-                  {permisos.video && <div className="text-slate-950 text-xs text-center leading-4">{"\u2713"}</div>}
+                <div className="flex-1"><div className="text-sm font-semibold text-slate-100">Te grabo?</div><div className="text-[11px] text-amber-300">Ver su cámara · Premium</div></div>
+                <div className={`h-5 w-5 rounded-full border-2 ${solicitudes.video ? "border-amber-400 bg-amber-400" : "border-slate-500"}`}>
+                  {solicitudes.video && <div className="text-slate-950 text-xs text-center leading-4">{"\u2713"}</div>}
                 </div>
               </div>
             </button>
 
-            <div className="flex gap-2 mt-2">
-              <button onClick={() => setPaso("inicio")} className="flex-1 rounded-xl border border-white/10 bg-white/5 py-3 text-sm text-slate-400">Volver</button>
-              <button onClick={handleConfirmarPermisos} className="flex-1 rounded-xl bg-gradient-to-r from-cyan-400 to-sky-500 py-3 text-sm font-semibold text-white shadow-lg">Confirmar y enviar</button>
-            </div>
+            <button onClick={enviarSolicitudes}
+              className="w-full rounded-xl bg-gradient-to-r from-cyan-400 to-sky-500 py-3 text-sm font-semibold text-white shadow-lg">
+              Enviar solicitud a {contactoSel.nombre}
+            </button>
           </div>
         )}
 
-        {paso === "activo" && (
-          <div className="text-center space-y-4">
-            <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-5">
-              <div className="text-2xl mb-2">{"\u{1FAC2}"}</div>
-              <div className="text-sm font-semibold text-cyan-300">{cuidadorActivo?.nombre} te está cuidando</div>
-              <div className="text-[11px] text-slate-400 mt-1">Duración: {duracion}</div>
-              <div className="mt-3 flex flex-wrap justify-center gap-2">
-                {cuidadorActivo?.permisos?.ubicacion && <span className="rounded-lg bg-white/10 px-2 py-1 text-[11px] text-slate-300">{"\u{1F4CD}"} Ubicación</span>}
-                {cuidadorActivo?.permisos?.audio && <span className="rounded-lg bg-white/10 px-2 py-1 text-[11px] text-slate-300">{"\u{1F3A7}"} Audio</span>}
-                {cuidadorActivo?.permisos?.video && <span className="rounded-lg bg-white/10 px-2 py-1 text-[11px] text-slate-300">{"\u{1F4F9}"} Video</span>}
+        {/* CUIDADOR: ESPERANDO */}
+        {modo === "cuidador" && paso === "esperando" && (
+          <div className="text-center py-6">
+            <div className="text-4xl mb-3 animate-pulse">{"\u{1F4E9}"}</div>
+            <div className="text-lg font-bold text-slate-100">Solicitud enviada</div>
+            <p className="mt-2 text-sm text-slate-400">Esperando que {contactoSel?.nombre} acepte tus permisos en su app.</p>
+            <p className="mt-4 text-xs text-slate-500">Cuando acepte, podrás ver su ubicación, escuchar su entorno o ver su cámara desde acá.</p>
+            <div className="mt-4 rounded-xl bg-white/5 border border-white/10 p-3">
+              <div className="text-[11px] text-slate-400">Próximamente: panel en vivo del cuidador con mapa, audio y video.</div>
+            </div>
+            <button onClick={onClose} className="mt-4 w-full rounded-xl border border-white/10 bg-white/5 py-3 text-sm text-slate-400">Cerrar</button>
+          </div>
+        )}
+
+        {/* VÍCTIMA: VER SOLICITUDES */}
+        {modo === "victima" && paso === "solicitudes" && (
+          <div className="space-y-3">
+            <div className="rounded-xl bg-cyan-500/10 border border-cyan-500/30 p-3 mb-3">
+              <div className="text-sm font-semibold text-cyan-300 text-center">Alguien quiere cuidarte</div>
+              <div className="text-[11px] text-slate-400 text-center mt-1">Aceptá o rechazá cada permiso</div>
+            </div>
+
+            {solicitudesRecibidas.map(s => (
+              <div key={s.key} className={`rounded-xl border p-4 ${s.estado === "aceptado" ? "border-emerald-500/40 bg-emerald-500/10" : s.estado === "rechazado" ? "border-red-500/30 bg-red-500/5 opacity-50" : "border-white/10 bg-white/5"}`}>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-xl">{s.icon}</span>
+                  <div className="flex-1 text-sm text-slate-200">{s.texto}</div>
+                </div>
+                {s.estado === null ? (
+                  <div className="flex gap-2">
+                    <button onClick={() => responderSolicitud(s.key, true)}
+                      className="flex-1 rounded-lg bg-emerald-500/20 border border-emerald-500/30 py-2 text-xs font-semibold text-emerald-300">Permitir</button>
+                    <button onClick={() => responderSolicitud(s.key, false)}
+                      className="flex-1 rounded-lg bg-red-500/10 border border-red-500/30 py-2 text-xs font-semibold text-red-300">Rechazar</button>
+                  </div>
+                ) : (
+                  <div className={`text-xs font-semibold text-center ${s.estado === "aceptado" ? "text-emerald-300" : "text-red-300"}`}>
+                    {s.estado === "aceptado" ? "Permitido" : "Rechazado"}
+                  </div>
+                )}
               </div>
-              <div className="mt-3 rounded-xl bg-white/5 p-3">
-                <div className="text-xs text-slate-400">Código para {cuidadorActivo?.nombre}:</div>
-                <div className="font-mono text-2xl font-bold text-white tracking-widest mt-1">{codigo}</div>
+            ))}
+
+            {solicitudesRecibidas.every(s => s.estado !== null) && (
+              <button onClick={confirmarPermisos}
+                className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white shadow-lg">
+                Confirmar y activar cuidado
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* VÍCTIMA: CUIDADO ACTIVO */}
+        {paso === "cuidado_activo" && (
+          <div className="text-center space-y-4">
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
+              <div className="text-2xl mb-2">{"\u{1FAC2}"}</div>
+              <div className="text-sm font-semibold text-emerald-300">Te están cuidando</div>
+              <div className="mt-3 flex flex-wrap justify-center gap-2">
+                {permisosActivos.ubicacion && <span className="rounded-lg bg-white/10 px-2 py-1 text-[11px] text-slate-300">{"\u{1F4CD}"} Ubicación</span>}
+                {permisosActivos.audio && <span className="rounded-lg bg-white/10 px-2 py-1 text-[11px] text-slate-300">{"\u{1F3A7}"} Audio</span>}
+                {permisosActivos.video && <span className="rounded-lg bg-white/10 px-2 py-1 text-[11px] text-slate-300">{"\u{1F4F9}"} Video</span>}
               </div>
             </div>
 
@@ -1120,7 +1212,7 @@ function CuidadoModal({ onClose, contactos = [] }) {
               <button onClick={handleAyuda} className="rounded-xl bg-red-500/20 border border-red-500/30 py-3 text-center">
                 <div className="text-xl">{"\u{1F198}"}</div><div className="text-[10px] text-red-300 mt-1">Ayuda</div>
               </button>
-              <button onClick={handleTerminar} className="rounded-xl bg-white/5 border border-white/10 py-3 text-center">
+              <button onClick={onClose} className="rounded-xl bg-white/5 border border-white/10 py-3 text-center">
                 <div className="text-xl">{"\u23F9\u{FE0F}"}</div><div className="text-[10px] text-slate-400 mt-1">Terminar</div>
               </button>
             </div>
