@@ -205,25 +205,19 @@ function detenerGrabacion() {
 
 // Guardar evidencia en Supabase Storage
 async function guardarEvidencia(blob, tipo = "audio") {
+  const ts = new Date().toISOString().replace(/[:.]/g, "-");
+  const ext = "webm";
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: "No autenticado" };
-    const ts = new Date().toISOString().replace(/[:.]/g, "-");
-    const ext = tipo === "audio" ? "webm" : "webm";
+    if (!user) throw new Error("No autenticado");
     const path = `${user.id}/${tipo}_${ts}.${ext}`;
-    const { data, error } = await supabase.storage.from("evidencias").upload(path, blob, { contentType: `${tipo}/${ext}`, upsert: false });
-    if (error) {
-      // Si no existe el bucket, guardar local como fallback
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a"); a.href = url; a.download = `evidencia_${ts}.${ext}`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      return { success: true, fallback: true };
-    }
-    return { success: true, path: data.path };
+    const { data, error } = await supabase.storage.from("evidencias").upload(path, blob, { contentType: "audio/webm", upsert: false });
+    if (error) throw error;
+    return { success: true, path: data.path, cloud: true };
   } catch (e) {
-    // Fallback: descargar local
-    const ts = new Date().toISOString().replace(/[:.]/g, "-");
+    console.warn("Evidencia: fallback local", e);
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `evidencia_${ts}.webm`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    const a = document.createElement("a"); a.href = url; a.download = `evidencia_${ts}.${ext}`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
     return { success: true, fallback: true };
   }
 }
@@ -268,8 +262,8 @@ function GrabacionModal({ onClose }) {
     const blob = await detenerGrabacion();
     setGrabando(false);
     if (blob) {
-      await guardarEvidencia(blob, "audio");
-      setGuardado(true);
+      const result = await guardarEvidencia(blob, "audio");
+      setGuardado(result.cloud ? "nube" : "local");
     }
   }
 
@@ -282,7 +276,7 @@ function GrabacionModal({ onClose }) {
           <div className="mb-3 text-4xl">{guardado ? "\u2705" : "\u{1F399}\u{FE0F}"}</div>
           <div className="text-lg font-bold text-slate-100">{guardado ? "Evidencia guardada" : "Grabación silenciosa"}</div>
           {guardado ? (
-            <><p className="mt-2 text-xs text-slate-400">El audio se guardó como evidencia.</p>
+            <><p className="mt-2 text-xs text-slate-400">{guardado === "nube" ? "Guardado en la nube. Accedé desde Adulto Mayor > Mis Evidencias." : "Descargado en tu dispositivo (fallback)."}</p>
             <button onClick={onClose} className="mt-4 w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white">Listo</button></>
           ) : grabando ? (
             <><div className="my-6 rounded-2xl border border-red-500/30 bg-red-500/10 py-6">
@@ -930,6 +924,7 @@ const MODULES = [
       { key: "panico", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "ALERTA - Botón de pánico activado. Necesito ayuda urgente." },
       { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío mi ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación en vivo." },
       { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido ambiente", desc: "Grabación silenciosa.", type: "record_audio" },
+      { key: "evidencias", icon: "\u{1F4C1}", name: "Mis Evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
       { key: "entro", icon: "\u{1F3D8}\u{FE0F}", name: "Entro a la casa de...", desc: "Aviso con ubicación.", type: "alert_contacts", message: "Entro a la casa de [completar]." },
       { key: "reuno", icon: "\u{1F465}", name: "Me reúno con...", desc: "Aviso.", type: "alert_contacts", message: "Me reúno con [completar]." },
       { key: "uber", icon: "\u{1F697}", name: "Llamar transporte", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
@@ -941,6 +936,7 @@ const MODULES = [
       { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
       { key: "cole", icon: "\u{1F3EB}", name: "Buscame por el cole", desc: "Aviso silencioso.", type: "alert_contacts", message: "URGENTE - Necesito que me busquen por el colegio." },
       { key: "bullying", icon: "\u{1F399}\u{FE0F}", name: "Bullying - Grabar evidencia", desc: "Grabación silenciosa.", type: "record_audio" },
+      { key: "evidencias", icon: "\u{1F4C1}", name: "Mis Evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
       { key: "sali", icon: "\u{1F6B6}", name: "Salí de casa, voy a lo de...", desc: "Aviso.", type: "alert_contacts", message: "Salí de casa. Voy a lo de [completar]." },
       { key: "maps", icon: "\u{1F5FA}\u{FE0F}", name: "Llegar a casa (GPS)", desc: "Abre Maps.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
       { key: "llegue", icon: "\u2705", name: "Llegué bien", desc: "Confirmación.", type: "alert_contacts", message: "Llegué bien." },
@@ -954,6 +950,7 @@ const MODULES = [
       { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
       { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido ambiente", desc: "Grabación silenciosa.", type: "record_audio" },
       { key: "pastillero", icon: "\u{1F48A}", name: "Mis Medicamentos", desc: "Pastillero virtual con alarmas.", type: "pastillero" },
+      { key: "evidencias", icon: "\u{1F4C1}", name: "Mis Evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
       { key: "medicacion", icon: "\u2705", name: "Tomé la medicación", desc: "Confirmación.", type: "alert_contacts", message: "Tomé la medicación del horario." },
       { key: "familiar", icon: "\u{1F4DE}", name: "Llamar a familiar", desc: "Contactar.", type: "alert_contacts", message: "Necesito hablar con mi familiar." },
       { key: "perdi", icon: "\u{1F4CD}", name: "Me perdí", desc: "Envía ubicación.", type: "alert_contacts", message: "Me perdí." },
@@ -975,6 +972,7 @@ const MODULES = [
       { key: "peligro", icon: "\u{1F6A8}", name: "Estoy en peligro (SOS)", desc: "Alerta inmediata.", type: "alert_contacts", message: "SOS - En peligro durante mi trabajo." },
       { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
       { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido ambiente", desc: "Grabación silenciosa.", type: "record_audio" },
+      { key: "evidencias", icon: "\u{1F4C1}", name: "Mis Evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
       { key: "desconocido", icon: "\u{1F9D1}\u200D\u{1F91D}\u200D\u{1F9D1}", name: "Salgo con desconocido/a", desc: "Aviso.", type: "alert_contacts", message: "Salgo con cliente desconocido/a." },
       { key: "sospechoso", icon: "\u26A0\u{FE0F}", name: "Cliente sospechoso", desc: "Aviso preventivo.", type: "alert_contacts", message: "Cliente con actitud sospechosa." },
       { key: "uber", icon: "\u{1F697}", name: "Llamar transporte", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
@@ -983,7 +981,7 @@ const MODULES = [
 ];
 
 // ─── MODULE CARD ────────────────────────────
-function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero }) {
+function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, onOpenEvidencias }) {
   const [expanded, setExpanded] = useState(autoExpand);
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [currentMessage, setCurrentMessage] = useState("");
@@ -998,6 +996,7 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero })
       case "maps": openMapsTo(action.destination); return;
       case "uber": openUber(action.destination); return;
       case "pastillero": if (onOpenPastillero) onOpenPastillero(); return;
+      case "evidencias": if (onOpenEvidencias) onOpenEvidencias(); return;
       default: return;
     }
   }
@@ -1129,8 +1128,6 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
 
   const quickCards = [
     { key: "contactos", emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} configurados` },
-    { key: "pastillero", emoji: "\u{1F48A}", title: "Mis Medicamentos", text: "Pastillero virtual con alarmas." },
-    { key: "evidencias", emoji: "\u{1F4C1}", title: "Mis Evidencias", text: "Grabaciones guardadas en la nube." },
     { key: "tercero", emoji: "\u{1F441}\u{FE0F}", title: "Tercero Remoto", text: "Cuidadores con audio y ubicación." },
     { key: "violencia", emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de género", text: "Pánico, grabación y red de apoyo." },
     { key: "adolescente", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente seguro", text: "Anti-bullying, GPS y geocercas." },
@@ -1166,7 +1163,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
         {activeModule ? (
           <div className="mb-8">
             <button onClick={() => setActiveModule(null)} className="mb-4 text-sm text-cyan-300">← Volver al panel</button>
-            <ModuleCard m={activeModule} autoExpand={true} contactos={contactos} onOpenPastillero={() => { setActiveModule(null); setActiveScreen("pastillero"); }} />
+            <ModuleCard m={activeModule} autoExpand={true} contactos={contactos} onOpenPastillero={() => { setActiveModule(null); setActiveScreen("pastillero"); }} onOpenEvidencias={() => { setActiveModule(null); setActiveScreen("evidencias"); }} />
           </div>
         ) : (
           <>
