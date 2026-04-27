@@ -277,7 +277,7 @@ function GrabacionModal({ onClose }) {
           <div className="mb-3 text-4xl">{guardado ? "\u2705" : "\u{1F399}\u{FE0F}"}</div>
           <div className="text-lg font-bold text-slate-100">{guardado ? "Evidencia guardada" : "Grabación silenciosa"}</div>
           {guardado ? (
-            <><p className="mt-2 text-xs text-slate-400">{guardado === "nube" ? "Guardado en la nube. Accedé desde Adulto Mayor > Mis Evidencias." : "Descargado en tu dispositivo (fallback)."}</p>
+            <><p className="mt-2 text-xs text-slate-400">{guardado === "nube" ? "Guardado en la nube. Accedé desde Mis Evidencias en este módulo." : "Descargado en tu dispositivo."}</p>
             <button onClick={onClose} className="mt-4 w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white">Listo</button></>
           ) : grabando ? (
             <><div className="my-6 rounded-2xl border border-red-500/30 bg-red-500/10 py-6">
