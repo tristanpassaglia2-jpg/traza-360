@@ -18,6 +18,7 @@ import { signUp, signIn, signOut, getCurrentUser, supabase, getContactos, addCon
 const WHATSAPP_NUMBER_DEFAULT = "5493513956879";
 const PIN_DEFAULT = "1234";
 const HOME_ADDRESS_DEFAULT = "Mi casa";
+const TAXI_NUMBER_DEFAULT = ""; // El usuario lo configura
 
 const PLAN_LIMITS = {
   gratis: { contactos: 2, terceros: 1, zonas: 2, medicamentos: 1, audioMax: 300, storage: "100 MB" },
@@ -407,14 +408,24 @@ function TimerLugarModal({ onClose, contactos }) {
 function EvidenciasScreen({ onBack }) {
   const [archivos, setArchivos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [reproduciendo, setReproduciendo] = useState(null);
 
   useEffect(() => { cargar(); }, []);
   async function cargar() { setLoading(true); setArchivos(await listarEvidencias()); setLoading(false); }
 
-  async function descargar(f) {
+  async function reproducir(f) {
     const url = await getEvidenciaUrl(f.fullPath);
-    if (url) window.open(url, "_blank");
-    else alert("No se pudo obtener el archivo.");
+    if (!url) { alert("No se pudo obtener el archivo."); return; }
+    setReproduciendo(f.name);
+    try {
+      const audio = new Audio(url);
+      audio.onended = () => setReproduciendo(null);
+      audio.onerror = () => { setReproduciendo(null); window.open(url, "_blank"); };
+      await audio.play();
+    } catch(e) {
+      setReproduciendo(null);
+      window.open(url, "_blank");
+    }
   }
 
   async function eliminar(f) {
@@ -426,11 +437,11 @@ function EvidenciasScreen({ onBack }) {
   return (
     <div className="min-h-screen bg-[#07111f] px-5 py-8 text-white">
       <div className="mx-auto max-w-3xl">
-        <button onClick={onBack} className="mb-4 text-sm text-cyan-300">← Volver al panel</button>
+        <button onClick={onBack} className="mb-4 text-sm text-cyan-300">{"\u2190"} Volver</button>
         <div className="mb-6 rounded-3xl border border-white/10 bg-white/5 p-6">
           <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Mis archivos protegidos</p>
           <h2 className="mt-2 text-2xl font-bold">Mis Evidencias</h2>
-          <p className="mt-2 text-sm text-slate-400">Grabaciones de audio/video guardadas en la nube.</p>
+          <p className="mt-2 text-sm text-slate-400">Grabaciones guardadas en la nube.</p>
         </div>
         {loading ? <div className="text-center py-8 text-slate-400">Cargando...</div>
         : archivos.length === 0 ? (
@@ -442,24 +453,28 @@ function EvidenciasScreen({ onBack }) {
         ) : (
           <div className="space-y-3">
             {archivos.map((f, i) => (
-              <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <span className="text-2xl">{f.name?.includes("audio") ? "\u{1F399}\u{FE0F}" : "\u{1F3A5}"}</span>
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-slate-100 truncate">{f.name}</div>
-                    <div className="text-xs text-slate-400">{f.metadata?.size ? (f.metadata.size / 1024).toFixed(0) + " KB" : ""}</div>
+              <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <span className="text-2xl">{f.name?.includes("audio") ? "\u{1F399}\u{FE0F}" : "\u{1F3A5}"}</span>
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-slate-100 truncate">{f.name}</div>
+                      <div className="text-xs text-slate-400">{f.metadata?.size ? (f.metadata.size / 1024).toFixed(0) + " KB" : ""}</div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex gap-2 shrink-0">
-                  <button onClick={() => descargar(f)} className="rounded-lg bg-cyan-500/20 border border-cyan-500/30 px-3 py-1.5 text-xs text-cyan-300">Ver</button>
-                  <button onClick={() => eliminar(f)} className="rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-1.5 text-xs text-red-300">Borrar</button>
+                  <div className="flex gap-2 shrink-0">
+                    <button onClick={() => reproducir(f)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${reproduciendo === f.name ? "bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 animate-pulse" : "bg-cyan-500/20 border border-cyan-500/30 text-cyan-300"}`}>
+                      {reproduciendo === f.name ? "Escuchando..." : "Escuchar"}
+                    </button>
+                    <button onClick={() => eliminar(f)} className="rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-1.5 text-xs text-red-300">Borrar</button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
-      <WhatsAppFloatingButton />
     </div>
   );
 }
@@ -795,7 +810,6 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
           </div>
         )}
       </div>
-      <WhatsAppFloatingButton />
     </div>
   );
 }
@@ -902,7 +916,6 @@ function ContactosScreen({ onBack, userPlan = "gratis" }) {
           </div>
         )}
       </div>
-      <WhatsAppFloatingButton />
     </div>
   );
 }
@@ -912,6 +925,8 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
   const [seleccionados, setSeleccionados] = useState([]);
   const [enviando, setEnviando] = useState(false);
   const [sent, setSent] = useState(false);
+  const [detalle, setDetalle] = useState("");
+  const tieneCompletar = mensaje.includes("[completar]");
 
   function toggle(id) { setSeleccionados(seleccionados.includes(id) ? seleccionados.filter(x => x !== id) : [...seleccionados, id]); }
   function getRelEmoji(r) { return {"Madre":"\u{1F469}","Padre":"\u{1F468}","Hermana":"\u{1F46D}","Hermano":"\u{1F46C}","Pareja":"\u{1F491}","Amigo/a":"\u{1F91D}","Hija":"\u{1F467}","Hijo":"\u{1F466}","Vecino/a":"\u{1F3D8}\u{FE0F}","Otro":"\u{1F464}"}[r]||"\u{1F464}"; }
@@ -921,7 +936,8 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
     setEnviando(true);
     const elegidos = contactos.filter(c => seleccionados.includes(c.id));
     const { location } = await getCurrentLocationWithFallback();
-    const msg = buildMessageWithReply(mensaje, location);
+    const msgFinal = tieneCompletar ? mensaje.replace("[completar]", detalle.trim() || "alguien") : mensaje;
+    const msg = buildMessageWithReply(msgFinal, location);
     if (elegidos.length > 0) openWhatsAppToContact(elegidos[0].telefono, msg);
     setEnviando(false); setSent(true);
     setTimeout(() => onClose(), 2000);
@@ -938,6 +954,14 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
               <h3 className="text-lg font-bold">A quién avisar?</h3>
               <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl">×</button>
             </div>
+            {tieneCompletar && (
+              <div className="mb-4">
+                <label className="text-xs text-slate-400 block mb-1">Completá el detalle</label>
+                <input type="text" value={detalle} onChange={e => setDetalle(e.target.value)}
+                  placeholder="Nombre de la persona o lugar"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400/50" />
+              </div>
+            )}
             {contactos.length === 0 ? (
               <p className="text-sm text-slate-400 text-center py-6">No tenés contactos configurados.</p>
             ) : (
@@ -1236,6 +1260,7 @@ const MODULES = [
       { key: "reuno", icon: "\u{1F465}", name: "Me reúno con...", desc: "Aviso.", type: "alert_contacts", message: "Me reúno con [completar]." },
       { key: "lugar_desc", icon: "\u23F1\u{FE0F}", name: "Entro a lugar desconocido", desc: "Timer: si no avisás, se alerta.", type: "timer_lugar" },
       { key: "uber", icon: "\u{1F697}", name: "Llamar transporte", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
+      { key: "taxi", icon: "\u{1F696}", name: "Llamar taxi de confianza", desc: "Llama a tu taxi preestablecido.", type: "taxi" },
     ]},
   { key: "adolescente", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente seguro", desc: "Salidas, regresos y protección anti-bullying.",
     color: "from-sky-400 to-cyan-500", border: "border-sky-500/20", accentBg: "bg-sky-500/10", accentBorder: "border-sky-500/30", accentText: "text-sky-300",
@@ -1251,6 +1276,7 @@ const MODULES = [
       { key: "llegue", icon: "\u2705", name: "Llegué bien", desc: "Confirmación.", type: "alert_contacts", message: "Llegué bien." },
       { key: "perdido", icon: "\u{1F4CD}", name: "Estoy perdido", desc: "Envía ubicación.", type: "alert_contacts", message: "Estoy perdido." },
       { key: "uber", icon: "\u{1F697}", name: "Llamar transporte", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
+      { key: "taxi", icon: "\u{1F696}", name: "Llamar taxi de confianza", desc: "Llama a tu taxi preestablecido.", type: "taxi" },
     ]},
   { key: "adulto_mayor", emoji: "\u{1FAF6}", title: "Adulto mayor seguro", desc: "Seguimiento, medicamentos y asistencia.",
     color: "from-amber-400 to-orange-500", border: "border-amber-500/20", accentBg: "bg-amber-500/10", accentBorder: "border-amber-500/30", accentText: "text-amber-300",
@@ -1284,9 +1310,10 @@ const MODULES = [
       { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
       { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido ambiente", desc: "Grabación silenciosa.", type: "record_audio" },
       { key: "evidencias", icon: "\u{1F4C1}", name: "Mis Evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
-      { key: "desconocido", icon: "\u{1F9D1}\u200D\u{1F91D}\u200D\u{1F9D1}", name: "Salgo con desconocido/a", desc: "Aviso.", type: "alert_contacts", message: "Salgo con cliente desconocido/a." },
-      { key: "sospechoso", icon: "\u26A0\u{FE0F}", name: "Cliente sospechoso", desc: "Aviso preventivo.", type: "alert_contacts", message: "Cliente con actitud sospechosa." },
+      { key: "desconocido", icon: "\u{1F9D1}\u200D\u{1F91D}\u200D\u{1F9D1}", name: "Salgo con desconocido/a", desc: "Nombre o lugar del encuentro.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
+      { key: "sospechoso", icon: "\u26A0\u{FE0F}", name: "Cliente sospechoso", desc: "Envía ubicación actual + aviso.", type: "alert_contacts", message: "ALERTA - Cliente con actitud sospechosa. Estoy en esta ubicación." },
       { key: "uber", icon: "\u{1F697}", name: "Llamar transporte", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
+      { key: "taxi", icon: "\u{1F696}", name: "Llamar taxi de confianza", desc: "Llama a tu taxi preestablecido.", type: "taxi" },
       { key: "llegue", icon: "\u2705", name: "Llegué bien", desc: "Confirmación.", type: "alert_contacts", message: "Terminé mi trabajo y estoy bien." },
     ]},
 ];
@@ -1315,6 +1342,19 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
       case "camaras":
         alert("Abrí la app de tus cámaras de seguridad (Ej: Ring, Xiaomi Home, TP-Link Tapo, Alfred). Próximamente integración directa.");
         return;
+      case "taxi": {
+        const taxiNum = sessionStorage.getItem("traza360_taxi") || "";
+        if (!taxiNum) {
+          const num = prompt("Configurá tu número de taxi de confianza (con código de área, ej: 3515551234):");
+          if (num && num.trim()) {
+            sessionStorage.setItem("traza360_taxi", num.trim());
+            window.open(`tel:${num.trim()}`);
+          }
+        } else {
+          window.open(`tel:${taxiNum}`);
+        }
+        return;
+      }
       default: return;
     }
   }
@@ -1504,7 +1544,6 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
         )}
       </div>
       {showTerceroModal && <CuidadoModal contactos={contactos} onClose={() => setShowTerceroModal(false)} />}
-      <WhatsAppFloatingButton />
     </div>
   );
 }
