@@ -1017,7 +1017,7 @@ function CuidadoModal({ onClose, contactos = [] }) {
     if (items.length === 0) { alert("Seleccioná al menos 1 solicitud."); return; }
 
     getCurrentLocationWithFallback().then(({ location }) => {
-      const msg = `TRAZA 360 - SOLICITUD DE CUIDADO\n\nQuiero cuidarte. Te pido permiso para:\n\n${items.map((it, i) => `${i+1}. ${it}`).join("\n")}\n\nAbri la app Traza 360 y acepta o rechaza cada permiso.\nApp: https://traza-360-web.vercel.app\n\nResponder con:\nSI = Acepto todo\nNO = Rechazo`;
+      const msg = `TRAZA 360 - SOLICITUD DE CUIDADO\n\nQuiero cuidarte. Te pido permiso para:\n\n${items.map((it, i) => `${i+1}. ${it}`).join("\n")}\n\nAbri la app Traza 360 y acepta o rechaza cada permiso.\nApp: https://traza360.app\n\nResponder con:\nSI = Acepto todo\nNO = Rechazo`;
       openWhatsAppToContact(contactoSel.telefono, msg);
     });
     setPaso("esperando");
@@ -1303,7 +1303,7 @@ const MODULES = [
       { key: "accidente", icon: "\u{1FA79}", name: "Accidente doméstico", desc: "Aviso.", type: "alert_contacts", message: "ALERTA - Accidente doméstico." },
       { key: "emergencia", icon: "\u{1F198}", name: "Emergencia en el hogar", desc: "Alerta máxima.", type: "alert_contacts", message: "EMERGENCIA en el hogar." },
     ]},
-  { key: "trabajo", emoji: "\u{1F4BC}", title: "Trabajo seguro", desc: "Protección para trabajadoras independientes.",
+  { key: "trabajo", emoji: "\u{1F303}", title: "Trabajo seguro", desc: "Protección nocturna y domicilios.",
     color: "from-emerald-500 to-teal-500", border: "border-emerald-500/20", accentBg: "bg-emerald-500/10", accentBorder: "border-emerald-500/30", accentText: "text-emerald-300",
     actions: [
       { key: "peligro", icon: "\u{1F6A8}", name: "Estoy en peligro (SOS)", desc: "Alerta inmediata.", type: "alert_contacts", message: "SOS - En peligro durante mi trabajo." },
@@ -1486,13 +1486,13 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
   if (activeScreen === "evidencias") return <EvidenciasScreen onBack={() => setActiveScreen("home")} />;
 
   const quickCards = [
-    { key: "contactos", emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} configurados` },
-    { key: "cuidado", emoji: "\u{1FAC2}", title: "Estoy a tu cuidado", text: "Alguien te cuida. Vos elegís qué ve." },
+    { key: "cuidado", emoji: "\u{1F985}", title: "Te vigilo", text: "Alguien te cuida. Vos elegís qué ve.", big: true },
     { key: "violencia", emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de género", text: "Pánico, grabación y red de apoyo." },
+    { key: "trabajo", emoji: "\u{1F303}", title: "Trabajo seguro", text: "Protección nocturna y domicilios." },
     { key: "adolescente", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente seguro", text: "Anti-bullying, GPS y geocercas." },
     { key: "adulto_mayor", emoji: "\u{1FAF6}", title: "Adulto mayor seguro", text: "Medicamentos, caídas y geocercas." },
     { key: "hogar", emoji: "\u{1F3E0}", title: "Hogar seguro", text: "Intrusos, vecinos y accidentes." },
-    { key: "trabajo", emoji: "\u{1F4BC}", title: "Trabajo seguro", text: "Acompañantes y domicilios." },
+    { key: "contactos", emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} configurados` },
   ];
 
   function handleCard(key) {
@@ -1503,8 +1503,15 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
     else { const mod = MODULES.find(m => m.key === key); if (mod) setActiveModule(mod); }
   }
 
+  async function handlePanico() {
+    if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza."); return; }
+    const { location } = await getCurrentLocationWithFallback();
+    const msg = buildMessageWithReply("ALERTA - Botón de pánico activado. Necesito ayuda urgente.", location);
+    openWhatsAppToContact(contactos[0].telefono, msg);
+  }
+
   return (
-    <div className="min-h-screen bg-[#07111f] px-5 py-8 text-white">
+    <div className="min-h-screen bg-[#07111f] px-5 py-8 pb-24 text-white">
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 rounded-3xl border border-white/10 bg-white/5 p-6 md:p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -1521,7 +1528,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
 
         {activeModule ? (
           <div className="mb-8">
-            <button onClick={() => setActiveModule(null)} className="mb-4 text-sm text-cyan-300">← Volver al panel</button>
+            <button onClick={() => setActiveModule(null)} className="mb-4 text-sm text-cyan-300">{"\u2190"} Volver al panel</button>
             <ModuleCard m={activeModule} autoExpand={true} contactos={contactos} onOpenPastillero={() => { setActiveModule(null); setActiveScreen("pastillero"); }} onOpenEvidencias={() => { setActiveModule(null); setActiveScreen("evidencias"); }} />
           </div>
         ) : (
@@ -1531,12 +1538,13 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
               {quickCards.map(card => (
                 <button key={card.key} onClick={() => handleCard(card.key)}
                   className={`text-left rounded-2xl border p-5 hover:bg-white/10 hover:border-cyan-400/30 active:scale-[0.98] ${
+                    card.big ? "border-cyan-400/40 bg-gradient-to-br from-cyan-500/10 to-sky-500/5 sm:col-span-2 xl:col-span-3" :
                     (card.key === "contactos" && contactos.length === 0) ? "border-orange-500/40 bg-orange-500/10" : "border-white/10 bg-white/5"
                   }`}>
-                  <div className="mb-2 text-2xl">{card.emoji}</div>
-                  <div className="text-base font-semibold text-slate-100">{card.title}</div>
+                  <div className={`mb-2 ${card.big ? "text-5xl" : "text-2xl"}`}>{card.emoji}</div>
+                  <div className={`font-semibold text-slate-100 ${card.big ? "text-xl" : "text-base"}`}>{card.title}</div>
                   <p className="mt-2 text-sm text-slate-400">{card.text}</p>
-                  <div className="mt-3 text-xs font-semibold text-cyan-300">Abrir →</div>
+                  <div className="mt-3 text-xs font-semibold text-cyan-300">Abrir {"\u2192"}</div>
                 </button>
               ))}
             </div>
@@ -1544,6 +1552,15 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
         )}
       </div>
       {showTerceroModal && <CuidadoModal contactos={contactos} onClose={() => setShowTerceroModal(false)} />}
+
+      {/* BOTÓN DE PÁNICO FLOTANTE */}
+      <div className="fixed bottom-5 right-5 z-50">
+        <button onClick={handlePanico}
+          className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-xl shadow-red-500/30 hover:scale-110 active:scale-95 animate-pulse">
+          <span className="text-2xl">{"\u{1F6A8}"}</span>
+        </button>
+        <div className="text-[9px] text-red-300 text-center mt-1 font-semibold">PÁNICO</div>
+      </div>
     </div>
   );
 }
@@ -1624,9 +1641,9 @@ export default function App() {
   const [modoCalc, setModoCalc] = useState(false);
 
   useEffect(() => {
-    // Detectar si viene con ?modo=calc en la URL
+    // Calculadora SOLO si la URL tiene ?modo=calc
     const params = new URLSearchParams(window.location.search);
-    if (params.get("modo") === "calc" || sessionStorage.getItem("traza360_modo_calc") === "true") {
+    if (params.get("modo") === "calc") {
       setModoCalc(true);
       setScreen("calculadora");
       return;
