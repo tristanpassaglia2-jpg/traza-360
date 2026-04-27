@@ -1548,14 +1548,89 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
   );
 }
 
+// ─── CALCULADORA FALSA (Modo disfraz) ───────
+function CalculadoraScreen({ onUnlock }) {
+  const [display, setDisplay] = useState("0");
+  const [pin] = useState(() => sessionStorage.getItem("traza360_pin") || "1234");
+
+  function handleKey(key) {
+    if (key === "C") { setDisplay("0"); return; }
+    if (key === "=") {
+      // Verificar si el display contiene el PIN
+      if (display === pin || display.endsWith(pin)) {
+        onUnlock();
+        return;
+      }
+      // Intentar evaluar como calculadora real
+      try {
+        const result = Function('"use strict"; return (' + display.replace(/×/g, "*").replace(/÷/g, "/") + ')')();
+        setDisplay(String(result));
+      } catch(e) {
+        setDisplay("Error");
+      }
+      return;
+    }
+    if (display === "0" || display === "Error") setDisplay(key);
+    else setDisplay(display + key);
+  }
+
+  const keys = ["7","8","9","÷","4","5","6","×","1","2","3","-","0",".","=","+","C"];
+
+  return (
+    <div className="min-h-screen bg-[#1a1a1a] flex flex-col items-center justify-end pb-8 px-4">
+      {/* Barra superior falsa */}
+      <div className="w-full max-w-sm mt-8 mb-auto">
+        <div className="text-center text-slate-500 text-xs mb-2">Calculadora</div>
+      </div>
+
+      {/* Display */}
+      <div className="w-full max-w-sm mb-4">
+        <div className="rounded-2xl bg-[#222] p-6 text-right">
+          <div className="text-4xl font-light text-white font-mono tracking-wider overflow-hidden">{display}</div>
+        </div>
+      </div>
+
+      {/* Teclado */}
+      <div className="w-full max-w-sm grid grid-cols-4 gap-2">
+        {keys.map(k => {
+          const isOp = ["÷","×","-","+","="].includes(k);
+          const isClear = k === "C";
+          return (
+            <button key={k} onClick={() => handleKey(k)}
+              className={`rounded-2xl py-4 text-xl font-semibold active:scale-95 ${
+                isOp ? "bg-orange-500 text-white" :
+                isClear ? "bg-[#a5a5a5] text-black" :
+                "bg-[#333] text-white"
+              }`}>
+              {k}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-6 text-center">
+        <p className="text-[10px] text-slate-700">Ingresá {pin} y tocá = para acceder</p>
+      </div>
+    </div>
+  );
+}
+
 // ─── APP ─────────────────────────────────────
 export default function App() {
   const [screen, setScreen] = useState("loading");
   const [userProfile, setUserProfile] = useState(null);
   const [authUser, setAuthUser] = useState(null);
   const [pendingName, setPendingName] = useState(null);
+  const [modoCalc, setModoCalc] = useState(false);
 
   useEffect(() => {
+    // Detectar si viene con ?modo=calc en la URL
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("modo") === "calc" || sessionStorage.getItem("traza360_modo_calc") === "true") {
+      setModoCalc(true);
+      setScreen("calculadora");
+      return;
+    }
     checkSession();
     if (navigator.geolocation) navigator.geolocation.getCurrentPosition(pos => saveLastLocation(pos.coords.latitude, pos.coords.longitude), () => {}, { enableHighAccuracy: true, timeout: 10000 });
     try { const s = sessionStorage.getItem("traza360_pending_name"); if (s) setPendingName(s); } catch(e){}
@@ -1582,6 +1657,13 @@ export default function App() {
   }
 
   function handleLogout() { setUserProfile(null); setAuthUser(null); setPendingName(null); try { sessionStorage.removeItem("traza360_pending_name"); } catch(e){} setScreen("landing"); }
+
+  function handleUnlockCalc() {
+    setModoCalc(false);
+    checkSession();
+  }
+
+  if (screen === "calculadora") return <CalculadoraScreen onUnlock={handleUnlockCalc} />;
 
   if (screen === "loading") return (
     <div className="flex min-h-screen items-center justify-center bg-[#05080f] text-slate-100"><div className="text-center">
