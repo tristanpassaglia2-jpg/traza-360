@@ -2,16 +2,14 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { signUp, signIn, signOut, getCurrentUser, supabase, getContactos, addContacto, deleteContacto, getMedicamentos, addMedicamento, deleteMedicamento, getTomasHoy, getTomasSemana, marcarTomado, crearTomasDelDia } from "./lib/supabase";
 
 /* ═══════════════════════════════════════════════════════════════
-   TRAZA 360 — App completa v14
-   Versión: 14.0 · Abril 2026
+   TRAZA 360 — App completa v15
+   Versión: 15.0 · Abril 2026
    ═══════════════════════════════════════════════════════════════
-   CAMBIOS v14:
-   1. PASTILLERO VIRTUAL completo (agregar meds, horarios, dias,
-      boton "tome", calendario semanal, notificaciones, sonido,
-      WhatsApp al familiar si no confirma en 10 min)
-   2. FIX emojis WhatsApp (encoding correcto)
-   3. Evidencias se guardan en nube (Supabase Storage)
-   4. Pantalla "Mis Evidencias"
+   CAMBIOS v15:
+   1. WhatsApp AUTOMÁTICO vía Twilio API (no abre wa.me)
+   2. Fallback: si API falla, abre wa.me como respaldo
+   3. Pastillero envía WhatsApp SILENCIOSO (sin intervención)
+   4. Compatible Sandbox y Producción (1 variable en Vercel)
    ═══════════════════════════════════════════════════════════════ */
 
 // ─── CONFIG ─────────────────────────────────
@@ -113,14 +111,53 @@ function getCurrentLocationWithFallback() {
 
 function buildMapLink(loc) { return loc ? `https://www.google.com/maps?q=${loc.lat},${loc.lng}` : null; }
 
-// ─── WHATSAPP (FIX EMOJIS v14) ──────────────
+// ─── WHATSAPP VÍA API (v15 — Twilio Sandbox/Producción) ──────
+// Envía WhatsApp automático vía API del servidor (no abre wa.me)
+async function sendWhatsAppAPI(numero, text) {
+  try {
+    const numLimpio = numero.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
+    const response = await fetch("/api/send-whatsapp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to: numLimpio, message: text }),
+    });
+    const data = await response.json();
+    if (data.success) {
+      console.log("WhatsApp enviado OK:", data.sid);
+      return { success: true, sid: data.sid };
+    } else {
+      console.warn("WhatsApp API error:", data.error);
+      return { success: false, error: data.error };
+    }
+  } catch (error) {
+    console.error("WhatsApp fetch error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Envía por API y si falla abre wa.me como respaldo
+async function enviarWhatsApp(numero, text) {
+  const result = await sendWhatsAppAPI(numero, text);
+  if (!result.success) {
+    // Fallback: abrir wa.me manualmente
+    const numLimpio = numero.replace(/\+/g, "").replace(/\s/g, "");
+    window.open(`https://wa.me/${numLimpio}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+  }
+  return result;
+}
+
+// Solo por API (para timers automáticos como pastillero - no puede abrir ventanas)
+async function enviarWhatsAppSilencioso(numero, text) {
+  return await sendWhatsAppAPI(numero, text);
+}
+
+// Mantener compatibilidad con código existente
 function openWhatsAppToContact(numero, text) {
-  const numLimpio = numero.replace(/\+/g, "").replace(/\s/g, "");
-  window.open(`https://wa.me/${numLimpio}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+  enviarWhatsApp(numero, text);
 }
 
 function openWhatsAppDefault(text) {
-  window.open(`https://wa.me/${WHATSAPP_NUMBER_DEFAULT}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+  enviarWhatsApp(WHATSAPP_NUMBER_DEFAULT, text);
 }
 
 function buildMessageWithReply(baseMessage, loc) {
@@ -539,7 +576,7 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
               const estaT = tomasActualizadas.find(x => x.id === t.id);
               if (estaT && !estaT.tomado) {
                 const familiar = contactos[0];
-                openWhatsAppToContact(familiar.telefono, `AVISO PASTILLERO: No se confirmó la toma de ${medNombre} (${t.horario_programado}). Por favor verificar.`);
+                enviarWhatsAppSilencioso(familiar.telefono, `AVISO PASTILLERO: No se confirmo la toma de ${medNombre} (${t.horario_programado}). Por favor verificar.`);
               }
             }, 600000); // 10 min
             timersRef.current.push(tid2);
