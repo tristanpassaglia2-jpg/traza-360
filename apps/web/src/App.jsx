@@ -153,10 +153,10 @@ async function enviarWhatsAppSilencioso(numero, text) {
   return await sendWhatsAppAPI(numero, text);
 }
 
-// Mantener compatibilidad con código existente
-function enviarWhatsApp(numero, text) {
-  enviarWhatsApp(numero, text);
-}
+
+
+  
+
 
 function openWhatsAppDefault(text) {
   enviarWhatsApp(WHATSAPP_NUMBER_DEFAULT, text);
