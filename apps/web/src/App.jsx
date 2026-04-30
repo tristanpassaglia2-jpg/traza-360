@@ -10,7 +10,6 @@ import { signUp, signIn, signOut, getCurrentUser, supabase, getContactos, addCon
    2. Logo escudo con ojo de águila (SVG)
    3. Módulo "Zonas de riesgo" (ex Trabajo nocturno)
    4. Daily.co WebRTC audio/video en vivo
-   
    5. WhatsApp automático vía Twilio API
    ═══════════════════════════════════════════════════════════════ */
 
@@ -153,10 +152,10 @@ async function enviarWhatsAppSilencioso(numero, text) {
   return await sendWhatsAppAPI(numero, text);
 }
 
-
-
-  
-
+// Mantener compatibilidad con código existente
+function openWhatsAppToContact(numero, text) {
+  enviarWhatsApp(numero, text);
+}
 
 function openWhatsAppDefault(text) {
   enviarWhatsApp(WHATSAPP_NUMBER_DEFAULT, text);
@@ -362,7 +361,6 @@ function TimerLugarModal({ onClose, contactos }) {
       setTiempoRestante(t => {
         if (t <= 1) {
           clearInterval(timerRef.current);
-          // ALERTA AUTOMÁTICA
           enviarNotificacion("ALERTA TRAZA 360", "No confirmaste que estás bien. Se alertó a tus contactos.");
           reproducirSonido();
           if (contactos.length > 0) {
@@ -447,7 +445,8 @@ function TimerLugarModal({ onClose, contactos }) {
 function EvidenciasScreen({ onBack }) {
   const [archivos, setArchivos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [reproduciendo, setReproduciendo] = useState(null);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [audioName, setAudioName] = useState(null);
 
   useEffect(() => { cargar(); }, []);
   async function cargar() { setLoading(true); setArchivos(await listarEvidencias()); setLoading(false); }
@@ -455,58 +454,74 @@ function EvidenciasScreen({ onBack }) {
   async function reproducir(f) {
     const url = await getEvidenciaUrl(f.fullPath);
     if (!url) { alert("No se pudo obtener el archivo."); return; }
-    setReproduciendo(f.name);
-    try {
-      const audio = new Audio(url);
-      audio.onended = () => setReproduciendo(null);
-      audio.onerror = () => { setReproduciendo(null); window.open(url, "_blank"); };
-      await audio.play();
-    } catch(e) {
-      setReproduciendo(null);
-      window.open(url, "_blank");
-    }
+    setAudioUrl(url);
+    setAudioName(f.name);
   }
 
   async function eliminar(f) {
     if (!window.confirm("Eliminar esta evidencia?")) return;
     await eliminarEvidencia(f.fullPath);
+    if (audioName === f.name) { setAudioUrl(null); setAudioName(null); }
     cargar();
   }
 
+  async function descargar(f) {
+    const url = await getEvidenciaUrl(f.fullPath);
+    if (url) window.open(url, "_blank");
+  }
+
   return (
-    <div className="min-h-screen bg-[#07111f] px-5 py-8 text-white">
+    <div className="min-h-screen px-5 py-8 text-white" style={{ background: "linear-gradient(180deg, #0a0a10 0%, #0d0d16 40%, #0a0a10 100%)" }}>
       <div className="mx-auto max-w-3xl">
-        <button onClick={onBack} className="mb-4 text-sm text-cyan-300">{"\u2190"} Volver</button>
-        <div className="mb-6 rounded-3xl border border-white/10 bg-white/5 p-6">
-          <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Mis archivos protegidos</p>
-          <h2 className="mt-2 text-2xl font-bold">Mis Evidencias</h2>
-          <p className="mt-2 text-sm text-slate-400">Grabaciones guardadas en la nube.</p>
+        <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: "#d4af37" }}>{"\u2190"} Volver</button>
+        <div className="mb-6 rounded-2xl p-6" style={{ background: "linear-gradient(145deg, #13131d, #0e0e16)", border: "1px solid rgba(212,175,55,0.1)", boxShadow: "6px 6px 18px rgba(0,0,0,0.5), -3px -3px 10px rgba(212,175,55,0.01)" }}>
+          <p className="text-[10px] uppercase tracking-[3px]" style={{ color: "#d4af37" }}>Mis archivos protegidos</p>
+          <h2 className="mt-2 text-xl font-bold">Mis Evidencias</h2>
+          <p className="mt-2 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>Grabaciones guardadas en la nube.</p>
         </div>
+
+        {/* Reproductor de audio visible */}
+        {audioUrl && (
+          <div className="mb-4 rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.15)" }}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">{"\u{1F3B5}"}</span>
+              <span className="text-xs font-semibold" style={{ color: "#d4af37" }}>Reproduciendo: {audioName}</span>
+              <button onClick={() => { setAudioUrl(null); setAudioName(null); }} className="ml-auto text-xs text-slate-500">{"\u2715"}</button>
+            </div>
+            <audio controls autoPlay src={audioUrl} style={{ width: "100%", height: "40px", borderRadius: "8px" }} />
+          </div>
+        )}
+
         {loading ? <div className="text-center py-8 text-slate-400">Cargando...</div>
         : archivos.length === 0 ? (
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
+          <div className="rounded-2xl p-8 text-center" style={{ background: "linear-gradient(145deg, #12121a, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)" }}>
             <div className="text-5xl mb-3">{"\u{1F4C1}"}</div>
-            <h3 className="text-lg font-semibold text-slate-100">Sin evidencias</h3>
-            <p className="mt-2 text-sm text-slate-400">Cuando grabes audio desde cualquier módulo, aparecerá acá.</p>
+            <h3 className="text-lg font-semibold text-white">Sin evidencias</h3>
+            <p className="mt-2 text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>Cuando grabes audio desde cualquier módulo, aparecerá acá.</p>
           </div>
         ) : (
           <div className="space-y-3">
             {archivos.map((f, i) => (
-              <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div key={i} className="rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #12121a, #0c0c12)", border: audioName === f.name ? "1px solid rgba(212,175,55,0.3)" : "1px solid rgba(212,175,55,0.08)" }}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <span className="text-2xl">{f.name?.includes("audio") ? "\u{1F399}\u{FE0F}" : "\u{1F3A5}"}</span>
                     <div className="min-w-0">
-                      <div className="text-sm font-semibold text-slate-100 truncate">{f.name}</div>
-                      <div className="text-xs text-slate-400">{f.metadata?.size ? (f.metadata.size / 1024).toFixed(0) + " KB" : ""}</div>
+                      <div className="text-sm font-semibold text-white truncate">{f.name}</div>
+                      <div className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{f.metadata?.size ? (f.metadata.size / 1024).toFixed(0) + " KB" : ""}</div>
                     </div>
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <button onClick={() => reproducir(f)}
-                      className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${reproduciendo === f.name ? "bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 animate-pulse" : "bg-cyan-500/20 border border-cyan-500/30 text-cyan-300"}`}>
-                      {reproduciendo === f.name ? "Escuchando..." : "Escuchar"}
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold" style={{
+                        background: audioName === f.name ? "rgba(212,175,55,0.15)" : "rgba(212,175,55,0.08)",
+                        border: "1px solid rgba(212,175,55,0.2)",
+                        color: "#d4af37",
+                      }}>
+                      {audioName === f.name ? "\u{1F50A} Escuchando" : "\u{25B6}\u{FE0F} Escuchar"}
                     </button>
-                    <button onClick={() => eliminar(f)} className="rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-1.5 text-xs text-red-300">Borrar</button>
+                    <button onClick={() => descargar(f)} className="rounded-lg px-2 py-1.5 text-xs" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)" }}>{"\u{2B07}\u{FE0F}"}</button>
+                    <button onClick={() => eliminar(f)} className="rounded-lg px-2 py-1.5 text-xs" style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.2)", color: "#f87171" }}>{"\u{1F5D1}\u{FE0F}"}</button>
                   </div>
                 </div>
               </div>
@@ -1119,7 +1134,7 @@ function CuidadoModal({ onClose, contactos = [] }) {
     onClose();
   }
 
-  // CUIDADOR envía solicitudes + crea sala
+  // CUIDADOR envía solicitudes + crea sala DIRECTAMENTE
   async function enviarSolicitudes() {
     if (!contactoSel) return;
     const items = [];
@@ -1132,8 +1147,7 @@ function CuidadoModal({ onClose, contactos = [] }) {
     const salaUrl = await crearSalaDaily();
     if (!salaUrl) return;
 
-    const location = await getCurrentLocationWithFallback();
-    const msg = `TRAZA 360 - TE VIGILO ACTIVADO\n\nQuiero cuidarte. Te pido permiso para:\n\n${items.map((it, i) => `${i+1}. ${it}`).join("\n")}\n\nUni a la sala segura:\n${salaUrl}\n\nO abri la app Traza 360 y acepta.\nApp: https://traza-360-web.vercel.app`;
+    const msg = `TRAZA 360 - TE VIGILO ACTIVADO\n\nEstoy cuidandote. Abri este link para conectar audio/video en vivo:\n\n${salaUrl}\n\nSi no queres ser vigilado/a, ignora este mensaje.\n\nApp: https://traza-360-web.vercel.app`;
     enviarWhatsApp(contactoSel.telefono, msg);
     setPaso("panel_cuidador");
     // Cuidador se une automáticamente
