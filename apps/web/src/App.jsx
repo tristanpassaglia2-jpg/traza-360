@@ -2,14 +2,15 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { signUp, signIn, signOut, getCurrentUser, supabase, getContactos, addContacto, deleteContacto, getMedicamentos, addMedicamento, deleteMedicamento, getTomasHoy, getTomasSemana, marcarTomado, crearTomasDelDia } from "./lib/supabase";
 
 /* ═══════════════════════════════════════════════════════════════
-   TRAZA 360 — App completa v15
-   Versión: 15.0 · Abril 2026
+   TRAZA 360 — App completa v16
+   Versión: 16.0 · Abril 2026
    ═══════════════════════════════════════════════════════════════
-   CAMBIOS v15:
-   1. WhatsApp AUTOMÁTICO vía Twilio API (no abre wa.me)
-   2. Fallback: si API falla, abre wa.me como respaldo
-   3. Pastillero envía WhatsApp SILENCIOSO (sin intervención)
-   4. Compatible Sandbox y Producción (1 variable en Vercel)
+   CAMBIOS v16:
+   1. DISEÑO PREMIUM Dark Luxury + Neomorphism
+   2. Logo escudo con ojo de águila (SVG)
+   3. Módulo "Zonas de riesgo" (ex Trabajo nocturno)
+   4. Daily.co WebRTC audio/video en vivo
+   5. WhatsApp automático vía Twilio API
    ═══════════════════════════════════════════════════════════════ */
 
 // ─── CONFIG ─────────────────────────────────
@@ -1030,13 +1031,22 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
   );
 }
 
-// ─── TERCERO REMOTO MODAL ───────────────────
+// ─── TERCERO REMOTO MODAL (v15 — Daily.co WebRTC) ───────────────────
 function CuidadoModal({ onClose, contactos = [] }) {
   const [modo, setModo] = useState(null); // null | cuidador | victima
   const [paso, setPaso] = useState("inicio");
   // Cuidador
   const [contactoSel, setContactoSel] = useState(null);
   const [solicitudes, setSolicitudes] = useState({ ubicacion: false, audio: false, video: false });
+  // Daily.co
+  const [roomUrl, setRoomUrl] = useState(null);
+  const [roomName, setRoomName] = useState(null);
+  const [creandoSala, setCreandoSala] = useState(false);
+  const [enVivo, setEnVivo] = useState(false);
+  const [audioActivo, setAudioActivo] = useState(false);
+  const [videoActivo, setVideoActivo] = useState(false);
+  const dailyFrameRef = useRef(null);
+  const iframeContainerRef = useRef(null);
   // Víctima
   const [solicitudesRecibidas, setSolicitudesRecibidas] = useState([]);
   const [cuidadorNombre, setCuidadorNombre] = useState("");
@@ -1044,23 +1054,92 @@ function CuidadoModal({ onClose, contactos = [] }) {
 
   function toggleSolicitud(key) { setSolicitudes({ ...solicitudes, [key]: !solicitudes[key] }); }
 
-  // CUIDADOR envía solicitudes
-  function enviarSolicitudes() {
-    if (!contactoSel) return;
-    const items = [];
-    if (solicitudes.ubicacion) items.push("Te ubico? (ver tu ubicacion en tiempo real)");
-    if (solicitudes.audio) items.push("Te escucho? (escuchar tu entorno)");
-    if (solicitudes.video) items.push("Te grabo? (ver tu camara) [Premium]");
-    if (items.length === 0) { alert("Seleccioná al menos 1 solicitud."); return; }
-
-    getCurrentLocationWithFallback().then(({ location }) => {
-      const msg = `TRAZA 360 - SOLICITUD DE CUIDADO\n\nQuiero cuidarte. Te pido permiso para:\n\n${items.map((it, i) => `${i+1}. ${it}`).join("\n")}\n\nAbri la app Traza 360 y acepta o rechaza cada permiso.\nApp: https://traza360.app\n\nResponder con:\nSI = Acepto todo\nNO = Rechazo`;
-      openWhatsAppToContact(contactoSel.telefono, msg);
-    });
-    setPaso("esperando");
+  // Crear sala Daily.co
+  async function crearSalaDaily() {
+    setCreandoSala(true);
+    try {
+      const resp = await fetch("/api/daily-room", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create" }),
+      });
+      const data = await resp.json();
+      if (data.success) {
+        setRoomUrl(data.roomUrl);
+        setRoomName(data.roomName);
+        return data.roomUrl;
+      } else {
+        alert("Error al crear sala: " + (data.error || "desconocido"));
+        return null;
+      }
+    } catch (e) {
+      alert("Error de conexión al crear sala");
+      return null;
+    } finally {
+      setCreandoSala(false);
+    }
   }
 
-  // VÍCTIMA simula recibir solicitudes (en producción viene por Supabase Realtime)
+  // Unirse a la sala con iframe de Daily Prebuilt
+  function unirseSala(url) {
+    if (!url || !iframeContainerRef.current) return;
+    iframeContainerRef.current.innerHTML = "";
+    const iframe = document.createElement("iframe");
+    iframe.src = url + "?showLeaveButton=true&showFullscreenButton=true";
+    iframe.style.width = "100%";
+    iframe.style.height = "300px";
+    iframe.style.borderRadius = "12px";
+    iframe.style.border = "1px solid rgba(255,255,255,0.1)";
+    iframe.allow = "microphone; camera; autoplay; display-capture";
+    iframeContainerRef.current.appendChild(iframe);
+    dailyFrameRef.current = iframe;
+    setEnVivo(true);
+    setAudioActivo(true);
+  }
+
+  // Terminar sesión
+  function terminarSesion() {
+    if (dailyFrameRef.current) {
+      dailyFrameRef.current.remove();
+      dailyFrameRef.current = null;
+    }
+    if (roomName) {
+      fetch("/api/daily-room", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", roomName }),
+      }).catch(() => {});
+    }
+    setEnVivo(false);
+    setAudioActivo(false);
+    setVideoActivo(false);
+    setRoomUrl(null);
+    setRoomName(null);
+    onClose();
+  }
+
+  // CUIDADOR envía solicitudes + crea sala
+  async function enviarSolicitudes() {
+    if (!contactoSel) return;
+    const items = [];
+    if (solicitudes.ubicacion) items.push("Ver tu ubicacion en tiempo real");
+    if (solicitudes.audio) items.push("Escuchar tu entorno (audio en vivo)");
+    if (solicitudes.video) items.push("Ver tu camara (video en vivo) [Premium]");
+    if (items.length === 0) { alert("Selecciona al menos 1 solicitud."); return; }
+
+    // Crear sala Daily.co
+    const salaUrl = await crearSalaDaily();
+    if (!salaUrl) return;
+
+    const location = await getCurrentLocationWithFallback();
+    const msg = `TRAZA 360 - TE VIGILO ACTIVADO\n\nQuiero cuidarte. Te pido permiso para:\n\n${items.map((it, i) => `${i+1}. ${it}`).join("\n")}\n\nUni a la sala segura:\n${salaUrl}\n\nO abri la app Traza 360 y acepta.\nApp: https://traza-360-web.vercel.app`;
+    enviarWhatsApp(contactoSel.telefono, msg);
+    setPaso("panel_cuidador");
+    // Cuidador se une automáticamente
+    setTimeout(() => unirseSala(salaUrl), 500);
+  }
+
+  // VÍCTIMA simula recibir solicitudes
   function simularRecepcion() {
     setCuidadorNombre("Cuidador");
     setSolicitudesRecibidas([
@@ -1076,26 +1155,34 @@ function CuidadoModal({ onClose, contactos = [] }) {
     if (aceptar) setPermisosActivos(prev => ({ ...prev, [key]: true }));
   }
 
-  function confirmarPermisos() {
+  async function confirmarPermisos() {
     const aceptados = solicitudesRecibidas.filter(s => s.estado === "aceptado").map(s => s.key);
-    if (aceptados.length > 0 && contactos.length > 0) {
-      const textos = [];
-      if (aceptados.includes("ubicacion")) textos.push("Ver mi ubicacion");
-      if (aceptados.includes("audio")) textos.push("Escuchar mi entorno");
-      if (aceptados.includes("video")) textos.push("Ver mi camara");
-      openWhatsAppToContact(contactos[0].telefono, `TRAZA 360 - Acepte que me cuides.\n\nPermisos:\n${textos.map(t => "- " + t).join("\n")}\n\nEstoy protegido/a.`);
+    if (aceptados.length > 0) {
+      // Crear sala para víctima si no existe
+      let url = roomUrl;
+      if (!url) {
+        url = await crearSalaDaily();
+      }
+      if (contactos.length > 0) {
+        const textos = [];
+        if (aceptados.includes("ubicacion")) textos.push("Ver mi ubicacion");
+        if (aceptados.includes("audio")) textos.push("Escuchar mi entorno");
+        if (aceptados.includes("video")) textos.push("Ver mi camara");
+        enviarWhatsApp(contactos[0].telefono, `TRAZA 360 - Acepte que me cuides.\n\nPermisos:\n${textos.map(t => "- " + t).join("\n")}\n\nSala segura: ${url || "Abri la app"}\n\nEstoy protegido/a.`);
+      }
+      if (url) setTimeout(() => unirseSala(url), 500);
     }
     setPaso("cuidado_activo");
   }
 
   function handleEstoyBien() {
-    if (contactos.length > 0) openWhatsAppToContact(contactos[0].telefono, "Estoy bien. Todo en orden.");
+    if (contactos.length > 0) enviarWhatsApp(contactos[0].telefono, "Estoy bien. Todo en orden.");
   }
 
   function handleAyuda() {
     if (contactos.length > 0) {
       getCurrentLocationWithFallback().then(({ location }) => {
-        openWhatsAppToContact(contactos[0].telefono, buildMessageWithReply("AYUDA URGENTE - Necesito ayuda ahora.", location));
+        enviarWhatsApp(contactos[0].telefono, buildMessageWithReply("AYUDA URGENTE - Necesito ayuda ahora.", location));
       });
     }
   }
@@ -1107,7 +1194,7 @@ function CuidadoModal({ onClose, contactos = [] }) {
       <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0d1426] p-6 shadow-2xl my-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold">{"\u{1FAC2}"} Estoy a tu cuidado</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl">{"\u00D7"}</button>
+          <button onClick={terminarSesion} className="text-slate-400 hover:text-white text-2xl">{"\u00D7"}</button>
         </div>
 
         {/* ELEGIR MODO */}
@@ -1201,17 +1288,47 @@ function CuidadoModal({ onClose, contactos = [] }) {
           </div>
         )}
 
-        {/* CUIDADOR: ESPERANDO */}
-        {modo === "cuidador" && paso === "esperando" && (
-          <div className="text-center py-6">
-            <div className="text-4xl mb-3 animate-pulse">{"\u{1F4E9}"}</div>
-            <div className="text-lg font-bold text-slate-100">Solicitud enviada</div>
-            <p className="mt-2 text-sm text-slate-400">Esperando que {contactoSel?.nombre} acepte tus permisos en su app.</p>
-            <p className="mt-4 text-xs text-slate-500">Cuando acepte, podrás ver su ubicación, escuchar su entorno o ver su cámara desde acá.</p>
-            <div className="mt-4 rounded-xl bg-white/5 border border-white/10 p-3">
-              <div className="text-[11px] text-slate-400">Próximamente: panel en vivo del cuidador con mapa, audio y video.</div>
+        {/* CUIDADOR: PANEL EN VIVO (Daily.co) */}
+        {modo === "cuidador" && paso === "panel_cuidador" && (
+          <div className="space-y-3">
+            <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-3 text-center">
+              <div className="text-sm font-semibold text-emerald-300">
+                {enVivo ? `${"\u{1F7E2}"} EN VIVO — Cuidando a ${contactoSel?.nombre}` : `${"\u{1F4E9}"} Esperando que ${contactoSel?.nombre} se una...`}
+              </div>
+              {roomUrl && <div className="text-[10px] text-slate-500 mt-1 break-all">Sala: {roomUrl}</div>}
             </div>
-            <button onClick={onClose} className="mt-4 w-full rounded-xl border border-white/10 bg-white/5 py-3 text-sm text-slate-400">Cerrar</button>
+
+            {/* Panel de audio/video Daily.co */}
+            <div ref={iframeContainerRef} className="rounded-xl overflow-hidden">
+              {!enVivo && (
+                <div className="bg-white/5 border border-white/10 rounded-xl p-6 text-center">
+                  <div className="text-3xl mb-2 animate-pulse">{"\u{1F4E1}"}</div>
+                  <div className="text-sm text-slate-400">{creandoSala ? "Creando sala segura..." : "Sala creada. Esperando conexión..."}</div>
+                  <div className="text-[10px] text-slate-500 mt-2">El link fue enviado por WhatsApp a {contactoSel?.nombre}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Controles del cuidador */}
+            {enVivo && (
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => setAudioActivo(!audioActivo)}
+                  className={`rounded-xl py-3 text-center border ${audioActivo ? "bg-emerald-500/20 border-emerald-500/30" : "bg-red-500/20 border-red-500/30"}`}>
+                  <div className="text-lg">{audioActivo ? "\u{1F3A7}" : "\u{1F507}"}</div>
+                  <div className={`text-[10px] mt-1 ${audioActivo ? "text-emerald-300" : "text-red-300"}`}>{audioActivo ? "Audio ON" : "Audio OFF"}</div>
+                </button>
+                <button onClick={() => setVideoActivo(!videoActivo)}
+                  className={`rounded-xl py-3 text-center border ${videoActivo ? "bg-emerald-500/20 border-emerald-500/30" : "bg-white/5 border-white/10"}`}>
+                  <div className="text-lg">{videoActivo ? "\u{1F4F9}" : "\u{1F4F7}"}</div>
+                  <div className={`text-[10px] mt-1 ${videoActivo ? "text-emerald-300" : "text-slate-400"}`}>{videoActivo ? "Video ON" : "Video OFF"}</div>
+                </button>
+              </div>
+            )}
+
+            <button onClick={terminarSesion}
+              className="w-full rounded-xl bg-red-500/20 border border-red-500/30 py-3 text-sm font-semibold text-red-300">
+              {"\u23F9\u{FE0F}"} Terminar sesión
+            </button>
           </div>
         )}
 
@@ -1253,7 +1370,7 @@ function CuidadoModal({ onClose, contactos = [] }) {
           </div>
         )}
 
-        {/* VÍCTIMA: CUIDADO ACTIVO */}
+        {/* VÍCTIMA: CUIDADO ACTIVO CON AUDIO/VIDEO */}
         {paso === "cuidado_activo" && (
           <div className="text-center space-y-4">
             <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
@@ -1261,10 +1378,20 @@ function CuidadoModal({ onClose, contactos = [] }) {
               <div className="text-sm font-semibold text-emerald-300">Te están cuidando</div>
               <div className="mt-3 flex flex-wrap justify-center gap-2">
                 {permisosActivos.ubicacion && <span className="rounded-lg bg-white/10 px-2 py-1 text-[11px] text-slate-300">{"\u{1F4CD}"} Ubicación</span>}
-                {permisosActivos.audio && <span className="rounded-lg bg-white/10 px-2 py-1 text-[11px] text-slate-300">{"\u{1F3A7}"} Audio</span>}
-                {permisosActivos.video && <span className="rounded-lg bg-white/10 px-2 py-1 text-[11px] text-slate-300">{"\u{1F4F9}"} Video</span>}
+                {permisosActivos.audio && <span className="rounded-lg bg-emerald-500/20 px-2 py-1 text-[11px] text-emerald-300">{"\u{1F3A7}"} Audio EN VIVO</span>}
+                {permisosActivos.video && <span className="rounded-lg bg-cyan-500/20 px-2 py-1 text-[11px] text-cyan-300">{"\u{1F4F9}"} Video EN VIVO</span>}
               </div>
             </div>
+
+            {/* Daily.co iframe para víctima */}
+            <div ref={iframeContainerRef} className="rounded-xl overflow-hidden" />
+
+            {(permisosActivos.audio || permisosActivos.video) && !enVivo && roomUrl && (
+              <button onClick={() => unirseSala(roomUrl)}
+                className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white shadow-lg">
+                {"\u{1F3A7}"} Conectar audio/video en vivo
+              </button>
+            )}
 
             <div className="grid grid-cols-3 gap-2">
               <button onClick={handleEstoyBien} className="rounded-xl bg-emerald-500/20 border border-emerald-500/30 py-3 text-center">
@@ -1273,7 +1400,7 @@ function CuidadoModal({ onClose, contactos = [] }) {
               <button onClick={handleAyuda} className="rounded-xl bg-red-500/20 border border-red-500/30 py-3 text-center">
                 <div className="text-xl">{"\u{1F198}"}</div><div className="text-[10px] text-red-300 mt-1">Ayuda</div>
               </button>
-              <button onClick={onClose} className="rounded-xl bg-white/5 border border-white/10 py-3 text-center">
+              <button onClick={terminarSesion} className="rounded-xl bg-white/5 border border-white/10 py-3 text-center">
                 <div className="text-xl">{"\u23F9\u{FE0F}"}</div><div className="text-[10px] text-slate-400 mt-1">Terminar</div>
               </button>
             </div>
@@ -1340,8 +1467,8 @@ const MODULES = [
       { key: "accidente", icon: "\u{1FA79}", name: "Accidente doméstico", desc: "Aviso.", type: "alert_contacts", message: "ALERTA - Accidente doméstico." },
       { key: "emergencia", icon: "\u{1F198}", name: "Emergencia en el hogar", desc: "Alerta máxima.", type: "alert_contacts", message: "EMERGENCIA en el hogar." },
     ]},
-  { key: "trabajo", emoji: "\u{1F303}", title: "Trabajo seguro", desc: "Protección nocturna y domicilios.",
-    color: "from-emerald-500 to-teal-500", border: "border-emerald-500/20", accentBg: "bg-emerald-500/10", accentBorder: "border-emerald-500/30", accentText: "text-emerald-300",
+  { key: "trabajo", emoji: "\u{1F303}", title: "Zonas de riesgo", desc: "Protección en áreas peligrosas.",
+    color: "from-pink-500 to-purple-500", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.3)]", accentText: "text-[#d4af37]",
     actions: [
       { key: "peligro", icon: "\u{1F6A8}", name: "Estoy en peligro (SOS)", desc: "Alerta inmediata.", type: "alert_contacts", message: "SOS - En peligro durante mi trabajo." },
       { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
@@ -1398,10 +1525,14 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
 
   return (
     <>
-      <div className={`rounded-2xl border ${m.border} bg-[#11182e] p-5 flex flex-col`}>
+      <div className={`rounded-2xl border p-5 flex flex-col`} style={{
+        background: "linear-gradient(145deg, #12121a, #0c0c12)",
+        border: "1px solid rgba(212,175,55,0.1)",
+        boxShadow: "6px 6px 18px rgba(0,0,0,0.5), -3px -3px 10px rgba(212,175,55,0.01), inset 0 1px 0 rgba(212,175,55,0.04)",
+      }}>
         <div className="mb-3 flex items-center gap-3">
           <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${m.color} shadow-lg`}><span className="text-2xl">{m.emoji}</span></div>
-          <h4 className="text-base font-bold text-slate-100">{m.title}</h4>
+          <h4 className="text-base font-bold" style={{ color: "#d4af37" }}>{m.title}</h4>
         </div>
         <p className="mb-4 text-sm text-slate-400">{m.desc}</p>
         <button onClick={() => setExpanded(!expanded)}
@@ -1412,10 +1543,14 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
           <div className="mt-4 space-y-2">
             {m.actions.map(a => (
               <button key={a.key} onClick={() => handleAction(a)}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left hover:bg-white/10 active:scale-[0.98]">
+                className="w-full rounded-xl px-4 py-3 text-left active:scale-[0.98]" style={{
+                  background: "linear-gradient(145deg, #16161f, #0c0c12)",
+                  border: "1px solid rgba(212,175,55,0.06)",
+                  boxShadow: "3px 3px 8px rgba(0,0,0,0.4), -2px -2px 6px rgba(212,175,55,0.01)",
+                }}>
                 <div className="flex items-start gap-3">
                   <span className="text-xl shrink-0">{a.icon}</span>
-                  <div><div className="text-sm font-semibold text-slate-100">{a.name}</div><div className="mt-0.5 text-[11px] text-slate-400">{a.desc}</div></div>
+                  <div><div className="text-sm font-semibold text-white">{a.name}</div><div className="mt-0.5 text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{a.desc}</div></div>
                 </div>
               </button>
             ))}
@@ -1431,12 +1566,12 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
 
 // ─── AUTH SCREENS ────────────────────────────
 function Field({ label, type = "text", placeholder, value, onChange }) {
-  return (<label className="block space-y-2 text-left"><span className="text-sm font-medium text-slate-300">{label}</span>
+  return (<label className="block space-y-2 text-left"><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(212,175,55,0.6)" }}>{label}</span>
     <input type={type} value={value} onChange={onChange} placeholder={placeholder}
-      className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400/50" /></label>);
+      className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600" style={{ background: "linear-gradient(145deg, #121218, #0a0a0e)", border: "1px solid rgba(212,175,55,0.1)", boxShadow: "inset 3px 3px 6px rgba(0,0,0,0.4), inset -2px -2px 4px rgba(212,175,55,0.02)" }} /></label>);
 }
 
-function AccessCard({ children }) { return <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-xl md:p-8">{children}</div>; }
+function AccessCard({ children }) { return <div className="w-full max-w-md rounded-3xl p-6 shadow-2xl md:p-8" style={{ background: "linear-gradient(145deg, #13131d, #0a0a12)", border: "1px solid rgba(212,175,55,0.1)", boxShadow: "8px 8px 24px rgba(0,0,0,0.6), -4px -4px 12px rgba(212,175,55,0.01)" }}>{children}</div>; }
 
 function LoginScreen({ onBack, onSuccess }) {
   const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [loading, setLoading] = useState(false); const [error, setError] = useState("");
@@ -1445,14 +1580,14 @@ function LoginScreen({ onBack, onSuccess }) {
     setLoading(true); const r = await signIn(email.trim(), password); setLoading(false);
     if (r.success) onSuccess(); else setError(r.error.includes("Invalid") ? "Email o contraseña incorrectos." : r.error);
   }
-  return (<div className="flex min-h-screen items-center justify-center bg-[#07111f] px-5 py-8 text-white"><AccessCard>
-    <button onClick={onBack} className="text-sm text-cyan-300">← Volver</button>
-    <h2 className="mt-5 text-center text-2xl font-bold">Ingresar</h2>
+  return (<div className="flex min-h-screen items-center justify-center px-5 py-8 text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 100%)" }}><AccessCard>
+    <button onClick={onBack} className="text-sm font-semibold" style={{ color: "#d4af37" }}>← Volver</button>
+    <h2 className="mt-5 text-center text-2xl font-bold text-white">Ingresar</h2>
     <div className="mt-6 space-y-4">
       <Field label="Email" type="email" placeholder="tu@email.com" value={email} onChange={e => setEmail(e.target.value)} />
       <Field label="Contraseña" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
       {error && <p className="text-xs text-red-400 text-center">{error}</p>}
-      <button onClick={handle} disabled={loading} className="w-full rounded-2xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 py-3.5 font-semibold text-white shadow-lg disabled:opacity-50">{loading ? "Ingresando..." : "Ingresar"}</button>
+      <button onClick={handle} disabled={loading} className="w-full rounded-xl py-3.5 font-bold text-black shadow-lg disabled:opacity-50" style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)", boxShadow: "0 6px 20px rgba(212,175,55,0.25)" }}>{loading ? "Ingresando..." : "Ingresar"}</button>
     </div></AccessCard></div>);
 }
 
@@ -1465,35 +1600,76 @@ function RegisterScreen({ onBack, onSuccess, setPendingName }) {
     const r = await signUp(email.trim(), password, name.trim()); setLoading(false);
     if (r.success) onSuccess(); else setError(r.error.includes("already") ? "Email ya registrado." : r.error);
   }
-  return (<div className="flex min-h-screen items-center justify-center bg-[#07111f] px-5 py-8 text-white"><AccessCard>
-    <button onClick={onBack} className="text-sm text-cyan-300">← Volver</button>
-    <h2 className="mt-5 text-center text-2xl font-bold">Crear cuenta</h2>
+  return (<div className="flex min-h-screen items-center justify-center px-5 py-8 text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 100%)" }}><AccessCard>
+    <button onClick={onBack} className="text-sm font-semibold" style={{ color: "#d4af37" }}>← Volver</button>
+    <h2 className="mt-5 text-center text-2xl font-bold text-white">Crear cuenta</h2>
     <div className="mt-6 space-y-4">
       <Field label="Nombre completo" placeholder="Nombre y apellido" value={name} onChange={e => setName(e.target.value)} />
       <Field label="Email" type="email" placeholder="tu@email.com" value={email} onChange={e => setEmail(e.target.value)} />
       <Field label="Contraseña" type="password" placeholder="Mínimo 6 caracteres" value={password} onChange={e => setPassword(e.target.value)} />
       {error && <p className="text-xs text-red-400 text-center">{error}</p>}
-      <button onClick={handle} disabled={loading} className="w-full rounded-2xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 py-3.5 font-semibold text-white shadow-lg disabled:opacity-50">{loading ? "Creando..." : "Crear cuenta"}</button>
+      <button onClick={handle} disabled={loading} className="w-full rounded-xl py-3.5 font-bold text-black shadow-lg disabled:opacity-50" style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)", boxShadow: "0 6px 20px rgba(212,175,55,0.25)" }}>{loading ? "Creando..." : "Crear cuenta"}</button>
     </div></AccessCard></div>);
+}
+
+// ─── EAGLE EYE LOGO ─────────────────────────
+function EagleEyeLogo({ size = 80 }) {
+  return (
+    <div style={{ display: "inline-block" }}>
+      <svg viewBox="0 0 200 200" width={size} height={size}>
+        <defs>
+          <linearGradient id="shieldGold" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#d4af37"/><stop offset="50%" stopColor="#f5e6a3"/><stop offset="100%" stopColor="#d4af37"/></linearGradient>
+          <linearGradient id="shieldDark" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#1a1a2e"/><stop offset="100%" stopColor="#0a0a14"/></linearGradient>
+          <linearGradient id="eyeGlow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#d4af37"/><stop offset="100%" stopColor="#b8860b"/></linearGradient>
+          <filter id="goldGlow"><feGaussianBlur stdDeviation="3" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter>
+        </defs>
+        <path d="M100 10 L185 50 L185 110 C185 155 145 185 100 195 C55 185 15 155 15 110 L15 50 Z" fill="url(#shieldDark)" stroke="url(#shieldGold)" strokeWidth="3"/>
+        <path d="M100 22 L175 57 L175 112 C175 150 140 177 100 186 C60 177 25 150 25 112 L25 57 Z" fill="none" stroke="rgba(212,175,55,0.25)" strokeWidth="1"/>
+        <ellipse cx="100" cy="105" rx="52" ry="32" fill="none" stroke="url(#eyeGlow)" strokeWidth="2.5" filter="url(#goldGlow)"/>
+        <path d="M52 105 Q76 78 100 78 Q124 78 148 105 Q124 132 100 132 Q76 132 52 105 Z" fill="rgba(212,175,55,0.08)" stroke="rgba(212,175,55,0.4)" strokeWidth="1"/>
+        <circle cx="100" cy="105" r="20" fill="url(#eyeGlow)" opacity="0.9"/>
+        <circle cx="100" cy="105" r="10" fill="#0a0a14"/>
+        <circle cx="106" cy="99" r="4" fill="rgba(245,230,163,0.7)"/>
+        <circle cx="94" cy="109" r="2" fill="rgba(245,230,163,0.4)"/>
+        <path d="M48 90 Q74 65 100 68" fill="none" stroke="url(#eyeGlow)" strokeWidth="2" strokeLinecap="round"/>
+        <path d="M152 90 Q126 65 100 68" fill="none" stroke="url(#eyeGlow)" strokeWidth="2" strokeLinecap="round"/>
+        <path d="M38 100 L28 92" stroke="rgba(212,175,55,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
+        <path d="M40 108 L28 108" stroke="rgba(212,175,55,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
+        <path d="M162 100 L172 92" stroke="rgba(212,175,55,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
+        <path d="M160 108 L172 108" stroke="rgba(212,175,55,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
+        <polygon points="100,28 103,36 111,36 105,41 107,49 100,45 93,49 95,41 89,36 97,36" fill="#d4af37" opacity="0.9"/>
+        <polygon points="60,48 62,52 66,52 63,55 64,59 60,57 56,59 57,55 54,52 58,52" fill="#d4af37" opacity="0.5"/>
+        <polygon points="140,48 142,52 146,52 143,55 144,59 140,57 136,59 137,55 134,52 138,52" fill="#d4af37" opacity="0.5"/>
+        <text x="100" y="165" textAnchor="middle" fill="#d4af37" fontSize="11" fontWeight="800" letterSpacing="4" fontFamily="sans-serif">TRAZA 360</text>
+        <text x="100" y="178" textAnchor="middle" fill="rgba(212,175,55,0.5)" fontSize="7" letterSpacing="2" fontFamily="sans-serif">PROTECCIÓN</text>
+      </svg>
+    </div>
+  );
 }
 
 // ─── LANDING ────────────────────────────────
 function LandingScreen({ onScreen }) {
   return (
-    <div className="min-h-screen bg-[#05080f] text-slate-100">
+    <div className="min-h-screen text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 50%, #050508 100%)" }}>
       <section className="px-5 pt-16 pb-12 text-center">
-        <div className="mb-4 flex items-center justify-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-sky-500"><span className="text-xl">{"\u{1F6E1}\u{FE0F}"}</span></div>
-          <h1 className="bg-gradient-to-r from-slate-100 to-slate-400 bg-clip-text text-3xl font-extrabold text-transparent">TRAZA 360</h1>
+        <div className="mb-4 flex justify-center">
+          <EagleEyeLogo size={100} />
         </div>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Última señal. Respuesta real.</p>
-        <h2 className="mt-4 max-w-3xl text-3xl font-bold leading-tight md:text-5xl mx-auto">
-          Cuando cada segundo importa,<span className="bg-gradient-to-r from-purple-400 to-sky-400 bg-clip-text text-transparent"> Traza 360 responde.</span>
+        <p className="text-[10px] font-semibold uppercase tracking-[5px]" style={{ color: "rgba(212,175,55,0.4)" }}>Última señal. Respuesta real.</p>
+        <h2 className="mt-4 max-w-3xl text-2xl font-bold leading-tight md:text-4xl mx-auto text-white">
+          Cuando cada segundo importa,<br/><span style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}> Traza 360 responde.</span>
         </h2>
       </section>
       <div className="px-5 pb-12"><div className="mx-auto flex w-full max-w-sm flex-col gap-3">
-        <button onClick={() => onScreen("login")} className="w-full rounded-2xl bg-gradient-to-r from-purple-500 to-sky-500 px-4 py-4 font-semibold text-white shadow-lg">Ingresar</button>
-        <button onClick={() => onScreen("register")} className="w-full rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-4 font-semibold text-white">Crear cuenta</button>
+        <button onClick={() => onScreen("login")} className="w-full rounded-2xl px-4 py-4 font-semibold text-black shadow-lg" style={{
+          background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)",
+          boxShadow: "0 8px 30px rgba(212,175,55,0.25)",
+        }}>Ingresar</button>
+        <button onClick={() => onScreen("register")} className="w-full rounded-2xl px-4 py-4 font-semibold text-white" style={{
+          background: "linear-gradient(145deg, #13131d, #0e0e16)",
+          border: "1px solid rgba(212,175,55,0.15)",
+          boxShadow: "5px 5px 14px rgba(0,0,0,0.5), -3px -3px 10px rgba(212,175,55,0.01)",
+        }}>Crear cuenta</button>
       </div></div>
       <WhatsAppFloatingButton />
     </div>
@@ -1525,7 +1701,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
   const quickCards = [
     { key: "cuidado", emoji: "\u{1F985}", title: "Te vigilo", text: "Alguien te cuida. Vos elegís qué ve.", big: true },
     { key: "violencia", emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de género", text: "Pánico, grabación y red de apoyo." },
-    { key: "trabajo", emoji: "\u{1F303}", title: "Trabajo seguro", text: "Protección nocturna y domicilios." },
+    { key: "trabajo", emoji: "\u{1F303}", title: "Zonas de riesgo", text: "Protección en áreas peligrosas." },
     { key: "adolescente", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente seguro", text: "Anti-bullying, GPS y geocercas." },
     { key: "adulto_mayor", emoji: "\u{1FAF6}", title: "Adulto mayor seguro", text: "Medicamentos, caídas y geocercas." },
     { key: "hogar", emoji: "\u{1F3E0}", title: "Hogar seguro", text: "Intrusos, vecinos y accidentes." },
@@ -1548,40 +1724,67 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#07111f] px-5 py-8 pb-24 text-white">
+    <div className="min-h-screen px-5 py-8 pb-24 text-white" style={{ background: "linear-gradient(180deg, #0a0a10 0%, #0d0d16 40%, #0a0a10 100%)" }}>
       <div className="mx-auto max-w-6xl">
-        <div className="mb-8 rounded-3xl border border-white/10 bg-white/5 p-6 md:p-8">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div><p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Panel inicial</p>
-              <h2 className="mt-2 text-2xl font-bold md:text-3xl">Bienvenido/a, {nombreUsuario} {"\u{1F44B}"}</h2>
-              <p className="mt-2 text-sm text-slate-400">
-                Plan: <span className="text-cyan-300 font-semibold">{PLAN_PRICES[userPlan]?.name || "Gratis"}</span>
-                {contactos.length === 0 && <span className="text-orange-300"> · Agregá contactos de confianza</span>}
-              </p></div>
-            <button onClick={handleLogout} disabled={loggingOut} className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-50">
+        {/* Header con logo águila */}
+        <div className="mb-6 text-center">
+          <EagleEyeLogo size={80} />
+          <p className="text-[10px] uppercase tracking-[4px] mt-1" style={{ color: "rgba(212,175,55,0.4)" }}>Sistema de protección</p>
+        </div>
+
+        {/* Bienvenida */}
+        <div className="mb-6 rounded-2xl p-5" style={{
+          background: "linear-gradient(145deg, #13131d, #0e0e16)",
+          border: "1px solid rgba(212,175,55,0.1)",
+          boxShadow: "6px 6px 18px rgba(0,0,0,0.5), -3px -3px 10px rgba(212,175,55,0.01), inset 0 1px 0 rgba(212,175,55,0.04)",
+        }}>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-[3px]" style={{ color: "#d4af37" }}>Panel inicial</p>
+              <h2 className="mt-2 text-xl font-bold text-white">Bienvenido/a, {nombreUsuario} {"\u{1F44B}"}</h2>
+              <p className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                Plan: <span className="font-semibold" style={{ color: "#d4af37" }}>{PLAN_PRICES[userPlan]?.name || "Gratis"}</span>
+                {contactos.length === 0 && <span className="text-orange-300"> · Agregá contactos</span>}
+              </p>
+            </div>
+            <button onClick={handleLogout} disabled={loggingOut} className="shrink-0 rounded-xl px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50" style={{
+              background: "linear-gradient(145deg, #16161f, #0c0c12)",
+              border: "1px solid rgba(212,175,55,0.1)",
+              boxShadow: "3px 3px 8px rgba(0,0,0,0.5), -2px -2px 6px rgba(212,175,55,0.01)",
+            }}>
               {loggingOut ? "Cerrando..." : "Cerrar sesión"}</button>
           </div>
         </div>
 
         {activeModule ? (
           <div className="mb-8">
-            <button onClick={() => setActiveModule(null)} className="mb-4 text-sm text-cyan-300">{"\u2190"} Volver al panel</button>
+            <button onClick={() => setActiveModule(null)} className="mb-4 text-sm font-semibold" style={{ color: "#d4af37" }}>{"\u2190"} Volver al panel</button>
             <ModuleCard m={activeModule} autoExpand={true} contactos={contactos} onOpenPastillero={() => { setActiveModule(null); setActiveScreen("pastillero"); }} onOpenEvidencias={() => { setActiveModule(null); setActiveScreen("evidencias"); }} />
           </div>
         ) : (
           <>
-            <h3 className="mb-4 text-lg font-bold text-slate-200">Qué necesitás hoy?</h3>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <h3 className="mb-4 text-sm font-bold uppercase tracking-[2px]" style={{ color: "rgba(212,175,55,0.5)" }}>Qué necesitás hoy?</h3>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {quickCards.map(card => (
                 <button key={card.key} onClick={() => handleCard(card.key)}
-                  className={`text-left rounded-2xl border p-5 hover:bg-white/10 hover:border-cyan-400/30 active:scale-[0.98] ${
-                    card.big ? "border-cyan-400/40 bg-gradient-to-br from-cyan-500/10 to-sky-500/5 sm:col-span-2 xl:col-span-3" :
-                    (card.key === "contactos" && contactos.length === 0) ? "border-orange-500/40 bg-orange-500/10" : "border-white/10 bg-white/5"
-                  }`}>
-                  <div className={`mb-2 ${card.big ? "text-5xl" : "text-2xl"}`}>{card.emoji}</div>
-                  <div className={`font-semibold text-slate-100 ${card.big ? "text-xl" : "text-base"}`}>{card.title}</div>
-                  <p className="mt-2 text-sm text-slate-400">{card.text}</p>
-                  <div className="mt-3 text-xs font-semibold text-cyan-300">Abrir {"\u2192"}</div>
+                  className={`text-left rounded-2xl p-5 active:scale-[0.98] transition-all ${card.big ? "sm:col-span-2 xl:col-span-3" : ""}`}
+                  style={{
+                    background: card.big
+                      ? "linear-gradient(135deg, rgba(212,175,55,0.08), rgba(184,134,11,0.04))"
+                      : card.key === "contactos" && contactos.length === 0
+                      ? "linear-gradient(135deg, rgba(234,88,12,0.1), rgba(234,88,12,0.05))"
+                      : "linear-gradient(145deg, #12121a, #0c0c12)",
+                    border: card.big
+                      ? "1px solid rgba(212,175,55,0.2)"
+                      : card.key === "contactos" && contactos.length === 0
+                      ? "1px solid rgba(234,88,12,0.3)"
+                      : "1px solid rgba(212,175,55,0.08)",
+                    boxShadow: "5px 5px 14px rgba(0,0,0,0.4), -2px -2px 8px rgba(212,175,55,0.01), inset 0 1px 0 rgba(212,175,55,0.03)",
+                  }}>
+                  <div className={`mb-2 ${card.big ? "text-4xl" : "text-2xl"}`}>{card.emoji}</div>
+                  <div className={`font-bold ${card.big ? "text-lg" : "text-sm"}`} style={{ color: "#d4af37" }}>{card.title}</div>
+                  <p className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{card.text}</p>
+                  <div className="mt-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: "rgba(212,175,55,0.5)" }}>Abrir {"\u2192"}</div>
                 </button>
               ))}
             </div>
@@ -1590,14 +1793,23 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
       </div>
       {showTerceroModal && <CuidadoModal contactos={contactos} onClose={() => setShowTerceroModal(false)} />}
 
-      {/* BOTÓN DE PÁNICO FLOTANTE */}
+      {/* BOTÓN DE PÁNICO FLOTANTE - Premium */}
       <div className="fixed bottom-5 right-5 z-50">
-        <button onClick={handlePanico}
-          className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-xl shadow-red-500/30 hover:scale-110 active:scale-95 animate-pulse">
-          <span className="text-2xl">{"\u{1F6A8}"}</span>
-        </button>
-        <div className="text-[9px] text-red-300 text-center mt-1 font-semibold">PÁNICO</div>
+        <div style={{ position: "relative" }}>
+          <div style={{ position: "absolute", inset: "-6px", borderRadius: "50%", border: "1px solid rgba(212,175,55,0.12)", animation: "panicPulse 2.5s infinite" }} />
+          <button onClick={handlePanico}
+            className="flex h-16 w-16 items-center justify-center rounded-full text-white active:scale-95"
+            style={{
+              background: "linear-gradient(145deg, #b91c1c, #991b1b)",
+              border: "2px solid rgba(212,175,55,0.25)",
+              boxShadow: "6px 6px 18px rgba(0,0,0,0.7), -3px -3px 10px rgba(139,0,0,0.1), 0 0 40px rgba(185,28,28,0.15)",
+            }}>
+            <span className="text-2xl">{"\u{1F6A8}"}</span>
+          </button>
+        </div>
+        <div className="text-[9px] text-center mt-1 font-bold uppercase tracking-wider" style={{ color: "#d4af37" }}>Pánico</div>
       </div>
+      <style>{`@keyframes panicPulse { 0%,100%{opacity:0.3;transform:scale(1)} 50%{opacity:0.7;transform:scale(1.08)} }`}</style>
     </div>
   );
 }
@@ -1720,9 +1932,9 @@ export default function App() {
   if (screen === "calculadora") return <CalculadoraScreen onUnlock={handleUnlockCalc} />;
 
   if (screen === "loading") return (
-    <div className="flex min-h-screen items-center justify-center bg-[#05080f] text-slate-100"><div className="text-center">
-      <div className="mb-4 flex items-center justify-center"><div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-sky-500 shadow-lg animate-pulse"><span className="text-3xl">{"\u{1F6E1}\u{FE0F}"}</span></div></div>
-      <div className="text-lg font-bold">TRAZA 360</div><div className="text-xs text-slate-400 mt-1">Cargando...</div>
+    <div className="flex min-h-screen items-center justify-center text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 100%)" }}><div className="text-center">
+      <div className="mb-4 flex items-center justify-center"><EagleEyeLogo size={80} /></div>
+      <div className="text-xs mt-2" style={{ color: "rgba(212,175,55,0.4)" }}>Cargando...</div>
     </div></div>
   );
 
