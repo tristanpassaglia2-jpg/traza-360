@@ -10,6 +10,7 @@ import { signUp, signIn, signOut, getCurrentUser, supabase, getContactos, addCon
    2. Logo escudo con ojo de águila (SVG)
    3. Módulo "Zonas de riesgo" (ex Trabajo nocturno)
    4. Daily.co WebRTC audio/video en vivo
+   
    5. WhatsApp automático vía Twilio API
    ═══════════════════════════════════════════════════════════════ */
 
@@ -153,7 +154,7 @@ async function enviarWhatsAppSilencioso(numero, text) {
 }
 
 // Mantener compatibilidad con código existente
-function openWhatsAppToContact(numero, text) {
+function enviarWhatsApp(numero, text) {
   enviarWhatsApp(numero, text);
 }
 
@@ -170,7 +171,7 @@ function buildMessageWithReply(baseMessage, loc) {
 
 async function sendAlertToContact(contact, baseMessage) {
   const { location } = await getCurrentLocationWithFallback();
-  openWhatsAppToContact(contact.telefono, buildMessageWithReply(baseMessage, location));
+  enviarWhatsApp(contact.telefono, buildMessageWithReply(baseMessage, location));
 }
 
 function openMapsTo(d) { window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(d)}`, "_blank", "noopener,noreferrer"); }
@@ -350,7 +351,7 @@ function TimerLugarModal({ onClose, contactos }) {
     if (contactos.length > 0) {
       getCurrentLocationWithFallback().then(({ location }) => {
         const msg = buildMessageWithReply(`Entro a un lugar desconocido. Si no aviso en ${minutos} minutos, necesito ayuda.`, location);
-        openWhatsAppToContact(contactos[0].telefono, msg);
+        enviarWhatsApp(contactos[0].telefono, msg);
       });
     }
   }
@@ -367,7 +368,7 @@ function TimerLugarModal({ onClose, contactos }) {
           if (contactos.length > 0) {
             getCurrentLocationWithFallback().then(({ location }) => {
               const msg = buildMessageWithReply("ALERTA AUTOMATICA - No confirmó que está bien después de entrar a un lugar desconocido. Verificar urgente.", location);
-              openWhatsAppToContact(contactos[0].telefono, msg);
+              enviarWhatsApp(contactos[0].telefono, msg);
             });
           }
           setAlertaEnviada(true);
@@ -390,7 +391,7 @@ function TimerLugarModal({ onClose, contactos }) {
     clearInterval(timerRef.current);
     setActivo(false);
     if (contactos.length > 0) {
-      openWhatsAppToContact(contactos[0].telefono, "Estoy bien. Salí del lugar sin problemas.");
+      enviarWhatsApp(contactos[0].telefono, "Estoy bien. Salí del lugar sin problemas.");
     }
     onClose();
   }
@@ -976,7 +977,7 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
     const { location } = await getCurrentLocationWithFallback();
     const msgFinal = tieneCompletar ? mensaje.replace("[completar]", detalle.trim() || "alguien") : mensaje;
     const msg = buildMessageWithReply(msgFinal, location);
-    if (elegidos.length > 0) openWhatsAppToContact(elegidos[0].telefono, msg);
+    if (elegidos.length > 0) enviarWhatsApp(elegidos[0].telefono, msg);
     setEnviando(false); setSent(true);
     setTimeout(() => onClose(), 2000);
   }
@@ -1720,7 +1721,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
     if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza."); return; }
     const { location } = await getCurrentLocationWithFallback();
     const msg = buildMessageWithReply("ALERTA - Botón de pánico activado. Necesito ayuda urgente.", location);
-    openWhatsAppToContact(contactos[0].telefono, msg);
+    enviarWhatsApp(contactos[0].telefono, msg);
   }
 
   return (
