@@ -1,8 +1,8 @@
-// api/daily-room.js — Traza 360
-// Crea salas de audio/video en Daily.co para "Te Vigilo"
+// api/send-whatsapp.js — Traza 360
+// Envía WhatsApp vía Twilio (Sandbox o Producción)
 
 export default async function handler(req, res) {
-  // CORS
+  // CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -13,68 +13,48 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { action, roomName } = req.body;
-    const apiKey = process.env.DAILY_API_KEY;
+    const { to, message } = req.body;
 
-    if (!apiKey) {
-      return res.status(500).json({ error: "DAILY_API_KEY no configurada" });
+    if (!to || !message) {
+      return res.status(400).json({ error: "Faltan campos: to, message" });
     }
 
-    // CREAR SALA
-    if (action === "create") {
-      const response = await fetch("https://api.daily.co/v1/rooms", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          properties: {
-            // Sala expira en 2 horas
-            exp: Math.floor(Date.now() / 1000) + 7200,
-            // Máximo 2 participantes (cuidador + víctima)
-            max_participants: 2,
-            // Permitir audio y video
-            enable_chat: true,
-            enable_knocking: false,
-            start_audio_off: false,
-            start_video_off: true, // Video apagado por defecto (se activa manualmente)
-          },
-        }),
-      });
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    // SANDBOX: usa +14155238886
+    // PRODUCCIÓN: cambiá esta variable en Vercel a whatsapp:+19349353798
+    const fromNumber = process.env.TWILIO_WHATSAPP_NUMBER || "whatsapp:+14155238886";
 
-      const data = await response.json();
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
 
-      if (data.url) {
-        return res.status(200).json({
-          success: true,
-          roomUrl: data.url,
-          roomName: data.name,
-          expiresAt: new Date((Math.floor(Date.now() / 1000) + 7200) * 1000).toISOString(),
-        });
-      } else {
-        return res.status(400).json({ success: false, error: data.info || "Error al crear sala" });
-      }
+    // Limpiar número: quitar +, espacios, y agregar prefijo whatsapp:
+    const cleanTo = to.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "");
+    const toWhatsApp = `whatsapp:+${cleanTo}`;
+
+    const params = new URLSearchParams();
+    params.append("To", toWhatsApp);
+    params.append("From", fromNumber);
+    params.append("Body", message);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": "Basic " + Buffer.from(`${accountSid}:${authToken}`).toString("base64"),
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    });
+
+    const data = await response.json();
+
+    if (data.sid) {
+      return res.status(200).json({ success: true, sid: data.sid, to: toWhatsApp });
+    } else {
+      console.error("Twilio error:", data);
+      return res.status(400).json({ success: false, error: data.message || "Error Twilio", code: data.code });
     }
-
-    // ELIMINAR SALA
-    if (action === "delete" && roomName) {
-      const response = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${apiKey}` },
-      });
-
-      if (response.ok) {
-        return res.status(200).json({ success: true });
-      } else {
-        const data = await response.json();
-        return res.status(400).json({ success: false, error: data.info || "Error al eliminar sala" });
-      }
-    }
-
-    return res.status(400).json({ error: "Acción inválida. Usar: create o delete" });
   } catch (error) {
-    console.error("Daily.co error:", error);
+    console.error("Server error:", error);
     return res.status(500).json({ success: false, error: error.message });
   }
 }
