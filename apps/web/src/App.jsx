@@ -1796,7 +1796,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
       {/* BOTÓN DE PÁNICO FLOTANTE - Premium */}
       <div className="fixed bottom-5 right-5 z-50">
         <div style={{ position: "relative" }}>
-          <div style={{ position: "absolute", inset: "-6px", borderRadius: "50%", border: "1px solid rgba(212,175,55,0.12)", animation: "panicPulse 2.5s infinite" }} />
+          <div style={{ position: "absolute", inset: "-6px", borderRadius: "50%", border: "1px solid rgba(212,175,55,0.12)", animation: "panicPulse 2.5s infinite", pointerEvents: "none" }} />
           <button onClick={handlePanico}
             className="flex h-16 w-16 items-center justify-center rounded-full text-white active:scale-95"
             style={{
