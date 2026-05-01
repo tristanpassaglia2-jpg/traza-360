@@ -219,11 +219,31 @@ function WhatsAppFloatingButton() {
 let mediaRecorderInstance = null;
 let audioChunksRef = [];
 
+// Detectar formato de audio soportado
+function getAudioMimeType() {
+  if (typeof MediaRecorder === "undefined") return "audio/webm";
+  if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) return "audio/webm;codecs=opus";
+  if (MediaRecorder.isTypeSupported("audio/webm")) return "audio/webm";
+  if (MediaRecorder.isTypeSupported("audio/mp4")) return "audio/mp4";
+  if (MediaRecorder.isTypeSupported("audio/ogg")) return "audio/ogg";
+  if (MediaRecorder.isTypeSupported("audio/aac")) return "audio/aac";
+  return ""; // dejar que el navegador elija
+}
+
+function getAudioExt(mimeType) {
+  if (mimeType.includes("mp4")) return "mp4";
+  if (mimeType.includes("ogg")) return "ogg";
+  if (mimeType.includes("aac")) return "aac";
+  return "webm";
+}
+
 async function iniciarGrabacion() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     audioChunksRef = [];
-    mediaRecorderInstance = new MediaRecorder(stream);
+    const mimeType = getAudioMimeType();
+    const options = mimeType ? { mimeType } : {};
+    mediaRecorderInstance = new MediaRecorder(stream, options);
     mediaRecorderInstance.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.push(e.data); };
     mediaRecorderInstance.start();
     return { success: true, stream };
@@ -234,7 +254,8 @@ function detenerGrabacion() {
   return new Promise((resolve) => {
     if (!mediaRecorderInstance || mediaRecorderInstance.state === "inactive") { resolve(null); return; }
     mediaRecorderInstance.onstop = () => {
-      const blob = new Blob(audioChunksRef, { type: "audio/webm" });
+      const mimeType = mediaRecorderInstance.mimeType || getAudioMimeType() || "audio/webm";
+      const blob = new Blob(audioChunksRef, { type: mimeType });
       mediaRecorderInstance.stream.getTracks().forEach(t => t.stop());
       resolve(blob);
     };
@@ -245,12 +266,12 @@ function detenerGrabacion() {
 // Guardar evidencia en Supabase Storage
 async function guardarEvidencia(blob, tipo = "audio") {
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
-  const ext = "webm";
+  const ext = getAudioExt(blob.type || "audio/webm");
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("No autenticado");
     const path = `${user.id}/${tipo}_${ts}.${ext}`;
-    const { data, error } = await supabase.storage.from("evidencias").upload(path, blob, { contentType: "audio/webm", upsert: false });
+    const { data, error } = await supabase.storage.from("evidencias").upload(path, blob, { contentType: blob.type || "audio/webm", upsert: false });
     if (error) throw error;
     return { success: true, path: data.path, cloud: true };
   } catch (e) {
