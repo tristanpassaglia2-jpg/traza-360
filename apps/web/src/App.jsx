@@ -1429,17 +1429,81 @@ function CuidadoModal({ onClose, contactos = [] }) {
               </button>
             )}
 
-            <div className="grid grid-cols-3 gap-2">
-              <button onClick={handleEstoyBien} className="rounded-xl bg-emerald-500/20 border border-emerald-500/30 py-3 text-center">
-                <div className="text-xl">{"\u{1F44D}"}</div><div className="text-[10px] text-emerald-300 mt-1">Estoy bien</div>
-              </button>
-              <button onClick={handleAyuda} className="rounded-xl bg-red-500/20 border border-red-500/30 py-3 text-center">
-                <div className="text-xl">{"\u{1F198}"}</div><div className="text-[10px] text-red-300 mt-1">Ayuda</div>
-              </button>
-              <button onClick={terminarSesion} className="rounded-xl bg-white/5 border border-white/10 py-3 text-center">
-                <div className="text-xl">{"\u23F9\u{FE0F}"}</div><div className="text-[10px] text-slate-400 mt-1">Terminar</div>
-              </button>
+            {/* Respuestas rápidas con emojis */}
+            <div className="rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #13131d, #0e0e16)", border: "1px solid rgba(212,175,55,0.1)" }}>
+              <div className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: "rgba(212,175,55,0.5)" }}>Respuesta rápida</div>
+              <div className="grid grid-cols-4 gap-2 mb-2">
+                {[
+                  { emoji: "\u2705", text: "OK" },
+                  { emoji: "\u{1F44D}", text: "Recibí" },
+                  { emoji: "\u{1F3C3}", text: "Voy" },
+                  { emoji: "\u{1F697}", text: "Salgo" },
+                ].map((r, i) => (
+                  <button key={i} onClick={() => { if (contactos.length > 0) enviarWhatsApp(contactos[0].telefono, `${r.emoji} ${r.text}`); }}
+                    className="rounded-xl py-3 text-center active:scale-95 transition-all" style={{
+                      background: "linear-gradient(145deg, #16161f, #0c0c12)",
+                      border: "1px solid rgba(212,175,55,0.08)",
+                      boxShadow: "3px 3px 8px rgba(0,0,0,0.4), -2px -2px 6px rgba(212,175,55,0.01)",
+                    }}>
+                    <div className="text-2xl">{r.emoji}</div>
+                    <div className="text-[9px] mt-1" style={{ color: "rgba(212,175,55,0.5)" }}>{r.text}</div>
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-4 gap-2 mb-2">
+                {[
+                  { emoji: "\u{1F3E0}", text: "En casa" },
+                  { emoji: "\u23F0", text: "5 min" },
+                  { emoji: "\u{1F4CD}", text: "Ubicación" },
+                  { emoji: "\u{1F44B}", text: "Llegué" },
+                ].map((r, i) => (
+                  <button key={i} onClick={() => { if (contactos.length > 0) enviarWhatsApp(contactos[0].telefono, `${r.emoji} ${r.text}`); }}
+                    className="rounded-xl py-3 text-center active:scale-95 transition-all" style={{
+                      background: "linear-gradient(145deg, #16161f, #0c0c12)",
+                      border: "1px solid rgba(212,175,55,0.08)",
+                      boxShadow: "3px 3px 8px rgba(0,0,0,0.4), -2px -2px 6px rgba(212,175,55,0.01)",
+                    }}>
+                    <div className="text-2xl">{r.emoji}</div>
+                    <div className="text-[9px] mt-1" style={{ color: "rgba(212,175,55,0.5)" }}>{r.text}</div>
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <button onClick={() => { if (contactos.length > 0) enviarWhatsApp(contactos[0].telefono, "\u{1F6A8} AYUDA URGENTE"); }}
+                  className="rounded-xl py-3 text-center active:scale-95 transition-all" style={{
+                    background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.3)",
+                  }}>
+                  <div className="text-2xl">{"\u{1F6A8}"}</div>
+                  <div className="text-[9px] mt-1 text-red-400">AYUDA</div>
+                </button>
+                <button onClick={() => { setShowGrabacion && setShowGrabacion(true); }}
+                  className="rounded-xl py-3 text-center active:scale-95 transition-all" style={{
+                    background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.15)",
+                  }}>
+                  <div className="text-2xl">{"\u{1F399}\u{FE0F}"}</div>
+                  <div className="text-[9px] mt-1" style={{ color: "#d4af37" }}>Audio</div>
+                </button>
+                <button onClick={() => {
+                    const txt = prompt("Escribí tu mensaje:");
+                    if (txt && contactos.length > 0) enviarWhatsApp(contactos[0].telefono, txt);
+                  }}
+                  className="rounded-xl py-3 text-center active:scale-95 transition-all" style={{
+                    background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)",
+                  }}>
+                  <div className="text-2xl">{"\u270D\u{FE0F}"}</div>
+                  <div className="text-[9px] mt-1" style={{ color: "rgba(212,175,55,0.5)" }}>Escribir</div>
+                </button>
+              </div>
             </div>
+
+            <button onClick={terminarSesion}
+              className="w-full rounded-xl py-3 text-sm font-semibold" style={{
+                background: "linear-gradient(145deg, #16161f, #0c0c12)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                color: "rgba(255,255,255,0.4)",
+              }}>
+              {"\u23F9\u{FE0F}"} Terminar sesión
+            </button>
           </div>
         )}
       </div>
