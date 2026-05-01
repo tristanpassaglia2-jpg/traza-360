@@ -1229,28 +1229,28 @@ function CuidadoModal({ onClose, contactos = [] }) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm overflow-y-auto py-8">
       <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0d1426] p-6 shadow-2xl my-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold">{"\u{1FAC2}"} Estoy a tu cuidado</h3>
+          <h3 className="text-lg font-bold">{"\u{1FAC2}"} Te vigilo</h3>
           <button onClick={terminarSesion} className="text-slate-400 hover:text-white text-2xl">{"\u00D7"}</button>
         </div>
 
         {/* ELEGIR MODO */}
         {!modo && (
           <div className="space-y-3">
-            <p className="text-xs text-slate-400 mb-3">Elegí tu rol en esta sesión.</p>
+            <p className="text-xs text-slate-400 mb-3">¿Qué querés hacer?</p>
             <button onClick={() => { setModo("cuidador"); setPaso("elegir_contacto"); }}
               className="w-full rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-4 text-left">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{"\u{1F441}\u{FE0F}"}</span>
-                <div><div className="text-sm font-semibold text-cyan-300">Quiero cuidar a alguien</div>
-                  <div className="text-[11px] text-slate-400">Enviá solicitudes: te ubico? te escucho? te grabo?</div></div>
+                <div><div className="text-sm font-semibold text-cyan-300">Te cuido</div>
+                  <div className="text-[11px] text-slate-400">Escuchá, ubicá o grabá a tu contacto.</div></div>
               </div>
             </button>
             <button onClick={() => { setModo("victima"); simularRecepcion(); }}
               className="w-full rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-4 text-left">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{"\u{1F6E1}\u{FE0F}"}</span>
-                <div><div className="text-sm font-semibold text-emerald-300">Alguien me está cuidando</div>
-                  <div className="text-[11px] text-slate-400">Ver solicitudes pendientes y aceptar/rechazar</div></div>
+                <div><div className="text-sm font-semibold text-emerald-300">Me cuidas?</div>
+                  <div className="text-[11px] text-slate-400">Pedí que alguien te cuide en vivo.</div></div>
               </div>
             </button>
           </div>
@@ -1282,7 +1282,7 @@ function CuidadoModal({ onClose, contactos = [] }) {
         {/* CUIDADOR: ELEGIR QUÉ SOLICITAR */}
         {modo === "cuidador" && paso === "solicitudes_cuidador" && contactoSel && (
           <div className="space-y-3">
-            <p className="text-xs text-slate-400 mb-2">Qué querés pedirle a {contactoSel.nombre}?</p>
+            <p className="text-xs text-slate-400 mb-2">Qué activás para {contactoSel.nombre}?</p>
 
             <button onClick={() => toggleSolicitud("ubicacion")}
               className={`w-full rounded-xl border px-4 py-3 text-left ${solicitudes.ubicacion ? "border-cyan-400/50 bg-cyan-500/10" : "border-white/10 bg-white/5"}`}>
