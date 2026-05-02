@@ -1348,92 +1348,139 @@ function CuidadoModal({ onClose, contactos = [] }) {
           </div>
         )}
 
-        {/* CUIDADOR: ELEGIR QUÉ SOLICITAR */}
+        {/* CUIDADOR: ELEGIR QUÉ ACTIVAR — Botones independientes */}
         {modo === "cuidador" && paso === "solicitudes_cuidador" && contactoSel && (
           <div className="space-y-3">
             <p className="text-xs text-slate-400 mb-2">Qué activás para {contactoSel.nombre}?</p>
 
-            <button onClick={() => toggleSolicitud("ubicacion")}
-              className={`w-full rounded-xl border px-4 py-3 text-left ${solicitudes.ubicacion ? "border-cyan-400/50 bg-cyan-500/10" : "border-white/10 bg-white/5"}`}>
+            {/* Te rastreo - Solo ubicación */}
+            <button onClick={() => {
+              getCurrentLocationWithFallback().then(({ location }) => {
+                const msg = buildMessageWithReply(`TRAZA 360 - TE RASTREO ACTIVADO\n\nEstoy rastreando tu ubicación para cuidarte.`, location);
+                enviarWhatsApp(contactoSel.telefono, msg);
+              });
+              alert("Ubicación enviada a " + contactoSel.nombre);
+            }}
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-4 text-left active:scale-[0.98]">
               <div className="flex items-center gap-3">
-                <span className="text-xl"><MapPin size={20} /></span>
-                <div className="flex-1"><div className="text-sm font-semibold text-slate-100">Te rastreo?</div><div className="text-[11px] text-slate-400">Ver su ubicación en tiempo real</div></div>
-                <div className={`h-5 w-5 rounded-full border-2 ${solicitudes.ubicacion ? "border-cyan-400 bg-cyan-400" : "border-slate-500"}`}>
-                  {solicitudes.ubicacion && <div className="text-slate-950 text-xs text-center leading-4">{"\u2713"}</div>}
-                </div>
+                <span className="text-xl"><MapPin size={22} /></span>
+                <div className="flex-1"><div className="text-sm font-bold" style={{ color: "#d4af37" }}>Te rastreo</div><div className="text-[11px] text-slate-400">Envía tu ubicación GPS en tiempo real</div></div>
               </div>
             </button>
 
-            <button onClick={() => toggleSolicitud("audio")}
-              className={`w-full rounded-xl border px-4 py-3 text-left ${solicitudes.audio ? "border-cyan-400/50 bg-cyan-500/10" : "border-white/10 bg-white/5"}`}>
+            {/* Te escucho - Solo audio */}
+            <button onClick={async () => {
+              setSolicitudes({ ubicacion: false, audio: true, video: false });
+              const salaUrl = await crearSalaDaily();
+              if (!salaUrl) return;
+              const msg = `TRAZA 360 - TE ESCUCHO ACTIVADO\n\nEstoy escuchando tu entorno para cuidarte.\n\nAbri este link:\n${salaUrl}`;
+              enviarWhatsApp(contactoSel.telefono, msg);
+              setPaso("panel_cuidador");
+              setTimeout(() => {
+                if (iframeContainerRef.current) {
+                  iframeContainerRef.current.innerHTML = "";
+                  const iframe = document.createElement("iframe");
+                  iframe.src = salaUrl + "?showLeaveButton=true&showFullscreenButton=false&startVideoOff=true";
+                  iframe.style.width = "100%";
+                  iframe.style.height = "250px";
+                  iframe.style.borderRadius = "12px";
+                  iframe.style.border = "1px solid rgba(212,175,55,0.15)";
+                  iframe.allow = "microphone; autoplay";
+                  iframeContainerRef.current.appendChild(iframe);
+                  dailyFrameRef.current = iframe;
+                  setEnVivo(true);
+                  setAudioActivo(true);
+                }
+              }, 500);
+            }}
+              className="w-full rounded-xl px-4 py-4 text-left active:scale-[0.98]" style={{ background: "rgba(212,175,55,0.06)", border: "1px solid rgba(212,175,55,0.15)" }}>
               <div className="flex items-center gap-3">
                 <span className="text-xl">{"\u{1F3A7}"}</span>
-                <div className="flex-1"><div className="text-sm font-semibold text-slate-100">Te escucho?</div><div className="text-[11px] text-slate-400">Escuchar su entorno en vivo</div></div>
-                <div className={`h-5 w-5 rounded-full border-2 ${solicitudes.audio ? "border-cyan-400 bg-cyan-400" : "border-slate-500"}`}>
-                  {solicitudes.audio && <div className="text-slate-950 text-xs text-center leading-4">{"\u2713"}</div>}
-                </div>
+                <div className="flex-1"><div className="text-sm font-bold" style={{ color: "#d4af37" }}>Te escucho</div><div className="text-[11px]" style={{ color: "rgba(212,175,55,0.5)" }}>Audio en vivo · Premium</div></div>
+                <span className="text-[9px] px-2 py-1 rounded-md" style={{ background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)", color: "#d4af37" }}>PRO</span>
               </div>
             </button>
 
-            <button onClick={() => toggleSolicitud("video")}
-              className={`w-full rounded-xl border px-4 py-3 text-left ${solicitudes.video ? "border-amber-400/50 bg-amber-500/10" : "border-white/10 bg-white/5"}`}>
+            {/* Te veo - Solo video */}
+            <button onClick={async () => {
+              setSolicitudes({ ubicacion: false, audio: false, video: true });
+              const salaUrl = await crearSalaDaily();
+              if (!salaUrl) return;
+              const msg = `TRAZA 360 - TE VEO ACTIVADO\n\nEstoy viendo tu cámara para cuidarte.\n\nAbri este link:\n${salaUrl}`;
+              enviarWhatsApp(contactoSel.telefono, msg);
+              setPaso("panel_cuidador");
+              setTimeout(() => {
+                if (iframeContainerRef.current) {
+                  iframeContainerRef.current.innerHTML = "";
+                  const iframe = document.createElement("iframe");
+                  iframe.src = salaUrl + "?showLeaveButton=true&showFullscreenButton=true&startAudioOff=true";
+                  iframe.style.width = "100%";
+                  iframe.style.height = "300px";
+                  iframe.style.borderRadius = "12px";
+                  iframe.style.border = "1px solid rgba(212,175,55,0.15)";
+                  iframe.allow = "camera; autoplay";
+                  iframeContainerRef.current.appendChild(iframe);
+                  dailyFrameRef.current = iframe;
+                  setEnVivo(true);
+                  setVideoActivo(true);
+                }
+              }, 500);
+            }}
+              className="w-full rounded-xl px-4 py-4 text-left active:scale-[0.98]" style={{ background: "rgba(212,175,55,0.06)", border: "1px solid rgba(212,175,55,0.15)" }}>
               <div className="flex items-center gap-3">
                 <span className="text-xl">{"\u{1F4F9}"}</span>
-                <div className="flex-1"><div className="text-sm font-semibold text-slate-100">Te veo?</div><div className="text-[11px] text-amber-300">Ver su cámara · Premium</div></div>
-                <div className={`h-5 w-5 rounded-full border-2 ${solicitudes.video ? "border-amber-400 bg-amber-400" : "border-slate-500"}`}>
-                  {solicitudes.video && <div className="text-slate-950 text-xs text-center leading-4">{"\u2713"}</div>}
-                </div>
+                <div className="flex-1"><div className="text-sm font-bold" style={{ color: "#d4af37" }}>Te veo</div><div className="text-[11px]" style={{ color: "rgba(212,175,55,0.5)" }}>Video en vivo · Premium</div></div>
+                <span className="text-[9px] px-2 py-1 rounded-md" style={{ background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)", color: "#d4af37" }}>PRO</span>
               </div>
-            </button>
-
-            <button onClick={enviarSolicitudes}
-              className="w-full rounded-xl bg-gradient-to-r from-cyan-400 to-sky-500 py-3 text-sm font-semibold text-white shadow-lg">
-              Enviar solicitud a {contactoSel.nombre}
             </button>
           </div>
         )}
 
-        {/* CUIDADOR: PANEL EN VIVO (Daily.co) */}
+        {/* CUIDADOR: PANEL EN VIVO */}
         {modo === "cuidador" && paso === "panel_cuidador" && (
           <div className="space-y-3">
-            <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-3 text-center">
-              <div className="text-sm font-semibold text-emerald-300">
-                {enVivo ? `${"\u{1F7E2}"} EN VIVO — Cuidando a ${contactoSel?.nombre}` : `${"\u{1F4E9}"} Esperando que ${contactoSel?.nombre} se una...`}
+            <div className="rounded-xl p-3 text-center" style={{ background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.2)" }}>
+              <div className="text-sm font-bold" style={{ color: "#d4af37" }}>
+                {enVivo ? `\u{1F7E2} EN VIVO — ${contactoSel?.nombre}` : `\u{1F4E1} Esperando a ${contactoSel?.nombre}...`}
               </div>
-              {roomUrl && <div className="text-[10px] text-slate-500 mt-1 break-all">Sala: {roomUrl}</div>}
+              <div className="text-[10px] mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>
+                {audioActivo && !videoActivo && "\u{1F3A7} Solo audio"}
+                {videoActivo && !audioActivo && "\u{1F4F9} Solo video"}
+                {audioActivo && videoActivo && "\u{1F3A7}\u{1F4F9} Audio + Video"}
+              </div>
             </div>
 
-            {/* Panel de audio/video Daily.co */}
+            {/* Panel Daily.co */}
             <div ref={iframeContainerRef} className="rounded-xl overflow-hidden">
               {!enVivo && (
-                <div className="bg-white/5 border border-white/10 rounded-xl p-6 text-center">
-                  <div className="text-3xl mb-2 animate-pulse">{"\u{1F4E1}"}</div>
-                  <div className="text-sm text-slate-400">{creandoSala ? "Creando sala segura..." : "Sala creada. Esperando conexión..."}</div>
-                  <div className="text-[10px] text-slate-500 mt-2">El link fue enviado por WhatsApp a {contactoSel?.nombre}</div>
+                <div className="rounded-xl p-8 text-center" style={{ background: "linear-gradient(145deg, #12121a, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)" }}>
+                  <div className="text-4xl mb-3 animate-pulse">{"\u{1F4E1}"}</div>
+                  <div className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>{creandoSala ? "Creando sala segura..." : "Link enviado por WhatsApp"}</div>
+                  <div className="text-[10px] mt-2" style={{ color: "rgba(255,255,255,0.2)" }}>Esperando que {contactoSel?.nombre} abra el link</div>
                 </div>
               )}
             </div>
 
-            {/* Controles del cuidador */}
-            {enVivo && (
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => setAudioActivo(!audioActivo)}
-                  className={`rounded-xl py-3 text-center border ${audioActivo ? "bg-emerald-500/20 border-emerald-500/30" : "bg-red-500/20 border-red-500/30"}`}>
-                  <div className="text-lg">{audioActivo ? "\u{1F3A7}" : "\u{1F507}"}</div>
-                  <div className={`text-[10px] mt-1 ${audioActivo ? "text-emerald-300" : "text-red-300"}`}>{audioActivo ? "Audio ON" : "Audio OFF"}</div>
-                </button>
-                <button onClick={() => setVideoActivo(!videoActivo)}
-                  className={`rounded-xl py-3 text-center border ${videoActivo ? "bg-emerald-500/20 border-emerald-500/30" : "bg-white/5 border-white/10"}`}>
-                  <div className="text-lg">{videoActivo ? "\u{1F4F9}" : "\u{1F4F7}"}</div>
-                  <div className={`text-[10px] mt-1 ${videoActivo ? "text-emerald-300" : "text-slate-400"}`}>{videoActivo ? "Video ON" : "Video OFF"}</div>
-                </button>
-              </div>
-            )}
-
-            <button onClick={terminarSesion}
-              className="w-full rounded-xl bg-red-500/20 border border-red-500/30 py-3 text-sm font-semibold text-red-300">
-              {"\u23F9\u{FE0F}"} Terminar sesión
-            </button>
+            {/* Botones simples REC / STOP */}
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={terminarSesion}
+                className="rounded-xl py-4 text-center active:scale-95" style={{
+                  background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.3)",
+                }}>
+                <div className="text-2xl">{"\u23F9\u{FE0F}"}</div>
+                <div className="text-[10px] mt-1 text-red-400 font-bold">STOP</div>
+              </button>
+              <button onClick={() => {
+                if (contactos.length > 0) enviarWhatsApp(contactoSel?.telefono, "\u2705 Sesión finalizada. Todo bien.");
+                terminarSesion();
+              }}
+                className="rounded-xl py-4 text-center active:scale-95" style={{
+                  background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)",
+                }}>
+                <div className="text-2xl">{"\u2705"}</div>
+                <div className="text-[10px] mt-1 text-emerald-400 font-bold">GUARDAR Y SALIR</div>
+              </button>
+            </div>
           </div>
         )}
 
