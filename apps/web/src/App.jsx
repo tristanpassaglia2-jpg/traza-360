@@ -1373,19 +1373,20 @@ function CuidadoModal({ onClose, contactos = [] }) {
               setSolicitudes({ ubicacion: false, audio: true, video: false });
               const salaUrl = await crearSalaDaily();
               if (!salaUrl) return;
-              const msg = `TRAZA 360 - TE ESCUCHO ACTIVADO\n\nEstoy escuchando tu entorno para cuidarte.\n\nAbri este link:\n${salaUrl}`;
+              const msg = `TRAZA 360 - TE ESCUCHO\n\nTe estoy cuidando. Toca este link para que pueda escuchar tu entorno:\n\n${salaUrl}\n\nSolo toca el link. No necesitas hacer nada mas.`;
               enviarWhatsApp(contactoSel.telefono, msg);
               setPaso("panel_cuidador");
+              // CUIDADOR entra como RECEPTOR SILENCIOSO: mic OFF, cam OFF
               setTimeout(() => {
                 if (iframeContainerRef.current) {
                   iframeContainerRef.current.innerHTML = "";
                   const iframe = document.createElement("iframe");
-                  iframe.src = salaUrl + "?showLeaveButton=true&showFullscreenButton=false&startVideoOff=true";
+                  iframe.src = salaUrl + "?showLeaveButton=true&showFullscreenButton=false&startVideoOff=true&startAudioOff=true&activeSpeakerMode=false";
                   iframe.style.width = "100%";
-                  iframe.style.height = "250px";
+                  iframe.style.height = "200px";
                   iframe.style.borderRadius = "12px";
                   iframe.style.border = "1px solid rgba(212,175,55,0.15)";
-                  iframe.allow = "microphone; autoplay";
+                  iframe.allow = "microphone; camera; autoplay";
                   iframeContainerRef.current.appendChild(iframe);
                   dailyFrameRef.current = iframe;
                   setEnVivo(true);
@@ -1396,7 +1397,7 @@ function CuidadoModal({ onClose, contactos = [] }) {
               className="w-full rounded-xl px-4 py-4 text-left active:scale-[0.98]" style={{ background: "rgba(212,175,55,0.06)", border: "1px solid rgba(212,175,55,0.15)" }}>
               <div className="flex items-center gap-3">
                 <span className="text-xl">{"\u{1F3A7}"}</span>
-                <div className="flex-1"><div className="text-sm font-bold" style={{ color: "#d4af37" }}>Te escucho</div><div className="text-[11px]" style={{ color: "rgba(212,175,55,0.5)" }}>Audio en vivo · Premium</div></div>
+                <div className="flex-1"><div className="text-sm font-bold" style={{ color: "#d4af37" }}>Te escucho</div><div className="text-[11px]" style={{ color: "rgba(212,175,55,0.5)" }}>Solo audio en vivo · Premium</div></div>
                 <span className="text-[9px] px-2 py-1 rounded-md" style={{ background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)", color: "#d4af37" }}>PRO</span>
               </div>
             </button>
@@ -1406,19 +1407,20 @@ function CuidadoModal({ onClose, contactos = [] }) {
               setSolicitudes({ ubicacion: false, audio: false, video: true });
               const salaUrl = await crearSalaDaily();
               if (!salaUrl) return;
-              const msg = `TRAZA 360 - TE VEO ACTIVADO\n\nEstoy viendo tu cámara para cuidarte.\n\nAbri este link:\n${salaUrl}`;
+              const msg = `TRAZA 360 - TE VEO\n\nTe estoy cuidando. Toca este link para que pueda ver tu entorno:\n\n${salaUrl}\n\nSolo toca el link. No necesitas hacer nada mas.`;
               enviarWhatsApp(contactoSel.telefono, msg);
               setPaso("panel_cuidador");
+              // CUIDADOR entra como RECEPTOR SILENCIOSO: mic OFF, cam OFF
               setTimeout(() => {
                 if (iframeContainerRef.current) {
                   iframeContainerRef.current.innerHTML = "";
                   const iframe = document.createElement("iframe");
-                  iframe.src = salaUrl + "?showLeaveButton=true&showFullscreenButton=true&startAudioOff=true";
+                  iframe.src = salaUrl + "?showLeaveButton=true&showFullscreenButton=true&startVideoOff=true&startAudioOff=true&activeSpeakerMode=false";
                   iframe.style.width = "100%";
                   iframe.style.height = "300px";
                   iframe.style.borderRadius = "12px";
                   iframe.style.border = "1px solid rgba(212,175,55,0.15)";
-                  iframe.allow = "camera; autoplay";
+                  iframe.allow = "microphone; camera; autoplay";
                   iframeContainerRef.current.appendChild(iframe);
                   dailyFrameRef.current = iframe;
                   setEnVivo(true);
