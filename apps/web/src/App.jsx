@@ -2,22 +2,26 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { signUp, signIn, signOut, getCurrentUser, supabase, getContactos, addContacto, deleteContacto, getMedicamentos, addMedicamento, deleteMedicamento, getTomasHoy, getTomasSemana, marcarTomado, crearTomasDelDia } from "./lib/supabase";
 
 /* ═══════════════════════════════════════════════════════════════
-   TRAZA 360 — App completa v16
-   Versión: 16.0 · Abril 2026
+   TRAZA 360 — App completa v17
+   Versión: 17.0 · Mayo 2026
    ═══════════════════════════════════════════════════════════════
-   CAMBIOS v16:
-   1. DISEÑO PREMIUM Dark Luxury + Neomorphism
-   2. Logo escudo con ojo de águila (SVG)
-   3. Módulo "Zonas de riesgo" (ex Trabajo nocturno)
-   4. Daily.co WebRTC audio/video en vivo
-   5. WhatsApp automático vía Twilio API
+   CAMBIOS v17 (Auditoría PM):
+   1. Onboarding guiado de 3 pasos
+   2. Dashboard "Estado del sistema" con semáforo
+   3. Módulos renombrados (Mi Escudo, Los Cuido, etc.)
+   4. Te Vigilo → "Próximamente" (oculto hasta fix)
+   5. Verificación de contactos (Safety Check)
+   6. Check-in temporizado en todos los módulos
+   7. Confirmación post-alerta con feedback visual
+   8. Política de Privacidad + Términos visibles
+   9. Freemium con límites y upgrade CTA
+   10. Sistema de estado WhatsApp visible
    ═══════════════════════════════════════════════════════════════ */
 
 // ─── CONFIG ─────────────────────────────────
 const WHATSAPP_NUMBER_DEFAULT = "5493513956879";
 const PIN_DEFAULT = "1234";
 const HOME_ADDRESS_DEFAULT = "Mi casa";
-const TAXI_NUMBER_DEFAULT = ""; // El usuario lo configura
 
 const PLAN_LIMITS = {
   gratis: { contactos: 2, terceros: 1, zonas: 2, medicamentos: 1, audioMax: 300, storage: "100 MB" },
@@ -27,8 +31,8 @@ const PLAN_LIMITS = {
 
 const PLAN_PRICES = {
   gratis: { name: "Gratis", price: "US$0" },
-  mensual: { name: "Mensual", price: "US$2.99/mes" },
-  anual: { name: "Anual", price: "US$24.99/año (30% OFF)" },
+  mensual: { name: "Mensual", price: "US$4.99/mes" },
+  anual: { name: "Anual", price: "US$39.99/año (33% OFF)" },
 };
 
 // ─── PAÍSES ─────────────────────────────────
@@ -112,8 +116,7 @@ function getCurrentLocationWithFallback() {
 
 function buildMapLink(loc) { return loc ? `https://www.google.com/maps?q=${loc.lat},${loc.lng}` : null; }
 
-// ─── WHATSAPP VÍA API (v15 — Twilio Sandbox/Producción) ──────
-// Envía WhatsApp automático vía API del servidor (no abre wa.me)
+// ─── WHATSAPP VÍA API ────────────────────────
 async function sendWhatsAppAPI(numero, text) {
   try {
     const numLimpio = numero.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
@@ -123,48 +126,27 @@ async function sendWhatsAppAPI(numero, text) {
       body: JSON.stringify({ to: numLimpio, message: text }),
     });
     const data = await response.json();
-    if (data.success) {
-      console.log("WhatsApp enviado OK:", data.sid);
-      return { success: true, sid: data.sid };
-    } else {
-      console.warn("WhatsApp API error:", data.error);
-      return { success: false, error: data.error };
-    }
-  } catch (error) {
-    console.error("WhatsApp fetch error:", error);
-    return { success: false, error: error.message };
-  }
+    if (data.success) { console.log("WhatsApp enviado OK:", data.sid); return { success: true, sid: data.sid }; }
+    else { console.warn("WhatsApp API error:", data.error); return { success: false, error: data.error }; }
+  } catch (error) { console.error("WhatsApp fetch error:", error); return { success: false, error: error.message }; }
 }
 
-// Envía por API y si falla abre wa.me como respaldo
 async function enviarWhatsApp(numero, text) {
   const result = await sendWhatsAppAPI(numero, text);
   if (!result.success) {
-    // Fallback: abrir wa.me manualmente
     const numLimpio = numero.replace(/\+/g, "").replace(/\s/g, "");
     window.open(`https://wa.me/${numLimpio}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
   }
   return result;
 }
 
-// Solo por API (para timers automáticos como pastillero - no puede abrir ventanas)
-async function enviarWhatsAppSilencioso(numero, text) {
-  return await sendWhatsAppAPI(numero, text);
-}
-
-// Mantener compatibilidad con código existente
-function openWhatsAppToContact(numero, text) {
-  enviarWhatsApp(numero, text);
-}
-
-function openWhatsAppDefault(text) {
-  enviarWhatsApp(WHATSAPP_NUMBER_DEFAULT, text);
-}
+async function enviarWhatsAppSilencioso(numero, text) { return await sendWhatsAppAPI(numero, text); }
+function openWhatsAppDefault(text) { enviarWhatsApp(WHATSAPP_NUMBER_DEFAULT, text); }
 
 function buildMessageWithReply(baseMessage, loc) {
   let msg = baseMessage;
   if (loc) msg += "\n\n\u{1F4CD} Ubicacion: " + buildMapLink(loc);
-  msg += "\n\n\u{1F4F1} RESPONDER (toca y envia):\n\u2705 = OK\n\u{1F44D} = Recibi\n\u{1F3C3} = Voy\n\u{1F697} = Salgo ya\n\u23F0 = 5 min\n\u{1F3E0} = En casa\n\u{1F44B} = Llegue\n\u{1F6A8} = Emergencia";
+  msg += "\n\n\u{1F4F1} RESPONDER:\n\u2705 OK\n\u{1F44D} Recibi\n\u{1F3C3} Voy\n\u{1F697} Salgo ya\n\u23F0 5 min\n\u{1F3E0} En casa\n\u{1F44B} Llegue\n\u{1F6A8} Emergencia";
   return msg;
 }
 
@@ -185,21 +167,15 @@ async function pedirPermisoNotificaciones() {
 }
 
 function enviarNotificacion(titulo, body) {
-  if (Notification.permission === "granted") {
-    new Notification(titulo, { body, icon: "/favicon.ico", badge: "/favicon.ico" });
-  }
+  if (Notification.permission === "granted") new Notification(titulo, { body, icon: "/favicon.ico" });
 }
 
 function reproducirSonido() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 800;
-    gain.gain.value = 0.3;
-    osc.start();
+    const osc = ctx.createOscillator(); const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 800; gain.gain.value = 0.3; osc.start();
     setTimeout(() => { osc.frequency.value = 1000; }, 200);
     setTimeout(() => { osc.frequency.value = 800; }, 400);
     setTimeout(() => { osc.stop(); ctx.close(); }, 600);
@@ -212,14 +188,151 @@ function WhatsAppIcon({ size = 20 }) {
 }
 
 function WhatsAppFloatingButton() {
-  return (<div className="fixed bottom-5 right-5 z-50"><button onClick={() => openWhatsAppDefault("Hola, quiero información sobre Traza 360.")} className="flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-xl shadow-[#25D366]/30 hover:scale-110 active:scale-95"><WhatsAppIcon size={28} /></button></div>);
+  return (<div className="fixed bottom-5 left-5 z-50"><button onClick={() => openWhatsAppDefault("Hola, quiero información sobre Traza 360.")} className="flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-xl shadow-[#25D366]/30 hover:scale-110 active:scale-95"><WhatsAppIcon size={28} /></button></div>);
+}
+
+// ─── SISTEMA DE ESTADO (Semáforo) ────────────
+function SystemStatusBadge({ status }) {
+  const configs = {
+    ok:      { color: "#22c55e", label: "Sistema activo",    dot: "bg-green-400",  bg: "rgba(34,197,94,0.1)",  border: "rgba(34,197,94,0.3)" },
+    warning: { color: "#f59e0b", label: "Verificando...",    dot: "bg-yellow-400", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.3)" },
+    error:   { color: "#ef4444", label: "WhatsApp inactivo", dot: "bg-red-400",    bg: "rgba(239,68,68,0.1)",  border: "rgba(239,68,68,0.3)" },
+  };
+  const cfg = configs[status] || configs.warning;
+  return (
+    <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}>
+      <div className={`h-2 w-2 rounded-full ${cfg.dot} animate-pulse`} />
+      <span className="text-xs font-semibold" style={{ color: cfg.color }}>{cfg.label}</span>
+    </div>
+  );
+}
+
+// ─── ONBOARDING GUIADO (3 pasos) ────────────
+function OnboardingScreen({ onComplete }) {
+  const [step, setStep] = useState(0);
+  const [selectedModule, setSelectedModule] = useState(null);
+
+  const steps = [
+    {
+      emoji: "\u{1F6E1}\u{FE0F}",
+      title: "Bienvenido/a a Traza 360",
+      subtitle: "Tu escudo de protección personal",
+      desc: "Esta app te protege a vos y a quienes querés. Con un solo botón podés alertar a tus contactos de confianza, compartir tu ubicación y grabar evidencia.",
+      cta: "Entender cómo funciona →",
+    },
+    {
+      emoji: "\u{1F465}",
+      title: "¿Para quién es esta app?",
+      subtitle: "Elegí tu perfil principal",
+      desc: "",
+      cta: "Continuar →",
+      modules: [
+        { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", label: "Para mí — Violencia o riesgo" },
+        { key: "los_cuido",    emoji: "\u{1F9D1}\u200D\u{1F393}", label: "Mi hijo/a adolescente" },
+        { key: "los_protejo",  emoji: "\u{1FAF6}", label: "Mis padres / adultos mayores" },
+        { key: "turno_seguro", emoji: "\u{1F303}", label: "Trabajo de riesgo" },
+        { key: "mi_nido",      emoji: "\u{1F3E0}", label: "Seguridad en el hogar" },
+      ],
+    },
+    {
+      emoji: "\u{1F4F1}",
+      title: "Último paso: agregá un contacto",
+      subtitle: "Sin contactos no podemos alertar a nadie",
+      desc: "Necesitás al menos 1 contacto de confianza con WhatsApp. Podés hacerlo ahora o más tarde desde el panel.",
+      cta: "Empezar a usar la app →",
+    },
+  ];
+
+  const current = steps[step];
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-5 py-8 text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 100%)" }}>
+      {/* Progress dots */}
+      <div className="flex gap-2 mb-8">
+        {steps.map((_, i) => (
+          <div key={i} className="h-1.5 rounded-full transition-all" style={{ width: i === step ? "32px" : "8px", background: i === step ? "#d4af37" : "rgba(212,175,55,0.2)" }} />
+        ))}
+      </div>
+
+      <div className="w-full max-w-sm">
+        {/* Card */}
+        <div className="rounded-3xl p-8 text-center mb-6" style={{ background: "linear-gradient(145deg, #13131d, #0a0a12)", border: "1px solid rgba(212,175,55,0.15)", boxShadow: "8px 8px 24px rgba(0,0,0,0.6)" }}>
+          <div className="text-6xl mb-4">{current.emoji}</div>
+          <h2 className="text-xl font-bold text-white mb-1">{current.title}</h2>
+          <p className="text-xs font-semibold mb-3" style={{ color: "#d4af37" }}>{current.subtitle}</p>
+          {current.desc && <p className="text-sm text-slate-400 leading-relaxed">{current.desc}</p>}
+
+          {/* Step 2: selector de módulo */}
+          {step === 1 && current.modules && (
+            <div className="mt-4 space-y-2 text-left">
+              {current.modules.map(m => (
+                <button key={m.key} onClick={() => setSelectedModule(m.key)}
+                  className="w-full rounded-xl px-4 py-3 flex items-center gap-3 transition-all"
+                  style={{
+                    background: selectedModule === m.key ? "rgba(212,175,55,0.12)" : "rgba(255,255,255,0.04)",
+                    border: selectedModule === m.key ? "1px solid rgba(212,175,55,0.4)" : "1px solid rgba(255,255,255,0.08)",
+                  }}>
+                  <span className="text-xl">{m.emoji}</span>
+                  <span className="text-sm font-semibold" style={{ color: selectedModule === m.key ? "#d4af37" : "rgba(255,255,255,0.7)" }}>{m.label}</span>
+                  {selectedModule === m.key && <span className="ml-auto text-sm" style={{ color: "#d4af37" }}>{"\u2713"}</span>}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Step 3: tips de contacto */}
+          {step === 2 && (
+            <div className="mt-4 space-y-3 text-left">
+              {[
+                { icon: "\u{1F4F2}", text: "El número debe tener WhatsApp activo" },
+                { icon: "\u2705", text: "El contacto recibe una verificación automática" },
+                { icon: "\u{1F512}", text: "Solo vos podés ver tus contactos" },
+              ].map((tip, i) => (
+                <div key={i} className="flex items-start gap-3 rounded-xl px-3 py-2" style={{ background: "rgba(212,175,55,0.05)", border: "1px solid rgba(212,175,55,0.08)" }}>
+                  <span className="text-lg shrink-0">{tip.icon}</span>
+                  <span className="text-xs text-slate-300">{tip.text}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* CTA Button */}
+        <button
+          onClick={() => {
+            if (step === 1 && !selectedModule) { return; }
+            if (step < steps.length - 1) setStep(step + 1);
+            else {
+              try { sessionStorage.setItem("traza360_onboarding_done", "1"); } catch(e){}
+              onComplete(selectedModule);
+            }
+          }}
+          disabled={step === 1 && !selectedModule}
+          className="w-full rounded-2xl py-4 font-bold text-black shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)", boxShadow: "0 8px 30px rgba(212,175,55,0.25)" }}>
+          {current.cta}
+        </button>
+
+        {step > 0 && (
+          <button onClick={() => setStep(step - 1)} className="w-full mt-3 py-2 text-sm" style={{ color: "rgba(212,175,55,0.4)" }}>
+            ← Volver
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── VERIFICACIÓN CONTACTO (Safety Check) ───
+async function verificarContacto(telefono, nombreContacto, nombreUsuario) {
+  const msg = `Hola ${nombreContacto} 👋 Soy ${nombreUsuario} y te agregué como contacto de confianza en Traza 360, una app de seguridad personal.\n\n✅ Si recibís este mensaje, todo funciona correctamente.\n\nRespondé "OK" para confirmar que lo recibiste.\n\n🛡️ Traza 360 — traza360.app`;
+  return await sendWhatsAppAPI(telefono, msg);
 }
 
 // ─── GRABACION AUDIO ────────────────────────
 let mediaRecorderInstance = null;
 let audioChunksRef = [];
 
-// Detectar formato de audio soportado
 function getAudioMimeType() {
   if (typeof MediaRecorder === "undefined") return "audio/webm";
   if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) return "audio/webm;codecs=opus";
@@ -227,7 +340,7 @@ function getAudioMimeType() {
   if (MediaRecorder.isTypeSupported("audio/mp4")) return "audio/mp4";
   if (MediaRecorder.isTypeSupported("audio/ogg")) return "audio/ogg";
   if (MediaRecorder.isTypeSupported("audio/aac")) return "audio/aac";
-  return ""; // dejar que el navegador elija
+  return "";
 }
 
 function getAudioExt(mimeType) {
@@ -263,7 +376,6 @@ function detenerGrabacion() {
   });
 }
 
-// Guardar evidencia en Supabase Storage
 async function guardarEvidencia(blob, tipo = "audio") {
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
   const ext = getAudioExt(blob.type || "audio/webm");
@@ -321,10 +433,7 @@ function GrabacionModal({ onClose }) {
   async function detener() {
     const blob = await detenerGrabacion();
     setGrabando(false);
-    if (blob) {
-      const result = await guardarEvidencia(blob, "audio");
-      setGuardado(result.cloud ? "nube" : "local");
-    }
+    if (blob) { const result = await guardarEvidencia(blob, "audio"); setGuardado(result.cloud ? "nube" : "local"); }
   }
 
   const fmt = (s) => `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
@@ -336,16 +445,16 @@ function GrabacionModal({ onClose }) {
           <div className="mb-3 text-4xl">{guardado ? "\u2705" : "\u{1F399}\u{FE0F}"}</div>
           <div className="text-lg font-bold text-slate-100">{guardado ? "Evidencia guardada" : "Grabación silenciosa"}</div>
           {guardado ? (
-            <><p className="mt-2 text-xs text-slate-400">{guardado === "nube" ? "Guardado en la nube. Accedé desde Mis Evidencias en este módulo." : "Descargado en tu dispositivo."}</p>
+            <><p className="mt-2 text-xs text-slate-400">{guardado === "nube" ? "Guardado en la nube. Accedé desde Mis Evidencias." : "Descargado en tu dispositivo."}</p>
             <button onClick={onClose} className="mt-4 w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white">Listo</button></>
           ) : grabando ? (
             <><div className="my-6 rounded-2xl border border-red-500/30 bg-red-500/10 py-6">
               <div className="flex items-center justify-center gap-2 mb-2"><div className="h-3 w-3 rounded-full bg-red-500 animate-pulse"></div><span className="text-xs font-semibold text-red-300 uppercase tracking-widest">Grabando</span></div>
               <div className="font-mono text-4xl font-bold text-white tabular-nums">{fmt(tiempo)}</div>
             </div>
-            <button onClick={detener} className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white shadow-lg">Detener y guardar evidencia</button></>
+            <button onClick={detener} className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white shadow-lg">Detener y guardar</button></>
           ) : (
-            <><p className="mt-2 text-xs text-slate-400">Se graba audio del entorno sin hacer ruido.</p>
+            <><p className="mt-2 text-xs text-slate-400">Graba audio del entorno sin hacer ruido.</p>
             {error && <p className="text-xs text-red-400 my-2">{error}</p>}
             <button onClick={iniciar} className="mt-4 w-full rounded-2xl bg-gradient-to-r from-sky-500 to-cyan-500 py-3 text-sm font-semibold text-white shadow-lg mb-2">Iniciar grabación silenciosa</button>
             <button onClick={onClose} className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-xs text-slate-400">Cancelar</button></>
@@ -356,8 +465,8 @@ function GrabacionModal({ onClose }) {
   );
 }
 
-// ─── TIMER LUGAR DESCONOCIDO ────────────────
-function TimerLugarModal({ onClose, contactos }) {
+// ─── CHECK-IN TEMPORIZADO ────────────────────
+function CheckInModal({ onClose, contactos, titulo = "Check-in de seguridad" }) {
   const [minutos, setMinutos] = useState(30);
   const [activo, setActivo] = useState(false);
   const [tiempoRestante, setTiempoRestante] = useState(0);
@@ -367,10 +476,9 @@ function TimerLugarModal({ onClose, contactos }) {
   function iniciar() {
     setTiempoRestante(minutos * 60);
     setActivo(true);
-    // Avisar a contactos que entró a lugar desconocido
     if (contactos.length > 0) {
       getCurrentLocationWithFallback().then(({ location }) => {
-        const msg = buildMessageWithReply(`Entro a un lugar desconocido. Si no aviso en ${minutos} minutos, necesito ayuda.`, location);
+        const msg = buildMessageWithReply(`Check-in activado. Si no confirmo en ${minutos} minutos que estoy bien, necesito ayuda.`, location);
         enviarWhatsApp(contactos[0].telefono, msg);
       });
     }
@@ -382,11 +490,11 @@ function TimerLugarModal({ onClose, contactos }) {
       setTiempoRestante(t => {
         if (t <= 1) {
           clearInterval(timerRef.current);
-          enviarNotificacion("ALERTA TRAZA 360", "No confirmaste que estás bien. Se alertó a tus contactos.");
+          enviarNotificacion("ALERTA TRAZA 360", "No confirmaste que estás bien.");
           reproducirSonido();
           if (contactos.length > 0) {
             getCurrentLocationWithFallback().then(({ location }) => {
-              const msg = buildMessageWithReply("ALERTA AUTOMATICA - No confirmó que está bien después de entrar a un lugar desconocido. Verificar urgente.", location);
+              const msg = buildMessageWithReply("ALERTA AUTOMÁTICA — No confirmó que está bien en el tiempo acordado. Verificar urgente.", location);
               enviarWhatsApp(contactos[0].telefono, msg);
             });
           }
@@ -400,22 +508,15 @@ function TimerLugarModal({ onClose, contactos }) {
     return () => clearInterval(timerRef.current);
   }, [activo]);
 
-  function cancelar() {
-    clearInterval(timerRef.current);
-    setActivo(false);
-    setTiempoRestante(0);
-  }
-
   function estoyBien() {
     clearInterval(timerRef.current);
     setActivo(false);
-    if (contactos.length > 0) {
-      enviarWhatsApp(contactos[0].telefono, "Estoy bien. Salí del lugar sin problemas.");
-    }
+    if (contactos.length > 0) enviarWhatsApp(contactos[0].telefono, "\u2705 Estoy bien. Todo en orden.");
     onClose();
   }
 
   const fmt = (s) => `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+  const pct = activo ? (tiempoRestante / (minutos * 60)) * 100 : 100;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 px-5 backdrop-blur-sm">
@@ -424,35 +525,45 @@ function TimerLugarModal({ onClose, contactos }) {
           {alertaEnviada ? (
             <>
               <div className="text-5xl mb-3">{"\u{1F6A8}"}</div>
-              <div className="text-lg font-bold text-red-300">Alerta enviada</div>
+              <div className="text-lg font-bold text-red-300">Alerta enviada automáticamente</div>
               <p className="mt-2 text-xs text-slate-400">Se alertó a tus contactos porque no confirmaste.</p>
               <button onClick={onClose} className="mt-4 w-full rounded-2xl bg-white/10 border border-white/10 py-3 text-sm text-white">Cerrar</button>
             </>
           ) : activo ? (
             <>
-              <div className="text-4xl mb-3">{"\u23F1\u{FE0F}"}</div>
-              <div className="text-lg font-bold text-slate-100">Timer activo</div>
-              <p className="mt-2 text-xs text-slate-400">Si no tocás "Estoy bien" antes de que termine, se alerta a tus contactos.</p>
-              <div className="my-6 rounded-2xl border border-orange-500/30 bg-orange-500/10 py-6">
-                <div className="font-mono text-4xl font-bold text-white tabular-nums">{fmt(tiempoRestante)}</div>
+              <div className="text-4xl mb-2">{"\u23F1\u{FE0F}"}</div>
+              <div className="text-base font-bold text-slate-100">{titulo}</div>
+              <p className="mt-1 text-xs text-slate-400 mb-4">Si no tocás "Estoy bien" antes de que termine, se alerta a tus contactos.</p>
+              {/* Progress ring */}
+              <div className="relative mx-auto mb-4" style={{ width: 120, height: 120 }}>
+                <svg viewBox="0 0 120 120" className="rotate-[-90deg]" width={120} height={120}>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="#f59e0b" strokeWidth="8"
+                    strokeDasharray={`${2 * Math.PI * 52}`}
+                    strokeDashoffset={`${2 * Math.PI * 52 * (1 - pct / 100)}`}
+                    style={{ transition: "stroke-dashoffset 1s linear" }} />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="font-mono text-2xl font-bold text-white">{fmt(tiempoRestante)}</span>
+                </div>
               </div>
-              <button onClick={estoyBien} className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white shadow-lg mb-2">Estoy bien</button>
-              <button onClick={cancelar} className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-xs text-slate-400">Cancelar timer</button>
+              <button onClick={estoyBien} className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white shadow-lg mb-2">{"\u2705"} Estoy bien</button>
+              <button onClick={() => { clearInterval(timerRef.current); setActivo(false); }} className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-xs text-slate-400">Cancelar timer</button>
             </>
           ) : (
             <>
-              <div className="text-4xl mb-3">{"\u23F1\u{FE0F}"}</div>
-              <div className="text-lg font-bold text-slate-100">Entro a lugar desconocido</div>
-              <p className="mt-2 text-xs text-slate-400">Elegí cuánto tiempo vas a estar. Si no confirmás, se alerta automáticamente.</p>
-              <div className="my-4 grid grid-cols-3 gap-2">
-                {[15, 30, 60].map(m => (
+              <div className="text-4xl mb-2">{"\u23F1\u{FE0F}"}</div>
+              <div className="text-base font-bold text-slate-100">{titulo}</div>
+              <p className="mt-2 text-xs text-slate-400 mb-4">Elegí cuánto tiempo. Si no confirmás, se alerta automáticamente.</p>
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                {[15, 30, 60, 120].map(m => (
                   <button key={m} onClick={() => setMinutos(m)}
                     className={`rounded-xl border py-3 text-sm font-semibold ${minutos === m ? "border-orange-400/50 bg-orange-500/10 text-orange-300" : "border-white/10 bg-white/5 text-slate-400"}`}>
-                    {m} min
+                    {m >= 60 ? `${m/60}h` : `${m}m`}
                   </button>
                 ))}
               </div>
-              <button onClick={iniciar} className="w-full rounded-2xl bg-gradient-to-r from-orange-400 to-amber-500 py-3 text-sm font-semibold text-white shadow-lg mb-2">Iniciar timer ({minutos} min)</button>
+              <button onClick={iniciar} className="w-full rounded-2xl bg-gradient-to-r from-orange-400 to-amber-500 py-3 text-sm font-semibold text-white shadow-lg mb-2">Activar check-in ({minutos} min)</button>
               <button onClick={onClose} className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-xs text-slate-400">Cancelar</button>
             </>
           )}
@@ -475,8 +586,7 @@ function EvidenciasScreen({ onBack }) {
   async function reproducir(f) {
     const url = await getEvidenciaUrl(f.fullPath);
     if (!url) { alert("No se pudo obtener el archivo."); return; }
-    setAudioUrl(url);
-    setAudioName(f.name);
+    setAudioUrl(url); setAudioName(f.name);
   }
 
   async function eliminar(f) {
@@ -494,14 +604,13 @@ function EvidenciasScreen({ onBack }) {
   return (
     <div className="min-h-screen px-5 py-8 text-white" style={{ background: "linear-gradient(180deg, #0a0a10 0%, #0d0d16 40%, #0a0a10 100%)" }}>
       <div className="mx-auto max-w-3xl">
-        <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: "#d4af37" }}>{"\u2190"} Volver</button>
-        <div className="mb-6 rounded-2xl p-6" style={{ background: "linear-gradient(145deg, #13131d, #0e0e16)", border: "1px solid rgba(212,175,55,0.1)", boxShadow: "6px 6px 18px rgba(0,0,0,0.5), -3px -3px 10px rgba(212,175,55,0.01)" }}>
+        <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: "#d4af37" }}>{"\u2190"} Volver al panel</button>
+        <div className="mb-6 rounded-2xl p-6" style={{ background: "linear-gradient(145deg, #13131d, #0e0e16)", border: "1px solid rgba(212,175,55,0.1)" }}>
           <p className="text-[10px] uppercase tracking-[3px]" style={{ color: "#d4af37" }}>Mis archivos protegidos</p>
           <h2 className="mt-2 text-xl font-bold">Mis Evidencias</h2>
-          <p className="mt-2 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>Grabaciones guardadas en la nube.</p>
+          <p className="mt-2 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>Grabaciones guardadas en la nube con cifrado.</p>
         </div>
 
-        {/* Reproductor de audio visible */}
         {audioUrl && (
           <div className="mb-4 rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.15)" }}>
             <div className="flex items-center gap-2 mb-2">
@@ -526,20 +635,15 @@ function EvidenciasScreen({ onBack }) {
               <div key={i} className="rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #12121a, #0c0c12)", border: audioName === f.name ? "1px solid rgba(212,175,55,0.3)" : "1px solid rgba(212,175,55,0.08)" }}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <span className="text-2xl">{f.name?.includes("audio") ? "\u{1F399}\u{FE0F}" : "\u{1F3A5}"}</span>
+                    <span className="text-2xl">{"\u{1F399}\u{FE0F}"}</span>
                     <div className="min-w-0">
                       <div className="text-sm font-semibold text-white truncate">{f.name}</div>
                       <div className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{f.metadata?.size ? (f.metadata.size / 1024).toFixed(0) + " KB" : ""}</div>
                     </div>
                   </div>
                   <div className="flex gap-2 shrink-0">
-                    <button onClick={() => reproducir(f)}
-                      className="rounded-lg px-3 py-1.5 text-xs font-semibold" style={{
-                        background: audioName === f.name ? "rgba(212,175,55,0.15)" : "rgba(212,175,55,0.08)",
-                        border: "1px solid rgba(212,175,55,0.2)",
-                        color: "#d4af37",
-                      }}>
-                      {audioName === f.name ? "\u{1F50A} Escuchando" : "\u{25B6}\u{FE0F} Escuchar"}
+                    <button onClick={() => reproducir(f)} className="rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.2)", color: "#d4af37" }}>
+                      {audioName === f.name ? "\u{1F50A} Escuchando" : "\u25B6\u{FE0F} Escuchar"}
                     </button>
                     <button onClick={() => descargar(f)} className="rounded-lg px-2 py-1.5 text-xs" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)" }}>{"\u{2B07}\u{FE0F}"}</button>
                     <button onClick={() => eliminar(f)} className="rounded-lg px-2 py-1.5 text-xs" style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.2)", color: "#f87171" }}>{"\u{1F5D1}\u{FE0F}"}</button>
@@ -557,16 +661,13 @@ function EvidenciasScreen({ onBack }) {
 // ═══════════════════════════════════════════════
 // PASTILLERO VIRTUAL
 // ═══════════════════════════════════════════════
-
 function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
   const [meds, setMeds] = useState([]);
   const [tomasHoy, setTomasHoy] = useState([]);
   const [tomasSemana, setTomasSemana] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [vista, setVista] = useState("hoy"); // hoy | agregar | semana
+  const [vista, setVista] = useState("hoy");
   const [error, setError] = useState("");
-
-  // Form agregar
   const [nombre, setNombre] = useState("");
   const [dosis, setDosis] = useState("");
   const [horarios, setHorarios] = useState(["08:00"]);
@@ -607,16 +708,14 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
           const medNombre = t.medicamentos?.nombre || "Medicamento";
           enviarNotificacion("Hora de tu medicación", `${medNombre} ${t.medicamentos?.dosis || ""} - ${t.horario_programado}`);
           reproducirSonido();
-          // WhatsApp al familiar si no confirma en 10 min
           if (notifFamiliar && contactos.length > 0) {
             const tid2 = setTimeout(async () => {
               const tomasActualizadas = await getTomasHoy();
               const estaT = tomasActualizadas.find(x => x.id === t.id);
               if (estaT && !estaT.tomado) {
-                const familiar = contactos[0];
-                enviarWhatsAppSilencioso(familiar.telefono, `AVISO PASTILLERO: No se confirmo la toma de ${medNombre} (${t.horario_programado}). Por favor verificar.`);
+                enviarWhatsAppSilencioso(contactos[0].telefono, `\u{1F48A} AVISO PASTILLERO: No se confirmó la toma de ${medNombre} (${t.horario_programado}). Por favor verificar.`);
               }
-            }, 600000); // 10 min
+            }, 600000);
             timersRef.current.push(tid2);
           }
         }, diff);
@@ -627,10 +726,7 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
 
   async function handleTome(tomaId) {
     const r = await marcarTomado(tomaId);
-    if (r.success) {
-      reproducirSonido();
-      cargarTodo();
-    }
+    if (r.success) { reproducirSonido(); cargarTodo(); }
   }
 
   async function handleAgregar() {
@@ -638,8 +734,7 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
     if (!nombre.trim()) { setError("Ponele un nombre al medicamento."); return; }
     if (horarios.length === 0) { setError("Agregá al menos 1 horario."); return; }
     if (diasSel.length === 0) { setError("Seleccioná al menos 1 día."); return; }
-    if (maxMeds > 0 && meds.length >= maxMeds) { setError(`Tu plan permite solo ${maxMeds} medicamento(s). Pasate a Mensual.`); return; }
-
+    if (maxMeds > 0 && meds.length >= maxMeds) { setError(`Tu plan permite solo ${maxMeds} medicamento(s). Pasate a Premium.`); return; }
     setSaving(true);
     const r = await addMedicamento({
       nombre: nombre.trim(), dosis: dosis.trim(), horarios, dias_semana: diasSel,
@@ -647,34 +742,28 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
       contacto_familiar_id: notifFamiliar && contactos.length > 0 ? contactos[0].id : null,
     });
     setSaving(false);
-    if (r.success) {
-      setVista("hoy"); setNombre(""); setDosis(""); setHorarios(["08:00"]); setDiasSel([1,2,3,4,5,6,7]);
-      cargarTodo();
-    } else setError(r.error || "Error al guardar.");
+    if (r.success) { setVista("hoy"); setNombre(""); setDosis(""); setHorarios(["08:00"]); setDiasSel([1,2,3,4,5,6,7]); cargarTodo(); }
+    else setError(r.error || "Error al guardar.");
   }
 
   async function handleEliminar(id) {
     if (!window.confirm("Eliminar este medicamento?")) return;
-    await deleteMedicamento(id);
-    cargarTodo();
+    await deleteMedicamento(id); cargarTodo();
   }
 
   function addHorario() { setHorarios([...horarios, "12:00"]); }
   function removeHorario(i) { setHorarios(horarios.filter((_, idx) => idx !== i)); }
   function updateHorario(i, val) { const h = [...horarios]; h[i] = val; setHorarios(h); }
   function toggleDia(d) { setDiasSel(diasSel.includes(d) ? diasSel.filter(x => x !== d) : [...diasSel, d].sort()); }
-
   function getColorObj(key) { return COLORES_MED.find(c => c.key === key) || COLORES_MED[0]; }
 
-  // Calcular calendario semanal
   function getCalendarioSemana() {
     const dias = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(); d.setDate(d.getDate() - i);
       const fecha = d.toISOString().split("T")[0];
       const tomasDia = tomasSemana.filter(t => t.fecha === fecha);
-      const total = tomasDia.length;
-      const tomadas = tomasDia.filter(t => t.tomado).length;
+      const total = tomasDia.length; const tomadas = tomasDia.filter(t => t.tomado).length;
       const dayNames = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
       dias.push({ fecha, dia: dayNames[d.getDay()], total, tomadas, hoy: i === 0 });
     }
@@ -684,10 +773,10 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
   return (
     <div className="min-h-screen bg-[#07111f] px-5 py-8 text-white">
       <div className="mx-auto max-w-3xl">
-        <button onClick={onBack} className="mb-4 text-sm text-cyan-300">← Volver</button>
+        <button onClick={onBack} className="mb-4 text-sm text-cyan-300">← Volver al panel</button>
         <div className="mb-6 rounded-3xl border border-white/10 bg-white/5 p-6">
           <div className="flex items-start justify-between gap-4">
-            <div><p className="text-xs uppercase tracking-[0.18em] text-amber-300">Pastillero virtual</p>
+            <div><p className="text-xs uppercase tracking-[0.18em] text-amber-300">Los Protejo — Pastillero</p>
               <h2 className="mt-2 text-2xl font-bold">Mis Medicamentos</h2></div>
             <span className="text-3xl">{"\u{1F48A}"}</span>
           </div>
@@ -696,7 +785,6 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
           </p>
         </div>
 
-        {/* TABS */}
         <div className="flex gap-2 mb-4">
           {[{k:"hoy",l:"Hoy"},{k:"semana",l:"Semana"},{k:"agregar",l:"+ Agregar"}].map(tab => (
             <button key={tab.k} onClick={() => setVista(tab.k)}
@@ -708,14 +796,13 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
 
         {loading ? <div className="text-center py-8 text-slate-400">Cargando...</div> : null}
 
-        {/* VISTA HOY */}
         {!loading && vista === "hoy" && (
           <>
             {tomasHoy.length === 0 && meds.length === 0 ? (
               <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
                 <div className="text-5xl mb-3">{"\u{1F48A}"}</div>
                 <h3 className="text-lg font-semibold text-slate-100">Sin medicamentos</h3>
-                <p className="mt-2 text-sm text-slate-400">Agregá tu primer medicamento.</p>
+                <p className="mt-2 text-sm text-slate-400">Agregá el primer medicamento.</p>
               </div>
             ) : tomasHoy.length === 0 ? (
               <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
@@ -736,14 +823,14 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <div className={`h-3 w-3 rounded-full shrink-0 ${t.tomado ? "bg-emerald-400" : pasado ? "bg-red-400 animate-pulse" : col.dot}`}></div>
                           <div className="min-w-0">
-                            <div className="text-sm font-semibold text-slate-100">{t.medicamentos?.nombre || "Medicamento"}</div>
+                            <div className="text-sm font-semibold text-slate-100">{t.medicamentos?.nombre}</div>
                             <div className="text-xs text-slate-400">{t.medicamentos?.dosis} · {t.horario_programado}hs</div>
                           </div>
                         </div>
                         {t.tomado ? (
                           <span className="text-xs text-emerald-300 font-semibold px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30">Tomado {t.tomado_en ? new Date(t.tomado_en).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }) : ""}</span>
                         ) : (
-                          <button onClick={() => handleTome(t.id)} className="rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2 text-xs font-semibold text-white shadow-lg shrink-0">Tome</button>
+                          <button onClick={() => handleTome(t.id)} className="rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2 text-xs font-semibold text-white shadow-lg shrink-0">Tomé</button>
                         )}
                       </div>
                     </div>
@@ -751,8 +838,6 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
                 })}
               </div>
             )}
-
-            {/* Medicamentos activos */}
             {meds.length > 0 && (
               <div className="mt-6">
                 <h3 className="text-sm font-semibold text-slate-300 mb-3">Medicamentos activos</h3>
@@ -766,7 +851,7 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
                           <div className="min-w-0">
                             <span className="text-sm font-semibold text-slate-100">{med.nombre}</span>
                             <span className="text-xs text-slate-400 ml-2">{med.dosis}</span>
-                            <div className="text-[11px] text-slate-500">{(med.horarios || []).join(" · ")}hs · {(med.dias_semana || []).map(d => DIAS_SEMANA.find(x => x.num === d)?.short).join(", ")}</div>
+                            <div className="text-[11px] text-slate-500">{(med.horarios || []).join(" · ")}hs</div>
                           </div>
                         </div>
                         <button onClick={() => handleEliminar(med.id)} className="text-xs text-red-300 border border-red-500/30 bg-red-500/10 rounded-lg px-3 py-1.5 shrink-0">Eliminar</button>
@@ -779,7 +864,6 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
           </>
         )}
 
-        {/* VISTA SEMANA */}
         {!loading && vista === "semana" && (
           <div>
             <h3 className="text-sm font-semibold text-slate-300 mb-4">Calendario semanal</h3>
@@ -792,51 +876,28 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
                 </div>
               ))}
             </div>
-            {tomasSemana.length > 0 && (
-              <div className="space-y-2">
-                {tomasSemana.map(t => (
-                  <div key={t.id} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 flex items-center justify-between text-sm">
-                    <span className="text-slate-300">{t.fecha} · {t.horario_programado} · {t.medicamentos?.nombre}</span>
-                    <span>{t.tomado ? "\u2705" : "\u274C"}</span>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )}
 
-        {/* VISTA AGREGAR */}
         {!loading && vista === "agregar" && (
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
             <h3 className="text-lg font-bold mb-4">Agregar medicamento</h3>
             <div className="space-y-4">
-              <div>
-                <label className="text-xs text-slate-400 block mb-1">Nombre del medicamento</label>
+              <div><label className="text-xs text-slate-400 block mb-1">Nombre</label>
                 <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Losartán"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-amber-400/50" />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 block mb-1">Dosis</label>
-                <input type="text" value={dosis} onChange={e => setDosis(e.target.value)} placeholder="Ej: 50mg, 1 comprimido"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-amber-400/50" />
-              </div>
-
-              {/* HORARIOS */}
-              <div>
-                <label className="text-xs text-slate-400 block mb-2">Horarios de toma</label>
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500" /></div>
+              <div><label className="text-xs text-slate-400 block mb-1">Dosis</label>
+                <input type="text" value={dosis} onChange={e => setDosis(e.target.value)} placeholder="Ej: 50mg"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500" /></div>
+              <div><label className="text-xs text-slate-400 block mb-2">Horarios</label>
                 {horarios.map((h, i) => (
                   <div key={i} className="flex items-center gap-2 mb-2">
-                    <input type="time" value={h} onChange={e => updateHorario(i, e.target.value)}
-                      className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none" />
+                    <input type="time" value={h} onChange={e => updateHorario(i, e.target.value)} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none" />
                     {horarios.length > 1 && <button onClick={() => removeHorario(i)} className="text-red-400 text-xs">Quitar</button>}
                   </div>
                 ))}
-                <button onClick={addHorario} className="text-xs text-amber-300 mt-1">+ Agregar otro horario</button>
-              </div>
-
-              {/* DIAS */}
-              <div>
-                <label className="text-xs text-slate-400 block mb-2">Días de la semana</label>
+                <button onClick={addHorario} className="text-xs text-amber-300 mt-1">+ Agregar horario</button></div>
+              <div><label className="text-xs text-slate-400 block mb-2">Días</label>
                 <div className="flex gap-2 flex-wrap">
                   {DIAS_SEMANA.map(d => (
                     <button key={d.num} onClick={() => toggleDia(d.num)}
@@ -844,42 +905,27 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
                       {d.short}
                     </button>
                   ))}
-                </div>
-              </div>
-
-              {/* COLOR */}
-              <div>
-                <label className="text-xs text-slate-400 block mb-2">Color</label>
+                </div></div>
+              <div><label className="text-xs text-slate-400 block mb-2">Color</label>
                 <div className="flex gap-2">
                   {COLORES_MED.map(c => (
                     <button key={c.key} onClick={() => setColorSel(c.key)}
                       className={`h-8 w-8 rounded-full ${c.dot} ${colorSel === c.key ? "ring-2 ring-white ring-offset-2 ring-offset-[#07111f]" : "opacity-60"}`} />
                   ))}
-                </div>
-              </div>
-
-              {/* NOTIF FAMILIAR */}
+                </div></div>
               <div className="flex items-center gap-3">
                 <button onClick={() => setNotifFamiliar(!notifFamiliar)}
                   className={`h-6 w-11 rounded-full shrink-0 ${notifFamiliar ? "bg-amber-500" : "bg-white/20"} relative`}>
-                  <div className={`h-5 w-5 rounded-full bg-white absolute top-0.5 transition-all ${notifFamiliar ? "left-5.5" : "left-0.5"}`}
-                    style={{ left: notifFamiliar ? "22px" : "2px" }} />
+                  <div className="h-5 w-5 rounded-full bg-white absolute top-0.5 transition-all" style={{ left: notifFamiliar ? "22px" : "2px" }} />
                 </button>
                 <span className="text-sm text-slate-300">Avisar a familiar si no confirmo en 10 min</span>
               </div>
-
               {error && <p className="text-xs text-red-400">{error}</p>}
-
               {maxMeds > 0 && meds.length >= maxMeds ? (
-                <div className="rounded-2xl border border-orange-500/30 bg-orange-500/10 p-4">
-                  <div className="text-sm font-semibold text-orange-300">Límite alcanzado</div>
-                  <p className="mt-1 text-xs text-slate-300">Pasate a Mensual (US$2.99/mes) para más medicamentos.</p>
-                </div>
+                <UpgradeBanner feature="más medicamentos" />
               ) : (
-                <button onClick={handleAgregar} disabled={saving}
-                  className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-50">
-                  {saving ? "Guardando..." : "Guardar medicamento"}
-                </button>
+                <button onClick={handleAgregar} disabled={saving} className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-50">
+                  {saving ? "Guardando..." : "Guardar medicamento"}</button>
               )}
             </div>
           </div>
@@ -889,8 +935,24 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
   );
 }
 
+// ─── UPGRADE BANNER ──────────────────────────
+function UpgradeBanner({ feature }) {
+  return (
+    <div className="rounded-2xl p-4" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.08), rgba(184,134,11,0.04))", border: "1px solid rgba(212,175,55,0.2)" }}>
+      <div className="flex items-start gap-3">
+        <span className="text-2xl">{"\u{1F451}"}</span>
+        <div className="flex-1">
+          <div className="text-sm font-bold" style={{ color: "#d4af37" }}>Función Premium</div>
+          <p className="text-xs text-slate-400 mt-1">Desbloqueá {feature} con el plan Mensual por solo <span style={{ color: "#d4af37" }}>US$4.99/mes</span>.</p>
+          <button className="mt-2 rounded-xl px-4 py-2 text-xs font-bold text-black" style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3)" }}>Ver planes →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── CONTACTOS SCREEN ───────────────────────
-function ContactosScreen({ onBack, userPlan = "gratis" }) {
+function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "" }) {
   const [contactos, setContactos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [vista, setVista] = useState("lista");
@@ -900,6 +962,7 @@ function ContactosScreen({ onBack, userPlan = "gratis" }) {
   const [telefono, setTelefono] = useState("");
   const [prefijo, setPrefijo] = useState("54");
   const [saving, setSaving] = useState(false);
+  const [verificando, setVerificando] = useState(false);
   const limites = PLAN_LIMITS[userPlan] || PLAN_LIMITS.gratis;
   const maxContactos = limites.contactos;
 
@@ -911,15 +974,26 @@ function ContactosScreen({ onBack, userPlan = "gratis" }) {
   async function handleAgregar() {
     setError("");
     if (!nombre.trim() || !telefono.trim()) { setError("Completá nombre y teléfono."); return; }
-    if (contactos.length >= maxContactos) { setError(`Límite de ${maxContactos} contactos. Pasate a Mensual.`); return; }
+    if (contactos.length >= maxContactos) { setError(`Límite de ${maxContactos} contactos. Pasate a Premium.`); return; }
     setSaving(true);
-    const r = await addContacto({ nombre: nombre.trim(), telefono: prefijo + limpiarNumero(telefono), relacion, prioridad: contactos.length + 1 });
+    const numCompleto = prefijo + limpiarNumero(telefono);
+    const r = await addContacto({ nombre: nombre.trim(), telefono: numCompleto, relacion, prioridad: contactos.length + 1 });
+    if (r.success) {
+      // Safety Check automático
+      setVerificando(true);
+      await verificarContacto(numCompleto, nombre.trim(), nombreUsuario || "Tu contacto de Traza 360");
+      setVerificando(false);
+      setVista("lista"); setNombre(""); setTelefono(""); cargar();
+    } else setError(r.error || "Error al guardar.");
     setSaving(false);
-    if (r.success) { setVista("lista"); setNombre(""); setTelefono(""); cargar(); }
-    else setError(r.error || "Error al guardar.");
   }
 
   async function handleEliminar(id) { if (!window.confirm("Eliminar?")) return; await deleteContacto(id); cargar(); }
+
+  async function reenviarVerificacion(c) {
+    await verificarContacto(c.telefono, c.nombre, nombreUsuario);
+    alert(`Verificación enviada a ${c.nombre} ✓`);
+  }
 
   return (
     <div className="min-h-screen bg-[#07111f] px-5 py-8 text-white">
@@ -932,7 +1006,13 @@ function ContactosScreen({ onBack, userPlan = "gratis" }) {
             <span className="text-3xl">{"\u{1F465}"}</span>
           </div>
           <p className="mt-2 text-sm text-slate-400">Plan: <span className="text-cyan-300 font-semibold">{PLAN_PRICES[userPlan]?.name || "Gratis"}</span> · {contactos.length}/{maxContactos} contactos.</p>
+          {contactos.length === 0 && (
+            <div className="mt-3 rounded-xl p-3" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+              <p className="text-xs text-red-300">{"\u26A0\u{FE0F}"} Sin contactos el botón de pánico no puede alertar a nadie.</p>
+            </div>
+          )}
         </div>
+
         {vista === "lista" && (
           <>
             {loading ? <div className="text-center py-8 text-slate-400">Cargando...</div>
@@ -940,31 +1020,38 @@ function ContactosScreen({ onBack, userPlan = "gratis" }) {
               <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
                 <div className="text-5xl mb-3">{"\u{1F465}"}</div>
                 <h3 className="text-lg font-semibold">Sin contactos</h3>
-                <p className="mt-2 text-sm text-slate-400">Agregá al menos 1.</p>
+                <p className="mt-2 text-sm text-slate-400">Agregá al menos 1 contacto para que la app pueda protegerte.</p>
               </div>
             ) : (
               <div className="space-y-3 mb-6">
                 {contactos.map(c => (
-                  <div key={c.id} className="rounded-2xl border border-white/10 bg-white/5 p-4 flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <div className="text-3xl shrink-0">{getRelEmoji(c.relacion)}</div>
-                      <div><div className="text-base font-semibold">{c.nombre}</div><div className="text-xs text-cyan-300">{c.relacion}</div><div className="text-xs text-slate-400 mt-1">+{c.telefono}</div></div>
+                  <div key={c.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className="text-3xl shrink-0">{getRelEmoji(c.relacion)}</div>
+                        <div>
+                          <div className="text-base font-semibold">{c.nombre}</div>
+                          <div className="text-xs text-cyan-300">{c.relacion}</div>
+                          <div className="text-xs text-slate-400 mt-1">+{c.telefono}</div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2 shrink-0">
+                        <button onClick={() => reenviarVerificacion(c)} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300">Verificar</button>
+                        <button onClick={() => handleEliminar(c.id)} className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-300">Eliminar</button>
+                      </div>
                     </div>
-                    <button onClick={() => handleEliminar(c.id)} className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-300 shrink-0">Eliminar</button>
                   </div>
                 ))}
               </div>
             )}
-            <button onClick={() => contactos.length >= maxContactos ? null : setVista("agregar")} disabled={contactos.length >= maxContactos}
-              className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-sky-500 py-4 font-semibold text-white shadow-lg disabled:opacity-40 disabled:cursor-not-allowed">+ Agregar contacto</button>
-            {contactos.length >= maxContactos && (
-              <div className="mt-4 rounded-2xl border border-orange-500/30 bg-orange-500/10 p-4">
-                <div className="text-sm font-semibold text-orange-300">Límite alcanzado</div>
-                <p className="mt-1 text-xs text-slate-300">Pasate a Mensual (US$2.99/mes) para más contactos.</p>
-              </div>
+            {contactos.length < maxContactos ? (
+              <button onClick={() => setVista("agregar")} className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-sky-500 py-4 font-semibold text-white shadow-lg">+ Agregar contacto</button>
+            ) : (
+              <UpgradeBanner feature="más contactos de emergencia" />
             )}
           </>
         )}
+
         {vista === "agregar" && (
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
             <button onClick={() => { setVista("lista"); setError(""); }} className="text-xs text-slate-400 mb-4">← Volver</button>
@@ -981,12 +1068,19 @@ function ContactosScreen({ onBack, userPlan = "gratis" }) {
                       {getRelEmoji(r)} {r}
                     </button>))}
                 </div></div>
-              <div><label className="text-xs text-slate-400 block mb-1">Teléfono</label>
+              <div><label className="text-xs text-slate-400 block mb-1">Teléfono (con WhatsApp)</label>
                 <PhoneInput value={telefono} onChange={setTelefono} prefix={prefijo} onPrefixChange={setPrefijo} /></div>
+
+              {/* Aviso Safety Check */}
+              <div className="rounded-xl p-3" style={{ background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.15)" }}>
+                <p className="text-xs text-emerald-300">{"\u2705"} Al guardar, le enviamos un WhatsApp de verificación automático para confirmar que el número funciona.</p>
+              </div>
+
               {error && <p className="text-xs text-red-400">{error}</p>}
-              <button onClick={handleAgregar} disabled={saving}
+              {verificando && <p className="text-xs text-emerald-300 animate-pulse">{"\u{1F4F1}"} Enviando verificación por WhatsApp...</p>}
+              <button onClick={handleAgregar} disabled={saving || verificando}
                 className="w-full rounded-xl bg-gradient-to-r from-cyan-400 to-sky-500 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-50">
-                {saving ? "Guardando..." : "Guardar contacto"}</button>
+                {saving ? "Guardando..." : verificando ? "Verificando..." : "Guardar y verificar"}</button>
             </div>
           </div>
         )}
@@ -1000,6 +1094,7 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
   const [seleccionados, setSeleccionados] = useState([]);
   const [enviando, setEnviando] = useState(false);
   const [sent, setSent] = useState(false);
+  const [sentOk, setSentOk] = useState(false);
   const [detalle, setDetalle] = useState("");
   const tieneCompletar = mensaje.includes("[completar]");
 
@@ -1013,8 +1108,11 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
     const { location } = await getCurrentLocationWithFallback();
     const msgFinal = tieneCompletar ? mensaje.replace("[completar]", detalle.trim() || "alguien") : mensaje;
     const msg = buildMessageWithReply(msgFinal, location);
-    if (elegidos.length > 0) enviarWhatsApp(elegidos[0].telefono, msg);
-    setEnviando(false); setSent(true);
+    const result = await enviarWhatsApp(elegidos[0].telefono, msg);
+    setEnviando(false);
+    setSent(true);
+    setSentOk(result.success);
+    reproducirSonido();
   }
 
   return (
@@ -1022,30 +1120,24 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
       <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0d1426] p-6 shadow-2xl">
         {sent ? (
           <div className="text-center space-y-4">
+            {/* Feedback visual premium */}
             <div className="py-4">
-              <div className="text-4xl mb-2">{"\u2705"}</div>
-              <h3 className="text-lg font-bold" style={{ color: "#d4af37" }}>Alerta enviada</h3>
-              <p className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>Tu contacto recibió el WhatsApp.</p>
+              <div className="text-5xl mb-3 animate-bounce">{sentOk ? "\u2705" : "\u{1F4F1}"}</div>
+              <h3 className="text-lg font-bold" style={{ color: "#d4af37" }}>{sentOk ? "Alerta enviada" : "Abriendo WhatsApp..."}</h3>
+              <p className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                {sentOk ? "Tu contacto recibió el WhatsApp automáticamente." : "Enviando manualmente por WhatsApp."}
+              </p>
             </div>
 
-            {/* Respuestas rápidas para seguir comunicando */}
             <div className="rounded-xl p-3" style={{ background: "rgba(212,175,55,0.05)", border: "1px solid rgba(212,175,55,0.1)" }}>
               <div className="text-[9px] font-bold uppercase tracking-wider mb-2" style={{ color: "rgba(212,175,55,0.5)" }}>Respuesta rápida</div>
               <div className="grid grid-cols-4 gap-2 mb-2">
                 {[
-                  { emoji: "\u2705", text: "OK" },
-                  { emoji: "\u{1F44D}", text: "Recibí" },
-                  { emoji: "\u{1F3C3}", text: "Voy" },
-                  { emoji: "\u{1F697}", text: "Salgo" },
+                  { emoji: "\u2705", text: "OK" }, { emoji: "\u{1F44D}", text: "Recibí" },
+                  { emoji: "\u{1F3C3}", text: "Voy" }, { emoji: "\u{1F697}", text: "Salgo" },
                 ].map((r, i) => (
-                  <button key={i} onClick={() => {
-                    const elegidos = contactos.filter(c => seleccionados.includes(c.id));
-                    if (elegidos.length > 0) enviarWhatsApp(elegidos[0].telefono, `${r.emoji} ${r.text}`);
-                  }}
-                    className="rounded-lg py-2 text-center active:scale-95" style={{
-                      background: "linear-gradient(145deg, #16161f, #0c0c12)",
-                      border: "1px solid rgba(212,175,55,0.08)",
-                    }}>
+                  <button key={i} onClick={() => { const elegidos = contactos.filter(c => seleccionados.includes(c.id)); if (elegidos.length > 0) enviarWhatsApp(elegidos[0].telefono, `${r.emoji} ${r.text}`); }}
+                    className="rounded-lg py-2 text-center active:scale-95" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)" }}>
                     <div className="text-xl">{r.emoji}</div>
                     <div className="text-[8px] mt-0.5" style={{ color: "rgba(212,175,55,0.4)" }}>{r.text}</div>
                   </button>
@@ -1053,65 +1145,40 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
               </div>
               <div className="grid grid-cols-4 gap-2 mb-2">
                 {[
-                  { emoji: "\u{1F3E0}", text: "En casa" },
-                  { emoji: "\u23F0", text: "5 min" },
-                  { emoji: "\u{1F4CD}", text: "Ubicación" },
-                  { emoji: "\u{1F44B}", text: "Llegué" },
+                  { emoji: "\u{1F3E0}", text: "En casa" }, { emoji: "\u23F0", text: "5 min" },
+                  { emoji: "\u{1F4CD}", text: "Ubicación" }, { emoji: "\u{1F44B}", text: "Llegué" },
                 ].map((r, i) => (
-                  <button key={i} onClick={() => {
-                    const elegidos = contactos.filter(c => seleccionados.includes(c.id));
-                    if (elegidos.length > 0) enviarWhatsApp(elegidos[0].telefono, `${r.emoji} ${r.text}`);
-                  }}
-                    className="rounded-lg py-2 text-center active:scale-95" style={{
-                      background: "linear-gradient(145deg, #16161f, #0c0c12)",
-                      border: "1px solid rgba(212,175,55,0.08)",
-                    }}>
+                  <button key={i} onClick={() => { const elegidos = contactos.filter(c => seleccionados.includes(c.id)); if (elegidos.length > 0) enviarWhatsApp(elegidos[0].telefono, `${r.emoji} ${r.text}`); }}
+                    className="rounded-lg py-2 text-center active:scale-95" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)" }}>
                     <div className="text-xl">{r.emoji}</div>
                     <div className="text-[8px] mt-0.5" style={{ color: "rgba(212,175,55,0.4)" }}>{r.text}</div>
                   </button>
                 ))}
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => {
-                    const elegidos = contactos.filter(c => seleccionados.includes(c.id));
-                    if (elegidos.length > 0) enviarWhatsApp(elegidos[0].telefono, "\u{1F6A8} AYUDA URGENTE");
-                  }}
-                  className="rounded-lg py-2 text-center active:scale-95" style={{
-                    background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.3)",
-                  }}>
-                  <div className="text-xl">{"\u{1F6A8}"}</div>
-                  <div className="text-[8px] mt-0.5 text-red-400">AYUDA</div>
+                <button onClick={() => { const elegidos = contactos.filter(c => seleccionados.includes(c.id)); if (elegidos.length > 0) enviarWhatsApp(elegidos[0].telefono, "\u{1F6A8} AYUDA URGENTE"); }}
+                  className="rounded-lg py-2 text-center active:scale-95" style={{ background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.3)" }}>
+                  <div className="text-xl">{"\u{1F6A8}"}</div><div className="text-[8px] mt-0.5 text-red-400">AYUDA</div>
                 </button>
-                <button onClick={() => {
-                    const txt = prompt("Escribí tu mensaje:");
-                    const elegidos = contactos.filter(c => seleccionados.includes(c.id));
-                    if (txt && elegidos.length > 0) enviarWhatsApp(elegidos[0].telefono, txt);
-                  }}
-                  className="rounded-lg py-2 text-center active:scale-95" style={{
-                    background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)",
-                  }}>
-                  <div className="text-xl">{"\u270D\u{FE0F}"}</div>
-                  <div className="text-[8px] mt-0.5" style={{ color: "rgba(212,175,55,0.4)" }}>Escribir</div>
+                <button onClick={() => { const txt = prompt("Escribí tu mensaje:"); const elegidos = contactos.filter(c => seleccionados.includes(c.id)); if (txt && elegidos.length > 0) enviarWhatsApp(elegidos[0].telefono, txt); }}
+                  className="rounded-lg py-2 text-center active:scale-95" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)" }}>
+                  <div className="text-xl">{"\u270D\u{FE0F}"}</div><div className="text-[8px] mt-0.5" style={{ color: "rgba(212,175,55,0.4)" }}>Escribir</div>
                 </button>
               </div>
             </div>
-
-            <button onClick={onClose} className="w-full rounded-xl py-3 text-sm font-semibold" style={{
-              background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)",
-            }}>Cerrar</button>
+            <button onClick={onClose} className="w-full rounded-xl py-3 text-sm font-semibold" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>Cerrar</button>
           </div>
         ) : (
           <>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold">A quién avisar?</h3>
-              <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl">×</button>
+              <h3 className="text-lg font-bold">¿A quién avisar?</h3>
+              <button onClick={onClose} className="text-slate-400 text-2xl">×</button>
             </div>
             {tieneCompletar && (
               <div className="mb-4">
                 <label className="text-xs text-slate-400 block mb-1">Completá el detalle</label>
-                <input type="text" value={detalle} onChange={e => setDetalle(e.target.value)}
-                  placeholder="Nombre de la persona o lugar"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400/50" />
+                <input type="text" value={detalle} onChange={e => setDetalle(e.target.value)} placeholder="Nombre de la persona o lugar"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500" />
               </div>
             )}
             {contactos.length === 0 ? (
@@ -1135,7 +1202,7 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
                 </div>
                 <button onClick={enviar} disabled={enviando || seleccionados.length === 0}
                   className="w-full rounded-xl bg-gradient-to-r from-red-500 to-rose-500 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-40">
-                  {enviando ? "Enviando..." : `Enviar alerta (${seleccionados.length})`}</button>
+                  {enviando ? "Enviando..." : `\u{1F6A8} Enviar alerta (${seleccionados.length})`}</button>
               </>
             )}
           </>
@@ -1145,561 +1212,77 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
   );
 }
 
-// ─── TERCERO REMOTO MODAL (v15 — Daily.co WebRTC) ───────────────────
-function CuidadoModal({ onClose, contactos = [] }) {
-  const [modo, setModo] = useState(null); // null | cuidador | victima
-  const [paso, setPaso] = useState("inicio");
-  // Cuidador
-  const [contactoSel, setContactoSel] = useState(null);
-  const [solicitudes, setSolicitudes] = useState({ ubicacion: false, audio: false, video: false });
-  // Daily.co
-  const [roomUrl, setRoomUrl] = useState(null);
-  const [roomName, setRoomName] = useState(null);
-  const [creandoSala, setCreandoSala] = useState(false);
-  const [enVivo, setEnVivo] = useState(false);
-  const [audioActivo, setAudioActivo] = useState(false);
-  const [videoActivo, setVideoActivo] = useState(false);
-  const dailyFrameRef = useRef(null);
-  const iframeContainerRef = useRef(null);
-  // Víctima
-  const [solicitudesRecibidas, setSolicitudesRecibidas] = useState([]);
-  const [cuidadorNombre, setCuidadorNombre] = useState("");
-  const [permisosActivos, setPermisosActivos] = useState({});
-
-  function toggleSolicitud(key) { setSolicitudes({ ...solicitudes, [key]: !solicitudes[key] }); }
-
-  // Crear sala Daily.co
-  async function crearSalaDaily() {
-    setCreandoSala(true);
-    try {
-      const resp = await fetch("/api/daily-room", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "create" }),
-      });
-      const data = await resp.json();
-      if (data.success) {
-        setRoomUrl(data.roomUrl);
-        setRoomName(data.roomName);
-        return data.roomUrl;
-      } else {
-        alert("Error al crear sala: " + (data.error || "desconocido"));
-        return null;
-      }
-    } catch (e) {
-      alert("Error de conexión al crear sala");
-      return null;
-    } finally {
-      setCreandoSala(false);
-    }
-  }
-
-  // Unirse a la sala con iframe de Daily Prebuilt
-  function unirseSala(url) {
-    if (!url || !iframeContainerRef.current) return;
-    iframeContainerRef.current.innerHTML = "";
-    const iframe = document.createElement("iframe");
-    iframe.src = url + "?showLeaveButton=true&showFullscreenButton=true";
-    iframe.style.width = "100%";
-    iframe.style.height = "300px";
-    iframe.style.borderRadius = "12px";
-    iframe.style.border = "1px solid rgba(255,255,255,0.1)";
-    iframe.allow = "microphone; camera; autoplay; display-capture";
-    iframeContainerRef.current.appendChild(iframe);
-    dailyFrameRef.current = iframe;
-    setEnVivo(true);
-    setAudioActivo(true);
-  }
-
-  // Terminar sesión
-  function terminarSesion() {
-    if (dailyFrameRef.current) {
-      dailyFrameRef.current.remove();
-      dailyFrameRef.current = null;
-    }
-    if (roomName) {
-      fetch("/api/daily-room", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete", roomName }),
-      }).catch(() => {});
-    }
-    setEnVivo(false);
-    setAudioActivo(false);
-    setVideoActivo(false);
-    setRoomUrl(null);
-    setRoomName(null);
-    onClose();
-  }
-
-  // CUIDADOR envía solicitudes + crea sala DIRECTAMENTE
-  async function enviarSolicitudes() {
-    if (!contactoSel) return;
-    const items = [];
-    if (solicitudes.ubicacion) items.push("Ver tu ubicacion en tiempo real");
-    if (solicitudes.audio) items.push("Escuchar tu entorno (audio en vivo)");
-    if (solicitudes.video) items.push("Ver tu camara (video en vivo) [Premium]");
-    if (items.length === 0) { alert("Selecciona al menos 1 solicitud."); return; }
-
-    // Crear sala Daily.co
-    const salaUrl = await crearSalaDaily();
-    if (!salaUrl) return;
-
-    const msg = `TRAZA 360 - TE VIGILO ACTIVADO\n\nEstoy cuidandote. Abri este link para conectar audio/video en vivo:\n\n${salaUrl}\n\nSi no queres ser vigilado/a, ignora este mensaje.\n\nApp: https://traza-360-web.vercel.app`;
-    enviarWhatsApp(contactoSel.telefono, msg);
-    setPaso("panel_cuidador");
-    // Cuidador se une automáticamente
-    setTimeout(() => unirseSala(salaUrl), 500);
-  }
-
-  // VÍCTIMA simula recibir solicitudes
-  function simularRecepcion() {
-    setCuidadorNombre("Cuidador");
-    setSolicitudesRecibidas([
-      { key: "ubicacion", icon: "\u{1F4CD}", texto: "quiere ver tu ubicación", estado: null },
-      { key: "audio", icon: "\u{1F3A7}", texto: "quiere escuchar tu entorno", estado: null },
-      { key: "video", icon: "\u{1F4F9}", texto: "quiere ver tu cámara (Premium)", estado: null },
-    ]);
-    setPaso("solicitudes");
-  }
-
-  function responderSolicitud(key, aceptar) {
-    setSolicitudesRecibidas(prev => prev.map(s => s.key === key ? { ...s, estado: aceptar ? "aceptado" : "rechazado" } : s));
-    if (aceptar) setPermisosActivos(prev => ({ ...prev, [key]: true }));
-  }
-
-  async function confirmarPermisos() {
-    const aceptados = solicitudesRecibidas.filter(s => s.estado === "aceptado").map(s => s.key);
-    if (aceptados.length > 0) {
-      // Crear sala para víctima si no existe
-      let url = roomUrl;
-      if (!url) {
-        url = await crearSalaDaily();
-      }
-      if (contactos.length > 0) {
-        const textos = [];
-        if (aceptados.includes("ubicacion")) textos.push("Ver mi ubicacion");
-        if (aceptados.includes("audio")) textos.push("Escuchar mi entorno");
-        if (aceptados.includes("video")) textos.push("Ver mi camara");
-        enviarWhatsApp(contactos[0].telefono, `TRAZA 360 - Acepte que me cuides.\n\nPermisos:\n${textos.map(t => "- " + t).join("\n")}\n\nSala segura: ${url || "Abri la app"}\n\nEstoy protegido/a.`);
-      }
-      if (url) setTimeout(() => unirseSala(url), 500);
-    }
-    setPaso("cuidado_activo");
-  }
-
-  function handleEstoyBien() {
-    if (contactos.length > 0) enviarWhatsApp(contactos[0].telefono, "Estoy bien. Todo en orden.");
-  }
-
-  function handleAyuda() {
-    if (contactos.length > 0) {
-      getCurrentLocationWithFallback().then(({ location }) => {
-        enviarWhatsApp(contactos[0].telefono, buildMessageWithReply("AYUDA URGENTE - Necesito ayuda ahora.", location));
-      });
-    }
-  }
-
-  function getRelEmoji(r) { return {"Madre":"\u{1F469}","Padre":"\u{1F468}","Hermana":"\u{1F46D}","Hermano":"\u{1F46C}","Pareja":"\u{1F491}","Amigo/a":"\u{1F91D}","Hija":"\u{1F467}","Hijo":"\u{1F466}","Vecino/a":"\u{1F3D8}\u{FE0F}","Otro":"\u{1F464}"}[r]||"\u{1F464}"; }
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm overflow-y-auto py-8">
-      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0d1426] p-6 shadow-2xl my-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold">{"\u{1FAC2}"} Te vigilo</h3>
-          <button onClick={terminarSesion} className="text-slate-400 hover:text-white text-2xl">{"\u00D7"}</button>
-        </div>
-
-        {/* ELEGIR MODO - Solo Te cuido */}
-        {!modo && (
-          <div className="space-y-3">
-            <p className="text-xs text-slate-400 mb-3">Activá vigilancia sobre tu contacto.</p>
-            <button onClick={() => { setModo("cuidador"); setPaso("elegir_contacto"); }}
-              className="w-full rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-4 text-left">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{"\u{1F441}\u{FE0F}"}</span>
-                <div><div className="text-sm font-semibold text-cyan-300">Te cuido</div>
-                  <div className="text-[11px] text-slate-400">Rastreá, escuchá o mirá a tu contacto en vivo.</div></div>
-              </div>
-            </button>
-          </div>
-        )}
-
-        {/* CUIDADOR: ELEGIR CONTACTO */}
-        {modo === "cuidador" && paso === "elegir_contacto" && (
-          <div className="space-y-3">
-            <p className="text-xs text-slate-400 mb-2">A quién querés cuidar?</p>
-            {contactos.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-4">Primero agregá contactos de confianza.</p>
-            ) : (
-              <>
-                {contactos.map(c => (
-                  <button key={c.id} onClick={() => { setContactoSel(c); setPaso("solicitudes_cuidador"); }}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left hover:bg-white/10">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{getRelEmoji(c.relacion)}</span>
-                      <div><div className="text-sm font-semibold text-slate-100">{c.nombre}</div>
-                        <div className="text-[11px] text-slate-400">{c.relacion} · +{c.telefono}</div></div>
-                    </div>
-                  </button>
-                ))}
-              </>
-            )}
-          </div>
-        )}
-
-        {/* CUIDADOR: ELEGIR QUÉ ACTIVAR — Botones independientes */}
-        {modo === "cuidador" && paso === "solicitudes_cuidador" && contactoSel && (
-          <div className="space-y-3">
-            <p className="text-xs text-slate-400 mb-2">Qué activás para {contactoSel.nombre}?</p>
-
-            {/* Te rastreo - Solo ubicación */}
-            <button onClick={() => {
-              getCurrentLocationWithFallback().then(({ location }) => {
-                const msg = buildMessageWithReply(`TRAZA 360 - TE RASTREO ACTIVADO\n\nEstoy rastreando tu ubicación para cuidarte.`, location);
-                enviarWhatsApp(contactoSel.telefono, msg);
-              });
-              alert("Ubicación enviada a " + contactoSel.nombre);
-            }}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-4 text-left active:scale-[0.98]">
-              <div className="flex items-center gap-3">
-                <span className="text-xl"><MapPin size={22} /></span>
-                <div className="flex-1"><div className="text-sm font-bold" style={{ color: "#d4af37" }}>Te rastreo</div><div className="text-[11px] text-slate-400">Envía tu ubicación GPS en tiempo real</div></div>
-              </div>
-            </button>
-
-            {/* Te escucho - Solo audio */}
-            <button onClick={async () => {
-              setSolicitudes({ ubicacion: false, audio: true, video: false });
-              const salaUrl = await crearSalaDaily();
-              if (!salaUrl) return;
-              const msg = `TRAZA 360 - TE ESCUCHO\n\nTe estoy cuidando. Toca este link para que pueda escuchar tu entorno:\n\n${salaUrl}\n\nSolo toca el link. No necesitas hacer nada mas.`;
-              enviarWhatsApp(contactoSel.telefono, msg);
-              setPaso("panel_cuidador");
-              // CUIDADOR entra como RECEPTOR SILENCIOSO: mic OFF, cam OFF
-              setTimeout(() => {
-                if (iframeContainerRef.current) {
-                  iframeContainerRef.current.innerHTML = "";
-                  const iframe = document.createElement("iframe");
-                  iframe.src = salaUrl + "?showLeaveButton=true&showFullscreenButton=false&startVideoOff=true&startAudioOff=true&activeSpeakerMode=false";
-                  iframe.style.width = "100%";
-                  iframe.style.height = "200px";
-                  iframe.style.borderRadius = "12px";
-                  iframe.style.border = "1px solid rgba(212,175,55,0.15)";
-                  iframe.allow = "microphone; camera; autoplay";
-                  iframeContainerRef.current.appendChild(iframe);
-                  dailyFrameRef.current = iframe;
-                  setEnVivo(true);
-                  setAudioActivo(true);
-                }
-              }, 500);
-            }}
-              className="w-full rounded-xl px-4 py-4 text-left active:scale-[0.98]" style={{ background: "rgba(212,175,55,0.06)", border: "1px solid rgba(212,175,55,0.15)" }}>
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{"\u{1F3A7}"}</span>
-                <div className="flex-1"><div className="text-sm font-bold" style={{ color: "#d4af37" }}>Te escucho</div><div className="text-[11px]" style={{ color: "rgba(212,175,55,0.5)" }}>Solo audio en vivo · Premium</div></div>
-                <span className="text-[9px] px-2 py-1 rounded-md" style={{ background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)", color: "#d4af37" }}>PRO</span>
-              </div>
-            </button>
-
-            {/* Te veo - Solo video */}
-            <button onClick={async () => {
-              setSolicitudes({ ubicacion: false, audio: false, video: true });
-              const salaUrl = await crearSalaDaily();
-              if (!salaUrl) return;
-              const msg = `TRAZA 360 - TE VEO\n\nTe estoy cuidando. Toca este link para que pueda ver tu entorno:\n\n${salaUrl}\n\nSolo toca el link. No necesitas hacer nada mas.`;
-              enviarWhatsApp(contactoSel.telefono, msg);
-              setPaso("panel_cuidador");
-              // CUIDADOR entra como RECEPTOR SILENCIOSO: mic OFF, cam OFF
-              setTimeout(() => {
-                if (iframeContainerRef.current) {
-                  iframeContainerRef.current.innerHTML = "";
-                  const iframe = document.createElement("iframe");
-                  iframe.src = salaUrl + "?showLeaveButton=true&showFullscreenButton=true&startVideoOff=true&startAudioOff=true&activeSpeakerMode=false";
-                  iframe.style.width = "100%";
-                  iframe.style.height = "300px";
-                  iframe.style.borderRadius = "12px";
-                  iframe.style.border = "1px solid rgba(212,175,55,0.15)";
-                  iframe.allow = "microphone; camera; autoplay";
-                  iframeContainerRef.current.appendChild(iframe);
-                  dailyFrameRef.current = iframe;
-                  setEnVivo(true);
-                  setVideoActivo(true);
-                }
-              }, 500);
-            }}
-              className="w-full rounded-xl px-4 py-4 text-left active:scale-[0.98]" style={{ background: "rgba(212,175,55,0.06)", border: "1px solid rgba(212,175,55,0.15)" }}>
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{"\u{1F4F9}"}</span>
-                <div className="flex-1"><div className="text-sm font-bold" style={{ color: "#d4af37" }}>Te veo</div><div className="text-[11px]" style={{ color: "rgba(212,175,55,0.5)" }}>Video en vivo · Premium</div></div>
-                <span className="text-[9px] px-2 py-1 rounded-md" style={{ background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)", color: "#d4af37" }}>PRO</span>
-              </div>
-            </button>
-          </div>
-        )}
-
-        {/* CUIDADOR: PANEL EN VIVO */}
-        {modo === "cuidador" && paso === "panel_cuidador" && (
-          <div className="space-y-3">
-            <div className="rounded-xl p-3 text-center" style={{ background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.2)" }}>
-              <div className="text-sm font-bold" style={{ color: "#d4af37" }}>
-                {enVivo ? `\u{1F7E2} EN VIVO — ${contactoSel?.nombre}` : `\u{1F4E1} Esperando a ${contactoSel?.nombre}...`}
-              </div>
-              <div className="text-[10px] mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>
-                {audioActivo && !videoActivo && "\u{1F3A7} Solo audio"}
-                {videoActivo && !audioActivo && "\u{1F4F9} Solo video"}
-                {audioActivo && videoActivo && "\u{1F3A7}\u{1F4F9} Audio + Video"}
-              </div>
-            </div>
-
-            {/* Panel Daily.co */}
-            <div ref={iframeContainerRef} className="rounded-xl overflow-hidden">
-              {!enVivo && (
-                <div className="rounded-xl p-8 text-center" style={{ background: "linear-gradient(145deg, #12121a, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)" }}>
-                  <div className="text-4xl mb-3 animate-pulse">{"\u{1F4E1}"}</div>
-                  <div className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>{creandoSala ? "Creando sala segura..." : "Link enviado por WhatsApp"}</div>
-                  <div className="text-[10px] mt-2" style={{ color: "rgba(255,255,255,0.2)" }}>Esperando que {contactoSel?.nombre} abra el link</div>
-                </div>
-              )}
-            </div>
-
-            {/* Botones simples REC / STOP */}
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={terminarSesion}
-                className="rounded-xl py-4 text-center active:scale-95" style={{
-                  background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.3)",
-                }}>
-                <div className="text-2xl">{"\u23F9\u{FE0F}"}</div>
-                <div className="text-[10px] mt-1 text-red-400 font-bold">STOP</div>
-              </button>
-              <button onClick={() => {
-                if (contactos.length > 0) enviarWhatsApp(contactoSel?.telefono, "\u2705 Sesión finalizada. Todo bien.");
-                terminarSesion();
-              }}
-                className="rounded-xl py-4 text-center active:scale-95" style={{
-                  background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)",
-                }}>
-                <div className="text-2xl">{"\u2705"}</div>
-                <div className="text-[10px] mt-1 text-emerald-400 font-bold">GUARDAR Y SALIR</div>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* VÍCTIMA: VER SOLICITUDES */}
-        {modo === "victima" && paso === "solicitudes" && (
-          <div className="space-y-3">
-            <div className="rounded-xl bg-cyan-500/10 border border-cyan-500/30 p-3 mb-3">
-              <div className="text-sm font-semibold text-cyan-300 text-center">Alguien quiere cuidarte</div>
-              <div className="text-[11px] text-slate-400 text-center mt-1">Aceptá o rechazá cada permiso</div>
-            </div>
-
-            {solicitudesRecibidas.map(s => (
-              <div key={s.key} className={`rounded-xl border p-4 ${s.estado === "aceptado" ? "border-emerald-500/40 bg-emerald-500/10" : s.estado === "rechazado" ? "border-red-500/30 bg-red-500/5 opacity-50" : "border-white/10 bg-white/5"}`}>
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-xl">{s.icon}</span>
-                  <div className="flex-1 text-sm text-slate-200">{s.texto}</div>
-                </div>
-                {s.estado === null ? (
-                  <div className="flex gap-2">
-                    <button onClick={() => responderSolicitud(s.key, true)}
-                      className="flex-1 rounded-lg bg-emerald-500/20 border border-emerald-500/30 py-2 text-xs font-semibold text-emerald-300">Permitir</button>
-                    <button onClick={() => responderSolicitud(s.key, false)}
-                      className="flex-1 rounded-lg bg-red-500/10 border border-red-500/30 py-2 text-xs font-semibold text-red-300">Rechazar</button>
-                  </div>
-                ) : (
-                  <div className={`text-xs font-semibold text-center ${s.estado === "aceptado" ? "text-emerald-300" : "text-red-300"}`}>
-                    {s.estado === "aceptado" ? "Permitido" : "Rechazado"}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {solicitudesRecibidas.every(s => s.estado !== null) && (
-              <button onClick={confirmarPermisos}
-                className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white shadow-lg">
-                Confirmar y activar cuidado
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* VÍCTIMA: CUIDADO ACTIVO CON AUDIO/VIDEO */}
-        {paso === "cuidado_activo" && (
-          <div className="text-center space-y-4">
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
-              <div className="text-2xl mb-2">{"\u{1FAC2}"}</div>
-              <div className="text-sm font-semibold text-emerald-300">Te están cuidando</div>
-              <div className="mt-3 flex flex-wrap justify-center gap-2">
-                {permisosActivos.ubicacion && <span className="rounded-lg bg-white/10 px-2 py-1 text-[11px] text-slate-300">{"\u{1F4CD}"} Ubicación</span>}
-                {permisosActivos.audio && <span className="rounded-lg bg-emerald-500/20 px-2 py-1 text-[11px] text-emerald-300">{"\u{1F3A7}"} Audio EN VIVO</span>}
-                {permisosActivos.video && <span className="rounded-lg bg-cyan-500/20 px-2 py-1 text-[11px] text-cyan-300">{"\u{1F4F9}"} Video EN VIVO</span>}
-              </div>
-            </div>
-
-            {/* Daily.co iframe para víctima */}
-            <div ref={iframeContainerRef} className="rounded-xl overflow-hidden" />
-
-            {(permisosActivos.audio || permisosActivos.video) && !enVivo && roomUrl && (
-              <button onClick={() => unirseSala(roomUrl)}
-                className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white shadow-lg">
-                {"\u{1F3A7}"} Conectar audio/video en vivo
-              </button>
-            )}
-
-            {/* Respuestas rápidas con emojis */}
-            <div className="rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #13131d, #0e0e16)", border: "1px solid rgba(212,175,55,0.1)" }}>
-              <div className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: "rgba(212,175,55,0.5)" }}>Respuesta rápida</div>
-              <div className="grid grid-cols-4 gap-2 mb-2">
-                {[
-                  { emoji: "\u2705", text: "OK" },
-                  { emoji: "\u{1F44D}", text: "Recibí" },
-                  { emoji: "\u{1F3C3}", text: "Voy" },
-                  { emoji: "\u{1F697}", text: "Salgo" },
-                ].map((r, i) => (
-                  <button key={i} onClick={() => { if (contactos.length > 0) enviarWhatsApp(contactos[0].telefono, `${r.emoji} ${r.text}`); }}
-                    className="rounded-xl py-3 text-center active:scale-95 transition-all" style={{
-                      background: "linear-gradient(145deg, #16161f, #0c0c12)",
-                      border: "1px solid rgba(212,175,55,0.08)",
-                      boxShadow: "3px 3px 8px rgba(0,0,0,0.4), -2px -2px 6px rgba(212,175,55,0.01)",
-                    }}>
-                    <div className="text-2xl">{r.emoji}</div>
-                    <div className="text-[9px] mt-1" style={{ color: "rgba(212,175,55,0.5)" }}>{r.text}</div>
-                  </button>
-                ))}
-              </div>
-              <div className="grid grid-cols-4 gap-2 mb-2">
-                {[
-                  { emoji: "\u{1F3E0}", text: "En casa" },
-                  { emoji: "\u23F0", text: "5 min" },
-                  { emoji: "\u{1F4CD}", text: "Ubicación" },
-                  { emoji: "\u{1F44B}", text: "Llegué" },
-                ].map((r, i) => (
-                  <button key={i} onClick={() => { if (contactos.length > 0) enviarWhatsApp(contactos[0].telefono, `${r.emoji} ${r.text}`); }}
-                    className="rounded-xl py-3 text-center active:scale-95 transition-all" style={{
-                      background: "linear-gradient(145deg, #16161f, #0c0c12)",
-                      border: "1px solid rgba(212,175,55,0.08)",
-                      boxShadow: "3px 3px 8px rgba(0,0,0,0.4), -2px -2px 6px rgba(212,175,55,0.01)",
-                    }}>
-                    <div className="text-2xl">{r.emoji}</div>
-                    <div className="text-[9px] mt-1" style={{ color: "rgba(212,175,55,0.5)" }}>{r.text}</div>
-                  </button>
-                ))}
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <button onClick={() => { if (contactos.length > 0) enviarWhatsApp(contactos[0].telefono, "\u{1F6A8} AYUDA URGENTE"); }}
-                  className="rounded-xl py-3 text-center active:scale-95 transition-all" style={{
-                    background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.3)",
-                  }}>
-                  <div className="text-2xl">{"\u{1F6A8}"}</div>
-                  <div className="text-[9px] mt-1 text-red-400">AYUDA</div>
-                </button>
-                <button onClick={() => { setShowGrabacion && setShowGrabacion(true); }}
-                  className="rounded-xl py-3 text-center active:scale-95 transition-all" style={{
-                    background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.15)",
-                  }}>
-                  <div className="text-2xl">{"\u{1F399}\u{FE0F}"}</div>
-                  <div className="text-[9px] mt-1" style={{ color: "#d4af37" }}>Audio</div>
-                </button>
-                <button onClick={() => {
-                    const txt = prompt("Escribí tu mensaje:");
-                    if (txt && contactos.length > 0) enviarWhatsApp(contactos[0].telefono, txt);
-                  }}
-                  className="rounded-xl py-3 text-center active:scale-95 transition-all" style={{
-                    background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)",
-                  }}>
-                  <div className="text-2xl">{"\u270D\u{FE0F}"}</div>
-                  <div className="text-[9px] mt-1" style={{ color: "rgba(212,175,55,0.5)" }}>Escribir</div>
-                </button>
-              </div>
-            </div>
-
-            <button onClick={terminarSesion}
-              className="w-full rounded-xl py-3 text-sm font-semibold" style={{
-                background: "linear-gradient(145deg, #16161f, #0c0c12)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                color: "rgba(255,255,255,0.4)",
-              }}>
-              {"\u23F9\u{FE0F}"} Terminar sesión
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── MÓDULOS ────────────────────────────────
+// ─── MÓDULOS (Renombrados v17) ────────────────
 const MODULES = [
-  { key: "violencia", emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de género", desc: "Alerta silenciosa, ubicación y red de apoyo.",
+  { key: "mi_escudo", emoji: "\u{1F6E1}\u{FE0F}", title: "Mi Escudo", desc: "Violencia de género — Alerta silenciosa, ubicación y red de apoyo.",
     color: "from-fuchsia-500 to-rose-500", border: "border-fuchsia-500/20", accentBg: "bg-fuchsia-500/10", accentBorder: "border-fuchsia-500/30", accentText: "text-fuchsia-300",
     actions: [
-      { key: "panico", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "ALERTA - Botón de pánico activado. Necesito ayuda urgente." },
-      { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío mi ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación en vivo." },
-      { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido ambiente", desc: "Grabación silenciosa.", type: "record_audio" },
+      { key: "panico", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "ALERTA — Botón de pánico activado. Necesito ayuda urgente." },
+      { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío mi ubicación ahora.", type: "alert_contacts", message: "Compartiendo mi ubicación en vivo." },
+      { key: "checkin", icon: "\u23F1\u{FE0F}", name: "Check-in de seguridad", desc: "Timer: si no avisás, se alerta.", type: "checkin", titulo: "Check-in — Mi Escudo" },
+      { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar evidencia", desc: "Grabación silenciosa.", type: "record_audio" },
       { key: "evidencias", icon: "\u{1F4C1}", name: "Mis Evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
       { key: "entro", icon: "\u{1F3D8}\u{FE0F}", name: "Entro a la casa de...", desc: "Aviso con ubicación.", type: "alert_contacts", message: "Entro a la casa de [completar]." },
       { key: "reuno", icon: "\u{1F465}", name: "Me reúno con...", desc: "Aviso.", type: "alert_contacts", message: "Me reúno con [completar]." },
-      { key: "lugar_desc", icon: "\u23F1\u{FE0F}", name: "Entro a lugar desconocido", desc: "Timer: si no avisás, se alerta.", type: "timer_lugar" },
       { key: "uber", icon: "\u{1F697}", name: "Llamar transporte", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
       { key: "taxi", icon: "\u{1F696}", name: "Llamar taxi de confianza", desc: "Llama a tu taxi preestablecido.", type: "taxi" },
     ]},
-  { key: "adolescente", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente seguro", desc: "Salidas, regresos y protección anti-bullying.",
+  { key: "los_cuido", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Los Cuido", desc: "Adolescente seguro — Salidas, regresos y anti-bullying.",
     color: "from-sky-400 to-cyan-500", border: "border-sky-500/20", accentBg: "bg-sky-500/10", accentBorder: "border-sky-500/30", accentText: "text-sky-300",
     actions: [
-      { key: "peligro", icon: "\u{1F6A8}", name: "Estoy en peligro (SOS)", desc: "Alerta inmediata.", type: "alert_contacts", message: "SOS - Estoy en peligro." },
+      { key: "peligro", icon: "\u{1F6A8}", name: "Estoy en peligro (SOS)", desc: "Alerta inmediata.", type: "alert_contacts", message: "SOS — Estoy en peligro." },
       { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
-      { key: "cole", icon: "\u{1F3EB}", name: "Buscame por el cole", desc: "Aviso silencioso.", type: "alert_contacts", message: "URGENTE - Necesito que me busquen por el colegio." },
-      { key: "bullying", icon: "\u{1F399}\u{FE0F}", name: "Bullying - Grabar evidencia", desc: "Grabación silenciosa.", type: "record_audio" },
+      { key: "checkin", icon: "\u23F1\u{FE0F}", name: "Check-in de seguridad", desc: "Timer automático.", type: "checkin", titulo: "Check-in — Los Cuido" },
+      { key: "cole", icon: "\u{1F3EB}", name: "Buscame por el cole", desc: "Aviso silencioso.", type: "alert_contacts", message: "URGENTE — Necesito que me busquen por el colegio." },
+      { key: "bullying", icon: "\u{1F399}\u{FE0F}", name: "Grabar evidencia de bullying", desc: "Grabación silenciosa.", type: "record_audio" },
       { key: "evidencias", icon: "\u{1F4C1}", name: "Mis Evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
       { key: "sali", icon: "\u{1F6B6}", name: "Salí de casa, voy a lo de...", desc: "Aviso.", type: "alert_contacts", message: "Salí de casa. Voy a lo de [completar]." },
-      { key: "lugar_desc", icon: "\u23F1\u{FE0F}", name: "Entro a lugar desconocido", desc: "Timer: si no avisás, se alerta.", type: "timer_lugar" },
       { key: "maps", icon: "\u{1F5FA}\u{FE0F}", name: "Llegar a casa (GPS)", desc: "Abre Maps.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
-      { key: "llegue", icon: "\u2705", name: "Llegué bien", desc: "Confirmación.", type: "alert_contacts", message: "Llegué bien." },
+      { key: "llegue", icon: "\u2705", name: "Llegué bien", desc: "Confirmación.", type: "alert_contacts", message: "Llegué bien a casa." },
       { key: "perdido", icon: "\u{1F4CD}", name: "Estoy perdido", desc: "Envía ubicación.", type: "alert_contacts", message: "Estoy perdido." },
       { key: "uber", icon: "\u{1F697}", name: "Llamar transporte", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
-      { key: "taxi", icon: "\u{1F696}", name: "Llamar taxi de confianza", desc: "Llama a tu taxi preestablecido.", type: "taxi" },
     ]},
-  { key: "adulto_mayor", emoji: "\u{1FAF6}", title: "Adulto mayor seguro", desc: "Seguimiento, medicamentos y asistencia.",
+  { key: "los_protejo", emoji: "\u{1FAF6}", title: "Los Protejo", desc: "Adulto mayor seguro — Medicamentos, caídas y asistencia.",
     color: "from-amber-400 to-orange-500", border: "border-amber-500/20", accentBg: "bg-amber-500/10", accentBorder: "border-amber-500/30", accentText: "text-amber-300",
     actions: [
-      { key: "cai", icon: "\u{1F198}", name: "Me caí", desc: "Alerta inmediata.", type: "alert_contacts", message: "ALERTA - Me caí." },
+      { key: "cai", icon: "\u{1F198}", name: "Me caí", desc: "Alerta inmediata.", type: "alert_contacts", message: "ALERTA — Me caí y necesito ayuda." },
       { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
-      { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido ambiente", desc: "Grabación silenciosa.", type: "record_audio" },
+      { key: "checkin", icon: "\u23F1\u{FE0F}", name: "Check-in de seguridad", desc: "Timer automático.", type: "checkin", titulo: "Check-in — Los Protejo" },
       { key: "pastillero", icon: "\u{1F48A}", name: "Mis Medicamentos", desc: "Pastillero virtual con alarmas.", type: "pastillero" },
+      { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar evidencia", desc: "Grabación silenciosa.", type: "record_audio" },
       { key: "evidencias", icon: "\u{1F4C1}", name: "Mis Evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
       { key: "medicacion", icon: "\u2705", name: "Tomé la medicación", desc: "Confirmación.", type: "alert_contacts", message: "Tomé la medicación del horario." },
       { key: "familiar", icon: "\u{1F4DE}", name: "Llamar a familiar", desc: "Contactar.", type: "alert_contacts", message: "Necesito hablar con mi familiar." },
-      { key: "perdi", icon: "\u{1F4CD}", name: "Me perdí", desc: "Envía ubicación.", type: "alert_contacts", message: "Me perdí." },
+      { key: "perdi", icon: "\u{1F4CD}", name: "Me perdí", desc: "Envía ubicación.", type: "alert_contacts", message: "Me perdí. Estoy en esta ubicación." },
       { key: "mal", icon: "\u{1F494}", name: "No me siento bien", desc: "Aviso.", type: "alert_contacts", message: "No me siento bien." },
-      { key: "casa", icon: "\u{1F3E0}", name: "Llegar a casa", desc: "Abre GPS con tu dirección.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
+      { key: "casa", icon: "\u{1F3E0}", name: "Llegar a casa", desc: "Abre GPS.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
       { key: "ambulancia", icon: "\u{1F691}", name: "Llamar ambulancia", desc: "Emergencia médica.", type: "ambulancia" },
     ]},
-  { key: "hogar", emoji: "\u{1F3E0}", title: "Hogar seguro", desc: "Intrusos, vecinos y emergencias.",
+  { key: "mi_nido", emoji: "\u{1F3E0}", title: "Mi Nido", desc: "Hogar seguro — Intrusos, vecinos y emergencias.",
     color: "from-violet-500 to-purple-500", border: "border-violet-500/20", accentBg: "bg-violet-500/10", accentBorder: "border-violet-500/30", accentText: "text-violet-300",
     actions: [
-      { key: "intruso", icon: "\u{1F6A8}", name: "Intruso en domicilio", desc: "Alerta inmediata.", type: "alert_contacts", message: "ALERTA - Posible intruso." },
+      { key: "intruso", icon: "\u{1F6A8}", name: "Intruso en domicilio", desc: "Alerta inmediata.", type: "alert_contacts", message: "ALERTA — Posible intruso en mi domicilio." },
       { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
-      { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido ambiente", desc: "Grabación silenciosa.", type: "record_audio" },
+      { key: "checkin", icon: "\u23F1\u{FE0F}", name: "Check-in de seguridad", desc: "Timer automático.", type: "checkin", titulo: "Check-in — Mi Nido" },
+      { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar evidencia", desc: "Grabación silenciosa.", type: "record_audio" },
       { key: "maps_casa", icon: "\u{1F5FA}\u{FE0F}", name: "Llegar a casa (GPS)", desc: "Abre Google Maps.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
-      { key: "camaras", icon: "\u{1F4F9}", name: "Ver mis cámaras", desc: "Abre tu app de cámaras.", type: "camaras" },
       { key: "ruido", icon: "\u{1F442}", name: "Ruido sospechoso", desc: "Aviso preventivo.", type: "alert_contacts", message: "Ruido sospechoso en mi domicilio." },
-      { key: "accidente", icon: "\u{1FA79}", name: "Accidente doméstico", desc: "Aviso.", type: "alert_contacts", message: "ALERTA - Accidente doméstico." },
+      { key: "accidente", icon: "\u{1FA79}", name: "Accidente doméstico", desc: "Aviso.", type: "alert_contacts", message: "ALERTA — Accidente doméstico." },
       { key: "emergencia", icon: "\u{1F198}", name: "Emergencia en el hogar", desc: "Alerta máxima.", type: "alert_contacts", message: "EMERGENCIA en el hogar." },
     ]},
-  { key: "trabajo", emoji: "\u{1F303}", title: "Trabajo de riesgo", desc: "Protección en áreas peligrosas.",
+  { key: "turno_seguro", emoji: "\u{1F303}", title: "Turno Seguro", desc: "Trabajo de riesgo — Protección en áreas peligrosas.",
     color: "from-pink-500 to-purple-500", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.3)]", accentText: "text-[#d4af37]",
     actions: [
-      { key: "peligro", icon: "\u{1F6A8}", name: "Estoy en peligro (SOS)", desc: "Alerta inmediata.", type: "alert_contacts", message: "SOS - En peligro durante mi trabajo." },
-      { key: "sospechoso_lugar", icon: "\u26A0\u{FE0F}", name: "Entro a lugar sospechoso", desc: "Envía ubicación en tiempo real.", type: "timer_lugar", message: "Estoy entrando a un lugar sospechoso." },
+      { key: "peligro", icon: "\u{1F6A8}", name: "Estoy en peligro (SOS)", desc: "Alerta inmediata.", type: "alert_contacts", message: "SOS — En peligro durante mi turno de trabajo." },
+      { key: "sospechoso_lugar", icon: "\u26A0\u{FE0F}", name: "Entro a lugar sospechoso", desc: "Timer automático.", type: "checkin", titulo: "Lugar sospechoso — Turno Seguro" },
       { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
-      { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido ambiente", desc: "Grabación silenciosa.", type: "record_audio" },
+      { key: "checkin", icon: "\u23F1\u{FE0F}", name: "Check-in de turno", desc: "Timer de turno.", type: "checkin", titulo: "Check-in de turno" },
+      { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar evidencia", desc: "Grabación silenciosa.", type: "record_audio" },
       { key: "evidencias", icon: "\u{1F4C1}", name: "Mis Evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
-      { key: "desconocido", icon: "\u{1F9D1}\u200D\u{1F91D}\u200D\u{1F9D1}", name: "Salgo con desconocido/a", desc: "Nombre o lugar del encuentro.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
-      { key: "sospechoso", icon: "\u{1F440}", name: "Cliente sospechoso", desc: "Envía ubicación actual + aviso.", type: "alert_contacts", message: "ALERTA - Cliente con actitud sospechosa. Estoy en esta ubicación." },
+      { key: "desconocido", icon: "\u{1F9D1}\u200D\u{1F91D}\u200D\u{1F9D1}", name: "Salgo con desconocido/a", desc: "Aviso.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
+      { key: "sospechoso", icon: "\u{1F440}", name: "Cliente sospechoso", desc: "Envía ubicación + aviso.", type: "alert_contacts", message: "ALERTA — Cliente con actitud sospechosa." },
       { key: "uber", icon: "\u{1F697}", name: "Llamar transporte", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
-      { key: "taxi", icon: "\u{1F696}", name: "Llamar taxi de confianza", desc: "Llama a tu taxi preestablecido.", type: "taxi" },
-      { key: "llegue", icon: "\u2705", name: "Llegué bien", desc: "Confirmación.", type: "alert_contacts", message: "Terminé mi trabajo y estoy bien." },
+      { key: "llegue", icon: "\u2705", name: "Llegué bien al destino", desc: "Confirmación.", type: "alert_contacts", message: "Terminé mi turno y estoy bien." },
     ]},
 ];
 
@@ -1709,46 +1292,42 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [currentMessage, setCurrentMessage] = useState("");
   const [showGrabacion, setShowGrabacion] = useState(false);
-  const [showTimerLugar, setShowTimerLugar] = useState(false);
+  const [showCheckIn, setShowCheckIn] = useState(false);
+  const [checkInTitulo, setCheckInTitulo] = useState("");
 
   function handleAction(action) {
     switch (action.type) {
       case "alert_contacts":
-        if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza."); return; }
+        if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza primero."); return; }
         setCurrentMessage(action.message); setSelectorOpen(true); return;
       case "record_audio": setShowGrabacion(true); return;
       case "maps": openMapsTo(action.destination); return;
       case "uber": openUber(action.destination); return;
       case "pastillero": if (onOpenPastillero) onOpenPastillero(); return;
       case "evidencias": if (onOpenEvidencias) onOpenEvidencias(); return;
-      case "timer_lugar":
-        if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza."); return; }
-        setShowTimerLugar(true); return;
+      case "checkin":
+        if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza primero."); return; }
+        setCheckInTitulo(action.titulo || "Check-in de seguridad");
+        setShowCheckIn(true); return;
       case "camaras":
-        alert("Abrí la app de tus cámaras de seguridad (Ej: Ring, Xiaomi Home, TP-Link Tapo, Alfred). Próximamente integración directa.");
-        return;
+        alert("Abrí la app de tus cámaras (Ring, Xiaomi Home, TP-Link Tapo, Alfred). Próximamente integración directa."); return;
       case "taxi": {
         const taxiNum = sessionStorage.getItem("traza360_taxi") || "";
         if (!taxiNum) {
-          const num = prompt("Configurá tu número de taxi de confianza (con código de área, ej: 3515551234):");
-          if (num && num.trim()) {
-            sessionStorage.setItem("traza360_taxi", num.trim());
-            window.open(`tel:${num.trim()}`);
-          }
-        } else {
-          window.open(`tel:${taxiNum}`);
-        }
+          const num = prompt("Configurá tu taxi de confianza (ej: 3515551234):");
+          if (num && num.trim()) { sessionStorage.setItem("traza360_taxi", num.trim()); window.open(`tel:${num.trim()}`); }
+        } else window.open(`tel:${taxiNum}`);
         return;
       }
       case "ambulancia": {
         const ambNum = sessionStorage.getItem("traza360_ambulancia") || "107";
-        const opciones = prompt(`Llamar ambulancia al ${ambNum}?\n\nSi querés cambiar el número, escribilo.\nPor defecto: 107 (SAME Argentina)\nOtras opciones: 911, número privado.\n\nDejá vacío para llamar al ${ambNum}:`);
-        const numFinal = (opciones && opciones.trim()) ? opciones.trim() : ambNum;
+        const opc = prompt(`Llamar al ${ambNum}? Dejá vacío para llamar, o escribí otro número:`);
+        const numFinal = (opc && opc.trim()) ? opc.trim() : ambNum;
         if (numFinal !== ambNum) sessionStorage.setItem("traza360_ambulancia", numFinal);
         window.open(`tel:${numFinal}`);
         if (contactos.length > 0) {
           getCurrentLocationWithFallback().then(({ location }) => {
-            enviarWhatsApp(contactos[0].telefono, buildMessageWithReply("EMERGENCIA MEDICA - Llamé a la ambulancia. Necesito ayuda.", location));
+            enviarWhatsApp(contactos[0].telefono, buildMessageWithReply("EMERGENCIA MÉDICA — Llamé a la ambulancia. Necesito ayuda.", location));
           });
         }
         return;
@@ -1759,29 +1338,23 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
 
   return (
     <>
-      <div className={`rounded-2xl border p-5 flex flex-col`} style={{
-        background: "linear-gradient(145deg, #12121a, #0c0c12)",
-        border: "1px solid rgba(212,175,55,0.1)",
-        boxShadow: "6px 6px 18px rgba(0,0,0,0.5), -3px -3px 10px rgba(212,175,55,0.01), inset 0 1px 0 rgba(212,175,55,0.04)",
-      }}>
+      <div className="rounded-2xl p-5 flex flex-col" style={{ background: "linear-gradient(145deg, #12121a, #0c0c12)", border: "1px solid rgba(212,175,55,0.1)", boxShadow: "6px 6px 18px rgba(0,0,0,0.5), -3px -3px 10px rgba(212,175,55,0.01)" }}>
         <div className="mb-3 flex items-center gap-3">
           <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${m.color} shadow-lg`}><span className="text-2xl">{m.emoji}</span></div>
-          <h4 className="text-base font-bold" style={{ color: "#d4af37" }}>{m.title}</h4>
+          <div>
+            <h4 className="text-base font-bold" style={{ color: "#d4af37" }}>{m.title}</h4>
+            <p className="text-xs text-slate-500">{m.desc}</p>
+          </div>
         </div>
-        <p className="mb-4 text-sm text-slate-400">{m.desc}</p>
         <button onClick={() => setExpanded(!expanded)}
           className={`w-full rounded-2xl border ${m.accentBorder} ${m.accentBg} ${m.accentText} px-4 py-3 text-sm font-semibold flex items-center justify-between`}>
-          <span>{expanded ? "Ocultar" : "Ver opciones"}</span><span className={`text-xs ${expanded ? "rotate-180" : ""}`}>{"\u25BC"}</span>
+          <span>{expanded ? "Ocultar opciones" : "Ver opciones"}</span><span className={`text-xs transition-transform ${expanded ? "rotate-180" : ""}`}>{"\u25BC"}</span>
         </button>
         {expanded && (
           <div className="mt-4 space-y-2">
             {m.actions.map(a => (
               <button key={a.key} onClick={() => handleAction(a)}
-                className="w-full rounded-xl px-4 py-3 text-left active:scale-[0.98]" style={{
-                  background: "linear-gradient(145deg, #16161f, #0c0c12)",
-                  border: "1px solid rgba(212,175,55,0.06)",
-                  boxShadow: "3px 3px 8px rgba(0,0,0,0.4), -2px -2px 6px rgba(212,175,55,0.01)",
-                }}>
+                className="w-full rounded-xl px-4 py-3 text-left active:scale-[0.98] transition-all" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.06)", boxShadow: "3px 3px 8px rgba(0,0,0,0.4)" }}>
                 <div className="flex items-start gap-3">
                   <span className="text-xl shrink-0">{a.icon}</span>
                   <div><div className="text-sm font-semibold text-white">{a.name}</div><div className="mt-0.5 text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{a.desc}</div></div>
@@ -1793,7 +1366,7 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
       </div>
       {selectorOpen && <SelectorContactoModal contactos={contactos} mensaje={currentMessage} onClose={() => setSelectorOpen(false)} />}
       {showGrabacion && <GrabacionModal onClose={() => setShowGrabacion(false)} />}
-      {showTimerLugar && <TimerLugarModal contactos={contactos} onClose={() => setShowTimerLugar(false)} />}
+      {showCheckIn && <CheckInModal contactos={contactos} titulo={checkInTitulo} onClose={() => setShowCheckIn(false)} />}
     </>
   );
 }
@@ -1802,10 +1375,10 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
 function Field({ label, type = "text", placeholder, value, onChange }) {
   return (<label className="block space-y-2 text-left"><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(212,175,55,0.6)" }}>{label}</span>
     <input type={type} value={value} onChange={onChange} placeholder={placeholder}
-      className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600" style={{ background: "linear-gradient(145deg, #121218, #0a0a0e)", border: "1px solid rgba(212,175,55,0.1)", boxShadow: "inset 3px 3px 6px rgba(0,0,0,0.4), inset -2px -2px 4px rgba(212,175,55,0.02)" }} /></label>);
+      className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600" style={{ background: "linear-gradient(145deg, #121218, #0a0a0e)", border: "1px solid rgba(212,175,55,0.1)", boxShadow: "inset 3px 3px 6px rgba(0,0,0,0.4)" }} /></label>);
 }
 
-function AccessCard({ children }) { return <div className="w-full max-w-md rounded-3xl p-6 shadow-2xl md:p-8" style={{ background: "linear-gradient(145deg, #13131d, #0a0a12)", border: "1px solid rgba(212,175,55,0.1)", boxShadow: "8px 8px 24px rgba(0,0,0,0.6), -4px -4px 12px rgba(212,175,55,0.01)" }}>{children}</div>; }
+function AccessCard({ children }) { return <div className="w-full max-w-md rounded-3xl p-6 shadow-2xl md:p-8" style={{ background: "linear-gradient(145deg, #13131d, #0a0a12)", border: "1px solid rgba(212,175,55,0.1)", boxShadow: "8px 8px 24px rgba(0,0,0,0.6)" }}>{children}</div>; }
 
 function LoginScreen({ onBack, onSuccess }) {
   const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [loading, setLoading] = useState(false); const [error, setError] = useState("");
@@ -1821,7 +1394,7 @@ function LoginScreen({ onBack, onSuccess }) {
       <Field label="Email" type="email" placeholder="tu@email.com" value={email} onChange={e => setEmail(e.target.value)} />
       <Field label="Contraseña" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
       {error && <p className="text-xs text-red-400 text-center">{error}</p>}
-      <button onClick={handle} disabled={loading} className="w-full rounded-xl py-3.5 font-bold text-black shadow-lg disabled:opacity-50" style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)", boxShadow: "0 6px 20px rgba(212,175,55,0.25)" }}>{loading ? "Ingresando..." : "Ingresar"}</button>
+      <button onClick={handle} disabled={loading} className="w-full rounded-xl py-3.5 font-bold text-black shadow-lg disabled:opacity-50" style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)" }}>{loading ? "Ingresando..." : "Ingresar"}</button>
     </div></AccessCard></div>);
 }
 
@@ -1842,7 +1415,7 @@ function RegisterScreen({ onBack, onSuccess, setPendingName }) {
       <Field label="Email" type="email" placeholder="tu@email.com" value={email} onChange={e => setEmail(e.target.value)} />
       <Field label="Contraseña" type="password" placeholder="Mínimo 6 caracteres" value={password} onChange={e => setPassword(e.target.value)} />
       {error && <p className="text-xs text-red-400 text-center">{error}</p>}
-      <button onClick={handle} disabled={loading} className="w-full rounded-xl py-3.5 font-bold text-black shadow-lg disabled:opacity-50" style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)", boxShadow: "0 6px 20px rgba(212,175,55,0.25)" }}>{loading ? "Creando..." : "Crear cuenta"}</button>
+      <button onClick={handle} disabled={loading} className="w-full rounded-xl py-3.5 font-bold text-black shadow-lg disabled:opacity-50" style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)" }}>{loading ? "Creando..." : "Crear cuenta"}</button>
     </div></AccessCard></div>);
 }
 
@@ -1860,20 +1433,12 @@ function EagleEyeLogo({ size = 80 }) {
         <path d="M100 10 L185 50 L185 110 C185 155 145 185 100 195 C55 185 15 155 15 110 L15 50 Z" fill="url(#shieldDark)" stroke="url(#shieldGold)" strokeWidth="3"/>
         <path d="M100 22 L175 57 L175 112 C175 150 140 177 100 186 C60 177 25 150 25 112 L25 57 Z" fill="none" stroke="rgba(212,175,55,0.25)" strokeWidth="1"/>
         <ellipse cx="100" cy="105" rx="52" ry="32" fill="none" stroke="url(#eyeGlow)" strokeWidth="2.5" filter="url(#goldGlow)"/>
-        <path d="M52 105 Q76 78 100 78 Q124 78 148 105 Q124 132 100 132 Q76 132 52 105 Z" fill="rgba(212,175,55,0.08)" stroke="rgba(212,175,55,0.4)" strokeWidth="1"/>
         <circle cx="100" cy="105" r="20" fill="url(#eyeGlow)" opacity="0.9"/>
         <circle cx="100" cy="105" r="10" fill="#0a0a14"/>
         <circle cx="106" cy="99" r="4" fill="rgba(245,230,163,0.7)"/>
-        <circle cx="94" cy="109" r="2" fill="rgba(245,230,163,0.4)"/>
         <path d="M48 90 Q74 65 100 68" fill="none" stroke="url(#eyeGlow)" strokeWidth="2" strokeLinecap="round"/>
         <path d="M152 90 Q126 65 100 68" fill="none" stroke="url(#eyeGlow)" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M38 100 L28 92" stroke="rgba(212,175,55,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
-        <path d="M40 108 L28 108" stroke="rgba(212,175,55,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
-        <path d="M162 100 L172 92" stroke="rgba(212,175,55,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
-        <path d="M160 108 L172 108" stroke="rgba(212,175,55,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
         <polygon points="100,28 103,36 111,36 105,41 107,49 100,45 93,49 95,41 89,36 97,36" fill="#d4af37" opacity="0.9"/>
-        <polygon points="60,48 62,52 66,52 63,55 64,59 60,57 56,59 57,55 54,52 58,52" fill="#d4af37" opacity="0.5"/>
-        <polygon points="140,48 142,52 146,52 143,55 144,59 140,57 136,59 137,55 134,52 138,52" fill="#d4af37" opacity="0.5"/>
         <text x="100" y="165" textAnchor="middle" fill="#d4af37" fontSize="11" fontWeight="800" letterSpacing="4" fontFamily="sans-serif">TRAZA 360</text>
         <text x="100" y="178" textAnchor="middle" fill="rgba(212,175,55,0.5)" fontSize="7" letterSpacing="2" fontFamily="sans-serif">PROTECCIÓN</text>
       </svg>
@@ -1881,48 +1446,40 @@ function EagleEyeLogo({ size = 80 }) {
   );
 }
 
-// ─── MAP PIN (estilo Google Maps) ────────────
-function MapPin({ size = 24 }) {
-  return (
-    <svg viewBox="0 0 24 36" width={size} height={size * 1.5} style={{ display: "inline-block", verticalAlign: "middle" }}>
-      <defs>
-        <linearGradient id="pinGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#EA4335"/>
-          <stop offset="100%" stopColor="#C5221F"/>
-        </linearGradient>
-        <filter id="pinShadow">
-          <feDropShadow dx="0" dy="1" stdDeviation="1" floodOpacity="0.3"/>
-        </filter>
-      </defs>
-      <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24C24 5.4 18.6 0 12 0z" fill="url(#pinGrad)" filter="url(#pinShadow)"/>
-      <circle cx="12" cy="11" r="5" fill="white"/>
-      <circle cx="12" cy="11" r="2.5" fill="#EA4335"/>
-    </svg>
-  );
-}
+// ─── LANDING SCREEN ─────────────────────────
 function LandingScreen({ onScreen }) {
   return (
     <div className="min-h-screen text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 50%, #050508 100%)" }}>
       <section className="px-5 pt-16 pb-12 text-center">
-        <div className="mb-4 flex justify-center">
-          <EagleEyeLogo size={100} />
-        </div>
+        <div className="mb-4 flex justify-center"><EagleEyeLogo size={100} /></div>
         <p className="text-[10px] font-semibold uppercase tracking-[5px]" style={{ color: "rgba(212,175,55,0.4)" }}>Última señal. Respuesta real.</p>
         <h2 className="mt-4 max-w-3xl text-2xl font-bold leading-tight md:text-4xl mx-auto text-white">
-          Cuando cada segundo importa,<br/><span style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}> Traza 360 responde.</span>
+          Cuando cada segundo importa,<br/><span style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Traza 360 responde.</span>
         </h2>
+        {/* Propuesta de valor */}
+        <div className="mt-6 flex flex-col gap-2 items-center max-w-xs mx-auto">
+          {["Un botón → alerta a tu familia", "Ubicación automática en segundos", "Funciona con WhatsApp. Sin apps extra"].map((feat, i) => (
+            <div key={i} className="flex items-center gap-2 text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
+              <span style={{ color: "#d4af37" }}>{"\u2713"}</span> {feat}
+            </div>
+          ))}
+        </div>
       </section>
       <div className="px-5 pb-12"><div className="mx-auto flex w-full max-w-sm flex-col gap-3">
-        <button onClick={() => onScreen("login")} className="w-full rounded-2xl px-4 py-4 font-semibold text-black shadow-lg" style={{
-          background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)",
-          boxShadow: "0 8px 30px rgba(212,175,55,0.25)",
-        }}>Ingresar</button>
-        <button onClick={() => onScreen("register")} className="w-full rounded-2xl px-4 py-4 font-semibold text-white" style={{
-          background: "linear-gradient(145deg, #13131d, #0e0e16)",
-          border: "1px solid rgba(212,175,55,0.15)",
-          boxShadow: "5px 5px 14px rgba(0,0,0,0.5), -3px -3px 10px rgba(212,175,55,0.01)",
-        }}>Crear cuenta</button>
+        <button onClick={() => onScreen("register")} className="w-full rounded-2xl px-4 py-4 font-semibold text-black shadow-lg" style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)", boxShadow: "0 8px 30px rgba(212,175,55,0.25)" }}>Empezar gratis →</button>
+        <button onClick={() => onScreen("login")} className="w-full rounded-2xl px-4 py-4 font-semibold text-white" style={{ background: "linear-gradient(145deg, #13131d, #0e0e16)", border: "1px solid rgba(212,175,55,0.15)" }}>Ya tengo cuenta</button>
       </div></div>
+
+      {/* Footer con privacidad */}
+      <div className="px-5 pb-8 text-center">
+        <div className="flex items-center justify-center gap-4 text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>
+          <button onClick={() => alert("Política de Privacidad\n\nTraza 360 almacena tus datos de forma segura en Supabase.\n\n✅ Tus datos son solo tuyos\n✅ No vendemos información a terceros\n✅ Las grabaciones son privadas y encriptadas\n✅ Podés eliminar tu cuenta en cualquier momento\n\nContacto: info@traza360.app")} className="hover:text-white underline">Privacidad</button>
+          <span>·</span>
+          <button onClick={() => alert("Términos de Uso\n\nTraza 360 es una herramienta de seguridad personal. No reemplaza a los servicios de emergencia oficiales (911, 107, policía).\n\nEn caso de emergencia real, llamá primero al número de emergencias de tu país.\n\nTraza 360 no se hace responsable por fallos de conexión en situaciones de emergencia.\n\nUso exclusivo para mayores de 13 años.")} className="hover:text-white underline">Términos</button>
+          <span>·</span>
+          <span>traza360.app</span>
+        </div>
+      </div>
       <WhatsAppFloatingButton />
     </div>
   );
@@ -1932,86 +1489,103 @@ function LandingScreen({ onScreen }) {
 function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
   const [activeScreen, setActiveScreen] = useState("home");
   const [activeModule, setActiveModule] = useState(null);
-  const [showTerceroModal, setShowTerceroModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [contactos, setContactos] = useState([]);
+  const [systemStatus, setSystemStatus] = useState("warning");
+  const [panicoEnviado, setPanicoEnviado] = useState(false);
 
   const nombreUsuario = userProfile?.nombre || pendingName || sessionStorage.getItem("traza360_pending_name") || authUser?.email?.split("@")[0] || "Usuario";
   const userPlan = userProfile?.plan || "gratis";
 
-  useEffect(() => { cargarContactos(); }, []);
+  useEffect(() => { cargarContactos(); checkSystemStatus(); }, []);
+
   async function cargarContactos() { setContactos(await getContactos()); }
+
+  async function checkSystemStatus() {
+    try {
+      const res = await fetch("/api/send-whatsapp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: "test", message: "ping", test: true }) });
+      const data = await res.json();
+      setSystemStatus(data.active ? "ok" : "error");
+    } catch(e) { setSystemStatus("error"); }
+  }
 
   async function handleLogout() {
     setLoggingOut(true); try { sessionStorage.removeItem("traza360_pending_name"); } catch(e){} await signOut(); setLoggingOut(false); onLogout();
   }
 
-  if (activeScreen === "contactos") return <ContactosScreen onBack={() => { setActiveScreen("home"); cargarContactos(); }} userPlan={userPlan} />;
+  if (activeScreen === "contactos") return <ContactosScreen onBack={() => { setActiveScreen("home"); cargarContactos(); }} userPlan={userPlan} nombreUsuario={nombreUsuario} />;
   if (activeScreen === "pastillero") return <PastilleroScreen onBack={() => setActiveScreen("home")} userPlan={userPlan} contactos={contactos} />;
   if (activeScreen === "evidencias") return <EvidenciasScreen onBack={() => setActiveScreen("home")} />;
 
   const quickCards = [
-    { key: "cuidado", emoji: "\u{1F985}", title: "Te vigilo", text: "Alguien te cuida. Vos elegís qué ve.", big: true },
-    { key: "violencia", emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de género", text: "Pánico, grabación y red de apoyo." },
-    { key: "trabajo", emoji: "\u{1F303}", title: "Trabajo de riesgo", text: "Protección en áreas peligrosas." },
-    { key: "adolescente", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente seguro", text: "Anti-bullying, GPS y geocercas." },
-    { key: "adulto_mayor", emoji: "\u{1FAF6}", title: "Adulto mayor seguro", text: "Medicamentos, caídas y geocercas." },
-    { key: "hogar", emoji: "\u{1F3E0}", title: "Hogar seguro", text: "Intrusos, vecinos y accidentes." },
-    { key: "contactos", emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} configurados` },
+    { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", title: "Mi Escudo",    text: "Violencia de género — Pánico, grabación y red de apoyo." },
+    { key: "los_cuido",   emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Los Cuido",   text: "Adolescente seguro — Anti-bullying, GPS y alertas." },
+    { key: "los_protejo", emoji: "\u{1FAF6}", title: "Los Protejo", text: "Adulto mayor — Medicamentos, caídas y asistencia." },
+    { key: "turno_seguro",emoji: "\u{1F303}", title: "Turno Seguro", text: "Trabajo de riesgo — Protección en áreas peligrosas." },
+    { key: "mi_nido",     emoji: "\u{1F3E0}", title: "Mi Nido",     text: "Hogar seguro — Intrusos, vecinos y accidentes." },
+    { key: "oidos_atentos", emoji: "\u{1F3A7}", title: "Oídos Atentos", text: "Vigilancia remota — Próximamente.", coming: true },
+    { key: "contactos",   emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} configurados` },
   ];
 
   function handleCard(key) {
     if (key === "contactos") setActiveScreen("contactos");
     else if (key === "pastillero") setActiveScreen("pastillero");
     else if (key === "evidencias") setActiveScreen("evidencias");
-    else if (key === "cuidado") setShowTerceroModal(true);
+    else if (key === "oidos_atentos") return; // Próximamente, no hace nada
     else { const mod = MODULES.find(m => m.key === key); if (mod) setActiveModule(mod); }
   }
 
-  const [panicoEnviado, setPanicoEnviado] = useState(false);
-
   async function handlePanico() {
-    if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza."); return; }
+    if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza primero."); return; }
     const { location } = await getCurrentLocationWithFallback();
-    const msg = buildMessageWithReply("ALERTA - Botón de pánico activado. Necesito ayuda urgente.", location);
-    enviarWhatsApp(contactos[0].telefono, msg);
+    const msg = buildMessageWithReply("ALERTA — Botón de pánico activado. Necesito ayuda urgente.", location);
+    const result = await enviarWhatsApp(contactos[0].telefono, msg);
+    reproducirSonido();
     setPanicoEnviado(true);
-  }
-
-  function enviarRespuestaPanico(emoji, texto) {
-    if (contactos.length > 0) enviarWhatsApp(contactos[0].telefono, `${emoji} ${texto}`);
   }
 
   return (
     <div className="min-h-screen px-5 py-8 pb-24 text-white" style={{ background: "linear-gradient(180deg, #0a0a10 0%, #0d0d16 40%, #0a0a10 100%)" }}>
       <div className="mx-auto max-w-6xl">
-        {/* Header con logo águila */}
+        {/* Header */}
         <div className="mb-6 text-center">
-          <EagleEyeLogo size={80} />
+          <EagleEyeLogo size={70} />
           <p className="text-[10px] uppercase tracking-[4px] mt-1" style={{ color: "rgba(212,175,55,0.4)" }}>Sistema de protección</p>
         </div>
 
-        {/* Bienvenida */}
-        <div className="mb-6 rounded-2xl p-5" style={{
-          background: "linear-gradient(145deg, #13131d, #0e0e16)",
-          border: "1px solid rgba(212,175,55,0.1)",
-          boxShadow: "6px 6px 18px rgba(0,0,0,0.5), -3px -3px 10px rgba(212,175,55,0.01), inset 0 1px 0 rgba(212,175,55,0.04)",
-        }}>
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        {/* Dashboard Estado del Sistema */}
+        <div className="mb-4 rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #13131d, #0e0e16)", border: "1px solid rgba(212,175,55,0.1)" }}>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <p className="text-[10px] uppercase tracking-[3px]" style={{ color: "#d4af37" }}>Panel inicial</p>
-              <h2 className="mt-2 text-xl font-bold text-white">Bienvenido/a, {nombreUsuario} {"\u{1F44B}"}</h2>
-              <p className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-                Plan: <span className="font-semibold" style={{ color: "#d4af37" }}>{PLAN_PRICES[userPlan]?.name || "Gratis"}</span>
-                {contactos.length === 0 && <span className="text-orange-300"> · Agregá contactos</span>}
-              </p>
+              <p className="text-[10px] uppercase tracking-[3px] mb-1" style={{ color: "rgba(212,175,55,0.4)" }}>Estado del sistema</p>
+              <p className="text-sm font-semibold text-white">Bienvenido/a, {nombreUsuario} {"\u{1F44B}"}</p>
+              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>Plan: <span style={{ color: "#d4af37" }}>{PLAN_PRICES[userPlan]?.name}</span></p>
             </div>
-            <button onClick={handleLogout} disabled={loggingOut} className="shrink-0 rounded-xl px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50" style={{
-              background: "linear-gradient(145deg, #16161f, #0c0c12)",
-              border: "1px solid rgba(212,175,55,0.1)",
-              boxShadow: "3px 3px 8px rgba(0,0,0,0.5), -2px -2px 6px rgba(212,175,55,0.01)",
-            }}>
-              {loggingOut ? "Cerrando..." : "Cerrar sesión"}</button>
+            <div className="flex flex-col gap-2 items-end">
+              <SystemStatusBadge status={systemStatus} />
+              <div className="flex items-center gap-2">
+                <div className={`h-2 w-2 rounded-full ${contactos.length > 0 ? "bg-green-400" : "bg-red-400 animate-pulse"}`} />
+                <span className="text-xs" style={{ color: contactos.length > 0 ? "#22c55e" : "#ef4444" }}>
+                  {contactos.length > 0 ? `${contactos.length} contacto${contactos.length > 1 ? "s" : ""} activo${contactos.length > 1 ? "s" : ""}` : "Sin contactos — Configurar"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Alerta si sin contactos */}
+          {contactos.length === 0 && (
+            <button onClick={() => setActiveScreen("contactos")} className="mt-3 w-full rounded-xl py-2.5 text-sm font-semibold" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#fca5a5" }}>
+              {"\u26A0\u{FE0F}"} Agregá un contacto para activar la protección →
+            </button>
+          )}
+
+          <div className="mt-3 flex gap-2">
+            <button onClick={handleLogout} disabled={loggingOut} className="rounded-xl px-3 py-1.5 text-xs text-slate-400 border border-white/10 bg-white/5 disabled:opacity-50">
+              {loggingOut ? "Saliendo..." : "Cerrar sesión"}
+            </button>
+            <button onClick={checkSystemStatus} className="rounded-xl px-3 py-1.5 text-xs border border-white/10 bg-white/5" style={{ color: "rgba(212,175,55,0.6)" }}>
+              {"\u{1F504}"} Verificar sistema
+            </button>
           </div>
         </div>
 
@@ -2022,192 +1596,143 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
           </div>
         ) : (
           <>
-            <h3 className="mb-4 text-sm font-bold uppercase tracking-[2px]" style={{ color: "rgba(212,175,55,0.5)" }}>Qué necesitás hoy?</h3>
+            <h3 className="mb-3 text-sm font-bold uppercase tracking-[2px]" style={{ color: "rgba(212,175,55,0.5)" }}>¿Qué necesitás hoy?</h3>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {quickCards.map(card => (
                 <button key={card.key} onClick={() => handleCard(card.key)}
-                  className={`text-left rounded-2xl p-5 active:scale-[0.98] transition-all ${card.big ? "sm:col-span-2 xl:col-span-3" : ""}`}
+                  className="text-left rounded-2xl p-5 active:scale-[0.98] transition-all relative"
                   style={{
-                    background: card.big
-                      ? "linear-gradient(135deg, rgba(212,175,55,0.08), rgba(184,134,11,0.04))"
-                      : card.key === "contactos" && contactos.length === 0
+                    background: card.key === "contactos" && contactos.length === 0
                       ? "linear-gradient(135deg, rgba(234,88,12,0.1), rgba(234,88,12,0.05))"
-                      : "linear-gradient(145deg, #12121a, #0c0c12)",
-                    border: card.big
-                      ? "1px solid rgba(212,175,55,0.2)"
-                      : card.key === "contactos" && contactos.length === 0
+                      : card.coming ? "linear-gradient(145deg, #0f0f15, #0a0a10)" : "linear-gradient(145deg, #12121a, #0c0c12)",
+                    border: card.key === "contactos" && contactos.length === 0
                       ? "1px solid rgba(234,88,12,0.3)"
-                      : "1px solid rgba(212,175,55,0.08)",
-                    boxShadow: "5px 5px 14px rgba(0,0,0,0.4), -2px -2px 8px rgba(212,175,55,0.01), inset 0 1px 0 rgba(212,175,55,0.03)",
+                      : card.coming ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(212,175,55,0.08)",
+                    boxShadow: "5px 5px 14px rgba(0,0,0,0.4)",
+                    opacity: card.coming ? 0.7 : 1,
                   }}>
-                  <div className={`mb-2 ${card.big ? "text-4xl" : "text-2xl"}`}>{card.emoji}</div>
-                  <div className={`font-bold ${card.big ? "text-lg" : "text-sm"}`} style={{ color: "#d4af37" }}>{card.title}</div>
+                  {card.coming && (
+                    <div className="absolute top-3 right-3 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider" style={{ background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)", color: "#d4af37" }}>Próximamente</div>
+                  )}
+                  <div className="mb-2 text-2xl">{card.emoji}</div>
+                  <div className="text-sm font-bold" style={{ color: card.coming ? "rgba(212,175,55,0.4)" : "#d4af37" }}>{card.title}</div>
                   <p className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{card.text}</p>
-                  <div className="mt-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: "rgba(212,175,55,0.5)" }}>Abrir {"\u2192"}</div>
+                  {!card.coming && <div className="mt-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: "rgba(212,175,55,0.4)" }}>Abrir {"\u2192"}</div>}
                 </button>
               ))}
+            </div>
+
+            {/* Upgrade Banner para plan gratis */}
+            {userPlan === "gratis" && (
+              <div className="mt-4 rounded-2xl p-4" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.06), rgba(184,134,11,0.03))", border: "1px solid rgba(212,175,55,0.15)" }}>
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{"\u{1F451}"}</span>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold" style={{ color: "#d4af37" }}>Desbloqueá la protección completa</div>
+                    <p className="text-xs text-slate-400 mt-0.5">5 contactos, medicamentos ilimitados, historial 90 días y más.</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <div className="text-sm font-bold" style={{ color: "#d4af37" }}>US$4.99</div>
+                    <div className="text-[10px] text-slate-500">/mes</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Footer privacidad */}
+            <div className="mt-6 text-center">
+              <div className="flex items-center justify-center gap-4 text-xs" style={{ color: "rgba(255,255,255,0.15)" }}>
+                <button onClick={() => alert("Tus datos son solo tuyos. No compartimos información con terceros. Las grabaciones son privadas y encriptadas. Podés eliminar tu cuenta en cualquier momento.\n\nContacto: info@traza360.app")} className="hover:text-white underline">Privacidad</button>
+                <span>·</span>
+                <button onClick={() => alert("Traza 360 no reemplaza a los servicios de emergencia oficiales (911, 107, policía).\n\nEn caso de emergencia real, llamá primero al número de emergencias de tu país.")} className="hover:text-white underline">Términos</button>
+                <span>·</span>
+                <span>v17.0</span>
+              </div>
             </div>
           </>
         )}
       </div>
-      {showTerceroModal && <CuidadoModal contactos={contactos} onClose={() => setShowTerceroModal(false)} />}
 
-      {/* PANEL POST-PÁNICO con emojis */}
+      {/* PANEL POST-PÁNICO */}
       {panicoEnviado && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-3xl p-6 shadow-2xl" style={{ background: "linear-gradient(145deg, #13131d, #0a0a12)", border: "1px solid rgba(212,175,55,0.15)" }}>
             <div className="text-center mb-4">
-              <div className="text-4xl mb-2">{"\u{1F6A8}"}</div>
+              <div className="text-5xl mb-2 animate-bounce">{"\u{1F6A8}"}</div>
               <h3 className="text-lg font-bold" style={{ color: "#d4af37" }}>Alerta enviada</h3>
-              <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>Tu contacto recibió la alerta por WhatsApp</p>
+              <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>Tu contacto recibió el WhatsApp con tu ubicación</p>
             </div>
-
             <div className="rounded-xl p-3 mb-3" style={{ background: "rgba(212,175,55,0.05)", border: "1px solid rgba(212,175,55,0.1)" }}>
               <div className="text-[9px] font-bold uppercase tracking-wider mb-2" style={{ color: "rgba(212,175,55,0.5)" }}>Seguí comunicándote</div>
               <div className="grid grid-cols-4 gap-2 mb-2">
-                {[
-                  { emoji: "\u2705", text: "Estoy bien" },
-                  { emoji: "\u{1F3C3}", text: "Me muevo" },
-                  { emoji: "\u{1F4CD}", text: "Acá estoy" },
-                  { emoji: "\u{1F6B6}", text: "Caminando" },
-                ].map((r, i) => (
-                  <button key={i} onClick={() => enviarRespuestaPanico(r.emoji, r.text)}
-                    className="rounded-lg py-2 text-center active:scale-95" style={{
-                      background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)",
-                    }}>
-                    <div className="text-xl">{r.emoji}</div>
-                    <div className="text-[8px] mt-0.5" style={{ color: "rgba(212,175,55,0.4)" }}>{r.text}</div>
-                  </button>
-                ))}
-              </div>
-              <div className="grid grid-cols-4 gap-2 mb-2">
-                {[
-                  { emoji: "\u{1F3E0}", text: "En casa" },
-                  { emoji: "\u{1F44B}", text: "Llegué" },
-                  { emoji: "\u{1F6D1}", text: "Peligro" },
-                  { emoji: "\u{1F510}", text: "Seguro/a" },
-                ].map((r, i) => (
-                  <button key={i} onClick={() => enviarRespuestaPanico(r.emoji, r.text)}
-                    className="rounded-lg py-2 text-center active:scale-95" style={{
-                      background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)",
-                    }}>
-                    <div className="text-xl">{r.emoji}</div>
-                    <div className="text-[8px] mt-0.5" style={{ color: "rgba(212,175,55,0.4)" }}>{r.text}</div>
+                {[{emoji:"\u2705",text:"Estoy bien"},{emoji:"\u{1F3C3}",text:"Me muevo"},{emoji:"\u{1F4CD}",text:"Acá estoy"},{emoji:"\u{1F6B6}",text:"Caminando"}].map((r,i) => (
+                  <button key={i} onClick={() => { if(contactos.length>0) enviarWhatsApp(contactos[0].telefono,`${r.emoji} ${r.text}`); }}
+                    className="rounded-lg py-2 text-center active:scale-95" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)" }}>
+                    <div className="text-xl">{r.emoji}</div><div className="text-[8px] mt-0.5" style={{ color: "rgba(212,175,55,0.4)" }}>{r.text}</div>
                   </button>
                 ))}
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => enviarRespuestaPanico("\u{1F6A8}", "SIGO EN PELIGRO")}
-                  className="rounded-lg py-2 text-center active:scale-95" style={{
-                    background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.3)",
-                  }}>
-                  <div className="text-xl">{"\u{1F6A8}"}</div>
-                  <div className="text-[8px] mt-0.5 text-red-400">SIGO EN PELIGRO</div>
+                <button onClick={() => { if(contactos.length>0) enviarWhatsApp(contactos[0].telefono,"\u{1F6A8} SIGO EN PELIGRO"); }}
+                  className="rounded-lg py-2 text-center active:scale-95" style={{ background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.3)" }}>
+                  <div className="text-xl">{"\u{1F6A8}"}</div><div className="text-[8px] mt-0.5 text-red-400">Sigo en peligro</div>
                 </button>
-                <button onClick={() => {
-                    const txt = prompt("Escribí tu mensaje:");
-                    if (txt) enviarRespuestaPanico("", txt);
-                  }}
-                  className="rounded-lg py-2 text-center active:scale-95" style={{
-                    background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)",
-                  }}>
-                  <div className="text-xl">{"\u270D\u{FE0F}"}</div>
-                  <div className="text-[8px] mt-0.5" style={{ color: "rgba(212,175,55,0.4)" }}>Escribir</div>
+                <button onClick={() => { if(contactos.length>0) enviarWhatsApp(contactos[0].telefono,"\u2705 Estoy bien. Falsa alarma."); setPanicoEnviado(false); }}
+                  className="rounded-lg py-2 text-center active:scale-95" style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
+                  <div className="text-xl">{"\u2705"}</div><div className="text-[8px] mt-0.5 text-green-400">Estoy bien</div>
                 </button>
               </div>
             </div>
-
-            <button onClick={() => setPanicoEnviado(false)} className="w-full rounded-xl py-3 text-sm font-semibold" style={{
-              background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)",
-            }}>Cerrar</button>
+            <button onClick={() => setPanicoEnviado(false)} className="w-full rounded-xl py-3 text-sm" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>Cerrar</button>
           </div>
         </div>
       )}
 
-      {/* BOTÓN DE PÁNICO FLOTANTE - Premium */}
+      {/* BOTÓN PÁNICO FLOTANTE */}
       <div className="fixed bottom-5 right-5 z-50">
         <div style={{ position: "relative" }}>
           <div style={{ position: "absolute", inset: "-6px", borderRadius: "50%", border: "1px solid rgba(212,175,55,0.12)", animation: "panicPulse 2.5s infinite", pointerEvents: "none" }} />
-          <button onClick={handlePanico}
-            className="flex h-16 w-16 items-center justify-center rounded-full text-white active:scale-95"
-            style={{
-              background: "linear-gradient(145deg, #b91c1c, #991b1b)",
-              border: "2px solid rgba(212,175,55,0.25)",
-              boxShadow: "6px 6px 18px rgba(0,0,0,0.7), -3px -3px 10px rgba(139,0,0,0.1), 0 0 40px rgba(185,28,28,0.15)",
-            }}>
+          <button onClick={handlePanico} className="flex h-16 w-16 items-center justify-center rounded-full text-white active:scale-95"
+            style={{ background: "linear-gradient(145deg, #b91c1c, #991b1b)", border: "2px solid rgba(212,175,55,0.25)", boxShadow: "6px 6px 18px rgba(0,0,0,0.7), 0 0 40px rgba(185,28,28,0.15)" }}>
             <span className="text-2xl">{"\u{1F6A8}"}</span>
           </button>
         </div>
         <div className="text-[9px] text-center mt-1 font-bold uppercase tracking-wider" style={{ color: "#d4af37" }}>Pánico</div>
       </div>
+      <WhatsAppFloatingButton />
       <style>{`@keyframes panicPulse { 0%,100%{opacity:0.3;transform:scale(1)} 50%{opacity:0.7;transform:scale(1.08)} }`}</style>
     </div>
   );
 }
 
-// ─── CALCULADORA FALSA (Modo disfraz) ───────
+// ─── CALCULADORA FALSA ───────────────────────
 function CalculadoraScreen({ onUnlock }) {
   const [display, setDisplay] = useState("0");
   const [pin] = useState(() => sessionStorage.getItem("traza360_pin") || "1234");
-
   function handleKey(key) {
     if (key === "C") { setDisplay("0"); return; }
     if (key === "=") {
-      // Verificar si el display contiene el PIN
-      if (display === pin || display.endsWith(pin)) {
-        onUnlock();
-        return;
-      }
-      // Intentar evaluar como calculadora real
-      try {
-        const result = Function('"use strict"; return (' + display.replace(/×/g, "*").replace(/÷/g, "/") + ')')();
-        setDisplay(String(result));
-      } catch(e) {
-        setDisplay("Error");
-      }
+      if (display === pin || display.endsWith(pin)) { onUnlock(); return; }
+      try { const result = Function('"use strict"; return (' + display.replace(/×/g,"*").replace(/÷/g,"/") + ')')(); setDisplay(String(result)); }
+      catch(e) { setDisplay("Error"); }
       return;
     }
-    if (display === "0" || display === "Error") setDisplay(key);
-    else setDisplay(display + key);
+    if (display === "0" || display === "Error") setDisplay(key); else setDisplay(display + key);
   }
-
   const keys = ["7","8","9","÷","4","5","6","×","1","2","3","-","0",".","=","+","C"];
-
   return (
     <div className="min-h-screen bg-[#1a1a1a] flex flex-col items-center justify-end pb-8 px-4">
-      {/* Barra superior falsa */}
-      <div className="w-full max-w-sm mt-8 mb-auto">
-        <div className="text-center text-slate-500 text-xs mb-2">Calculadora</div>
-      </div>
-
-      {/* Display */}
-      <div className="w-full max-w-sm mb-4">
-        <div className="rounded-2xl bg-[#222] p-6 text-right">
-          <div className="text-4xl font-light text-white font-mono tracking-wider overflow-hidden">{display}</div>
-        </div>
-      </div>
-
-      {/* Teclado */}
+      <div className="w-full max-w-sm mt-8 mb-auto"><div className="text-center text-slate-500 text-xs mb-2">Calculadora</div></div>
+      <div className="w-full max-w-sm mb-4"><div className="rounded-2xl bg-[#222] p-6 text-right"><div className="text-4xl font-light text-white font-mono">{display}</div></div></div>
       <div className="w-full max-w-sm grid grid-cols-4 gap-2">
-        {keys.map(k => {
-          const isOp = ["÷","×","-","+","="].includes(k);
-          const isClear = k === "C";
-          return (
-            <button key={k} onClick={() => handleKey(k)}
-              className={`rounded-2xl py-4 text-xl font-semibold active:scale-95 ${
-                isOp ? "bg-orange-500 text-white" :
-                isClear ? "bg-[#a5a5a5] text-black" :
-                "bg-[#333] text-white"
-              }`}>
-              {k}
-            </button>
-          );
-        })}
+        {keys.map(k => (
+          <button key={k} onClick={() => handleKey(k)}
+            className={`rounded-2xl py-4 text-xl font-semibold active:scale-95 ${["÷","×","-","+","="].includes(k) ? "bg-orange-500 text-white" : k==="C" ? "bg-[#a5a5a5] text-black" : "bg-[#333] text-white"}`}>
+            {k}
+          </button>
+        ))}
       </div>
-
-      <div className="mt-6 text-center">
-        <p className="text-[10px] text-slate-700">Ingresá {pin} y tocá = para acceder</p>
-      </div>
+      <div className="mt-6 text-center"><p className="text-[10px] text-slate-700">Ingresá {pin} y tocá = para acceder</p></div>
     </div>
   );
 }
@@ -2219,15 +1744,11 @@ export default function App() {
   const [authUser, setAuthUser] = useState(null);
   const [pendingName, setPendingName] = useState(null);
   const [modoCalc, setModoCalc] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
-    // Calculadora SOLO si la URL tiene ?modo=calc
     const params = new URLSearchParams(window.location.search);
-    if (params.get("modo") === "calc") {
-      setModoCalc(true);
-      setScreen("calculadora");
-      return;
-    }
+    if (params.get("modo") === "calc") { setModoCalc(true); setScreen("calculadora"); return; }
     checkSession();
     if (navigator.geolocation) navigator.geolocation.getCurrentPosition(pos => saveLastLocation(pos.coords.latitude, pos.coords.longitude), () => {}, { enableHighAccuracy: true, timeout: 10000 });
     try { const s = sessionStorage.getItem("traza360_pending_name"); if (s) setPendingName(s); } catch(e){}
@@ -2235,8 +1756,14 @@ export default function App() {
 
   async function checkSession() {
     const r = await getCurrentUser();
-    if (r?.authUser) { setAuthUser(r.authUser); setUserProfile(r.profile); if (!r.profile) await tryCreateProfile(r.authUser); setScreen("home"); }
-    else setScreen("landing");
+    if (r?.authUser) {
+      setAuthUser(r.authUser); setUserProfile(r.profile);
+      if (!r.profile) await tryCreateProfile(r.authUser);
+      // Verificar onboarding
+      const done = sessionStorage.getItem("traza360_onboarding_done");
+      if (!done) { setShowOnboarding(true); setScreen("home"); }
+      else setScreen("home");
+    } else setScreen("landing");
   }
 
   async function tryCreateProfile(user) {
@@ -2250,24 +1777,29 @@ export default function App() {
   async function handleLoginSuccess() {
     const r = await getCurrentUser();
     if (r?.authUser) { setAuthUser(r.authUser); setUserProfile(r.profile); if (!r.profile) await tryCreateProfile(r.authUser); }
+    // Usuarios que loguean por primera vez también ven onboarding
+    const done = sessionStorage.getItem("traza360_onboarding_done");
+    if (!done) setShowOnboarding(true);
     setScreen("home");
   }
 
-  function handleLogout() { setUserProfile(null); setAuthUser(null); setPendingName(null); try { sessionStorage.removeItem("traza360_pending_name"); } catch(e){} setScreen("landing"); }
-
-  function handleUnlockCalc() {
-    setModoCalc(false);
-    checkSession();
-  }
+  function handleLogout() { setUserProfile(null); setAuthUser(null); setPendingName(null); try { sessionStorage.removeItem("traza360_pending_name"); sessionStorage.removeItem("traza360_onboarding_done"); } catch(e){} setScreen("landing"); }
+  function handleUnlockCalc() { setModoCalc(false); checkSession(); }
+  function handleOnboardingComplete(selectedModule) { setShowOnboarding(false); }
 
   if (screen === "calculadora") return <CalculadoraScreen onUnlock={handleUnlockCalc} />;
 
   if (screen === "loading") return (
-    <div className="flex min-h-screen items-center justify-center text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 100%)" }}><div className="text-center">
-      <div className="mb-4 flex items-center justify-center"><EagleEyeLogo size={80} /></div>
-      <div className="text-xs mt-2" style={{ color: "rgba(212,175,55,0.4)" }}>Cargando...</div>
-    </div></div>
+    <div className="flex min-h-screen items-center justify-center text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 100%)" }}>
+      <div className="text-center">
+        <div className="mb-4 flex items-center justify-center"><EagleEyeLogo size={80} /></div>
+        <div className="text-xs mt-2" style={{ color: "rgba(212,175,55,0.4)" }}>Cargando...</div>
+      </div>
+    </div>
   );
+
+  // Onboarding overlay sobre home
+  if (screen === "home" && showOnboarding) return <OnboardingScreen onComplete={handleOnboardingComplete} />;
 
   if (screen === "login") return <LoginScreen onBack={() => setScreen("landing")} onSuccess={handleLoginSuccess} />;
   if (screen === "register") return <RegisterScreen onBack={() => setScreen("landing")} onSuccess={handleLoginSuccess} setPendingName={setPendingName} />;
