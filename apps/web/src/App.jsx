@@ -98,10 +98,10 @@ async function sendViaAPI(to, message, priority = "normal") {
 
 async function sendVoiceCall(to, mensaje, nombre_victima) {
   try {
-    const res = await fetch("/api/llamada-voz", {
+    const res = await fetch("/api/send-whatsapp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to, mensaje, nombre_victima }),
+      body: JSON.stringify({ to, message: mensaje, canal: "voz" }),
     });
     return await res.json();
   } catch(e) { return { success: false, error: e.message }; }
