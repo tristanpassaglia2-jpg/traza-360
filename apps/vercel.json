@@ -17,7 +17,7 @@
         },
         {
           "key": "X-Frame-Options",
-          "value": "DENY"
+          "value": "SAMEORIGIN"
         },
         {
           "key": "X-XSS-Protection",
@@ -26,7 +26,11 @@
         {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
-        }
+        },
+,{
+  "key": "X-Robots-Tag",
+  "value": "all"
+}
       ]
     },
     {
