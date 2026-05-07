@@ -772,7 +772,7 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
         <button onClick={onBack} className="mb-4 text-sm text-cyan-300">← Volver al panel</button>
         <div className="mb-6 rounded-3xl border border-white/10 bg-white/5 p-6">
           <div className="flex items-start justify-between gap-4">
-            <div><p className="text-xs uppercase tracking-[0.18em] text-amber-300">Los Protejo — Pastillero</p>
+            <div><p className="text-xs uppercase tracking-[0.18em] text-amber-300">Adulto Mayor — Pastillero</p>
               <h2 className="mt-2 text-2xl font-bold">Mis Medicamentos</h2></div>
             <span className="text-3xl">{"\u{1F48A}"}</span>
           </div>
@@ -1125,42 +1125,22 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
               </p>
             </div>
 
-            <div className="rounded-xl p-3" style={{ background: "rgba(212,175,55,0.05)", border: "1px solid rgba(212,175,55,0.1)" }}>
-              <div className="text-[9px] font-bold uppercase tracking-wider mb-2" style={{ color: "rgba(212,175,55,0.5)" }}>Respuesta rápida</div>
-              <div className="grid grid-cols-4 gap-2 mb-2">
+            <div className="rounded-xl p-4" style={{ background: "rgba(212,175,55,0.05)", border: "1px solid rgba(212,175,55,0.1)" }}>
+              <div className="text-[9px] font-bold uppercase tracking-wider mb-3" style={{ color: "rgba(212,175,55,0.5)" }}>Tu contacto recibió</div>
+              <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>Tu contacto recibió el WhatsApp con tu ubicación y puede responderte con:</p>
+              <div className="grid grid-cols-3 gap-3">
                 {[
-                  { emoji: "\u2705", text: "OK" }, { emoji: "\u{1F44D}", text: "Recibí" },
-                  { emoji: "\u{1F3C3}", text: "Voy" }, { emoji: "\u{1F697}", text: "Salgo" },
+                  { emoji: "\u{1F697}", text: "Salgo" },
+                  { emoji: "\u2705", text: "Recibí" },
+                  { emoji: "\u{1F4CD}", text: "Ubicación" },
                 ].map((r, i) => (
-                  <button key={i} onClick={() => { const elegidos = contactos.filter(c => seleccionados.includes(c.id)); if (elegidos.length > 0) enviarWhatsApp(elegidos[0].telefono, `${r.emoji} ${r.text}`); }}
-                    className="rounded-lg py-2 text-center active:scale-95" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)" }}>
-                    <div className="text-xl">{r.emoji}</div>
-                    <div className="text-[8px] mt-0.5" style={{ color: "rgba(212,175,55,0.4)" }}>{r.text}</div>
-                  </button>
+                  <div key={i} className="rounded-lg py-3 text-center" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.12)" }}>
+                    <div className="text-2xl">{r.emoji}</div>
+                    <div className="text-[9px] mt-1 font-medium" style={{ color: "rgba(212,175,55,0.5)" }}>{r.text}</div>
+                  </div>
                 ))}
               </div>
-              <div className="grid grid-cols-4 gap-2 mb-2">
-                {[
-                  { emoji: "\u{1F3E0}", text: "En casa" }, { emoji: "\u23F0", text: "5 min" },
-                  { emoji: "\u{1F4CD}", text: "Ubicación" }, { emoji: "\u{1F44B}", text: "Llegué" },
-                ].map((r, i) => (
-                  <button key={i} onClick={() => { const elegidos = contactos.filter(c => seleccionados.includes(c.id)); if (elegidos.length > 0) enviarWhatsApp(elegidos[0].telefono, `${r.emoji} ${r.text}`); }}
-                    className="rounded-lg py-2 text-center active:scale-95" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)" }}>
-                    <div className="text-xl">{r.emoji}</div>
-                    <div className="text-[8px] mt-0.5" style={{ color: "rgba(212,175,55,0.4)" }}>{r.text}</div>
-                  </button>
-                ))}
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => { const elegidos = contactos.filter(c => seleccionados.includes(c.id)); if (elegidos.length > 0) enviarWhatsApp(elegidos[0].telefono, "\u{1F6A8} AYUDA URGENTE"); }}
-                  className="rounded-lg py-2 text-center active:scale-95" style={{ background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.3)" }}>
-                  <div className="text-xl">{"\u{1F6A8}"}</div><div className="text-[8px] mt-0.5 text-red-400">AYUDA</div>
-                </button>
-                <button onClick={() => { const txt = prompt("Escribí tu mensaje:"); const elegidos = contactos.filter(c => seleccionados.includes(c.id)); if (txt && elegidos.length > 0) enviarWhatsApp(elegidos[0].telefono, txt); }}
-                  className="rounded-lg py-2 text-center active:scale-95" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)" }}>
-                  <div className="text-xl">{"\u270D\u{FE0F}"}</div><div className="text-[8px] mt-0.5" style={{ color: "rgba(212,175,55,0.4)" }}>Escribir</div>
-                </button>
-              </div>
+              <p className="text-[10px] mt-3 text-center" style={{ color: "rgba(255,255,255,0.25)" }}>Cuando responda, verás su emoji acá</p>
             </div>
             <button onClick={onClose} className="w-full rounded-xl py-3 text-sm font-semibold" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>Cerrar</button>
           </div>
@@ -1210,7 +1190,7 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
 
 // ─── MÓDULOS (Renombrados v17) ────────────────
 const MODULES = [
-  { key: "mi_escudo", emoji: "\u{1F6E1}\u{FE0F}", title: "Mi Escudo", desc: "Violencia de género — Alerta silenciosa, ubicación y red de apoyo.",
+  { key: "mi_escudo", emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género", desc: "Violencia de género — Alerta silenciosa, ubicación y red de apoyo.",
     color: "from-fuchsia-500 to-rose-500", border: "border-fuchsia-500/20", accentBg: "bg-fuchsia-500/10", accentBorder: "border-fuchsia-500/30", accentText: "text-fuchsia-300",
     actions: [
       { key: "panico", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "ALERTA — Botón de pánico activado. Necesito ayuda urgente." },
@@ -1219,12 +1199,12 @@ const MODULES = [
       { key: "evidencias", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver todas las grabaciones guardadas.", type: "evidencias" },
       { key: "entro", icon: "\u{1F3D8}\u{FE0F}", name: "Entro a la casa de...", desc: "Avisa al contacto + ubicación.", type: "alert_contacts", message: "Entro a la casa de [completar]." },
       { key: "reuno", icon: "\u{1F465}", name: "Me reúno con...", desc: "Avisa al contacto + ubicación.", type: "alert_contacts", message: "Me reúno con [completar]." },
-      { key: "checkin", icon: "\u23F1\u{FE0F}", name: "Ingreso a lugar desconocido", desc: "Timer + PIN: si no cancelás, se alerta.", type: "checkin", titulo: "Lugar desconocido — Mi Escudo" },
+      { key: "checkin", icon: "\u23F1\u{FE0F}", name: "Ingreso a lugar desconocido", desc: "Timer + PIN: si no cancelás, se alerta.", type: "checkin", titulo: "Lugar desconocido — Violencia de Género" },
       { key: "share", icon: "\u{1F4CD}", name: "Enviar ubicación en tiempo real", desc: "Comparte GPS en vivo con contacto.", type: "alert_contacts", message: "Compartiendo mi ubicación en vivo." },
       { key: "uber", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber con destino.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
       { key: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono de taxi.", type: "taxi" },
     ]},
-  { key: "los_cuido", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Los Cuido", desc: "Adolescente seguro — Salidas, regresos y anti-bullying.",
+  { key: "los_cuido", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro", desc: "Adolescente seguro — Salidas, regresos y anti-bullying.",
     color: "from-sky-400 to-cyan-500", border: "border-sky-500/20", accentBg: "bg-sky-500/10", accentBorder: "border-sky-500/30", accentText: "text-sky-300",
     actions: [
       { key: "ayuda", icon: "\u{1F6A8}", name: "AYUDA", desc: "Alerta máxima urgencia al padre.", type: "alert_contacts", message: "AYUDA — Necesito ayuda urgente." },
@@ -1238,7 +1218,7 @@ const MODULES = [
       { key: "uber", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
       { key: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono taxi.", type: "taxi" },
     ]},
-  { key: "los_protejo", emoji: "\u{1FAF6}", title: "Los Protejo", desc: "Adulto mayor seguro — Medicamentos, caídas y asistencia.",
+  { key: "los_protejo", emoji: "\u{1FAF6}", title: "Adulto Mayor Seguro", desc: "Adulto mayor seguro — Medicamentos, caídas y asistencia.",
     color: "from-amber-400 to-orange-500", border: "border-amber-500/20", accentBg: "bg-amber-500/10", accentBorder: "border-amber-500/30", accentText: "text-amber-300",
     actions: [
       { key: "cai", icon: "\u{1F691}", name: "Me caí", desc: "Alerta de caída + ubicación.", type: "alert_contacts", message: "ALERTA — Me caí y necesito ayuda." },
@@ -1248,7 +1228,7 @@ const MODULES = [
       { key: "ambulancia", icon: "\u{1F691}", name: "Llamar ambulancia", desc: "Llama al número configurado (SAME, 107, prepaga).", type: "ambulancia" },
       { key: "pastillero", icon: "\u{1F48A}", name: "Pastillero Virtual", desc: "Recordatorios de medicación.", type: "pastillero" },
     ]},
-  { key: "mi_nido", emoji: "\u{1F3E0}", title: "Mi Nido", desc: "Hogar seguro — Intrusos, accidentes y emergencias.",
+  { key: "mi_nido", emoji: "\u{1F3E0}", title: "Hogar Seguro", desc: "Hogar seguro — Intrusos, accidentes y emergencias.",
     color: "from-violet-500 to-purple-500", border: "border-violet-500/20", accentBg: "bg-violet-500/10", accentBorder: "border-violet-500/30", accentText: "text-violet-300",
     actions: [
       { key: "intruso", icon: "\u{1F6A8}", name: "Intruso", desc: "Alerta de intruso + ubicación.", type: "alert_contacts", message: "ALERTA — Posible intruso en mi domicilio." },
@@ -1258,11 +1238,11 @@ const MODULES = [
       { key: "evidencias", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver grabaciones.", type: "evidencias" },
       { key: "share", icon: "\u{1F4CD}", name: "Enviar ubicación", desc: "Comparte ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
     ]},
-  { key: "turno_seguro", emoji: "\u{1F303}", title: "Turno Seguro", desc: "Trabajo de riesgo — Protección en áreas peligrosas.",
+  { key: "turno_seguro", emoji: "\u{1F303}", title: "Trabajo Seguro", desc: "Trabajo de riesgo — Protección en áreas peligrosas.",
     color: "from-pink-500 to-purple-500", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.3)]", accentText: "text-[#d4af37]",
     actions: [
       { key: "peligro", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "SOS — En peligro durante mi turno de trabajo." },
-      { key: "sospechoso_lugar", icon: "\u26A0\u{FE0F}", name: "Entro a lugar sospechoso", desc: "Elige contactos + activa timer.", type: "checkin", titulo: "Lugar sospechoso — Turno Seguro" },
+      { key: "sospechoso_lugar", icon: "\u26A0\u{FE0F}", name: "Entro a lugar sospechoso", desc: "Elige contactos + activa timer.", type: "checkin", titulo: "Lugar sospechoso — Trabajo Seguro" },
       { key: "desconocido", icon: "\u{1F6B6}", name: "Salgo con desconocido", desc: "Avisa a contactos que elija.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
       { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación silenciosa → nube.", type: "record_audio" },
       { key: "grabar_video", icon: "\u{1F3A5}", name: "Grabar video silencioso", desc: "Grabación silenciosa → nube.", type: "record_video" },
@@ -1505,11 +1485,11 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
   if (activeScreen === "evidencias") return <EvidenciasScreen onBack={() => setActiveScreen("home")} />;
 
   const quickCards = [
-    { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", title: "Mi Escudo",    text: "Violencia de género — Pánico, grabación y red de apoyo." },
-    { key: "los_cuido",   emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Los Cuido",   text: "Adolescente seguro — Anti-bullying, GPS y alertas." },
-    { key: "los_protejo", emoji: "\u{1FAF6}", title: "Los Protejo", text: "Adulto mayor — Medicamentos, caídas y asistencia." },
-    { key: "turno_seguro",emoji: "\u{1F303}", title: "Turno Seguro", text: "Trabajo de riesgo — Protección en áreas peligrosas." },
-    { key: "mi_nido",     emoji: "\u{1F3E0}", title: "Mi Nido",     text: "Hogar seguro — Intrusos, vecinos y accidentes." },
+    { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género",    text: "Violencia de género — Alerta silenciosa, ubicación y red de apoyo." },
+    { key: "los_cuido",   emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro",   text: "Adolescente seguro — Salidas, regresos y anti-bullying." },
+    { key: "los_protejo", emoji: "\u{1FAF6}", title: "Adulto Mayor Seguro", text: "Adulto mayor — Medicamentos, caídas y asistencia." },
+    { key: "turno_seguro",emoji: "\u{1F303}", title: "Trabajo Seguro", text: "Trabajo de riesgo — Protección nocturna y áreas peligrosas." },
+    { key: "mi_nido",     emoji: "\u{1F3E0}", title: "Hogar Seguro",     text: "Hogar seguro — Intrusos, accidentes y emergencias." },
     { key: "oidos_atentos", emoji: "\u{1F3A7}", title: "Oídos Atentos", text: "Vigilancia remota — Próximamente.", coming: true },
     { key: "contactos",   emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} configurados` },
   ];
@@ -1649,17 +1629,22 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
               <h3 className="text-lg font-bold" style={{ color: "#d4af37" }}>Alerta enviada</h3>
               <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>Tu contacto recibió el WhatsApp con tu ubicación</p>
             </div>
-            <div className="rounded-xl p-3 mb-3" style={{ background: "rgba(212,175,55,0.05)", border: "1px solid rgba(212,175,55,0.1)" }}>
-              <div className="text-[9px] font-bold uppercase tracking-wider mb-2" style={{ color: "rgba(212,175,55,0.5)" }}>Seguí comunicándote</div>
-              <div className="grid grid-cols-4 gap-2 mb-2">
-                {[{emoji:"\u2705",text:"Estoy bien"},{emoji:"\u{1F3C3}",text:"Me muevo"},{emoji:"\u{1F4CD}",text:"Acá estoy"},{emoji:"\u{1F6B6}",text:"Caminando"}].map((r,i) => (
-                  <button key={i} onClick={() => { if(contactos.length>0) enviarWhatsApp(contactos[0].telefono,`${r.emoji} ${r.text}`); }}
-                    className="rounded-lg py-2 text-center active:scale-95" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)" }}>
-                    <div className="text-xl">{r.emoji}</div><div className="text-[8px] mt-0.5" style={{ color: "rgba(212,175,55,0.4)" }}>{r.text}</div>
-                  </button>
+            <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(212,175,55,0.05)", border: "1px solid rgba(212,175,55,0.1)" }}>
+              <div className="text-[9px] font-bold uppercase tracking-wider mb-3" style={{ color: "rgba(212,175,55,0.5)" }}>Tu contacto puede responder con</div>
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                {[
+                  { emoji: "\u{1F697}", text: "Salgo" },
+                  { emoji: "\u2705", text: "Recibí" },
+                  { emoji: "\u{1F4CD}", text: "Ubicación" },
+                ].map((r, i) => (
+                  <div key={i} className="rounded-lg py-3 text-center" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.12)" }}>
+                    <div className="text-2xl">{r.emoji}</div>
+                    <div className="text-[9px] mt-1 font-medium" style={{ color: "rgba(212,175,55,0.5)" }}>{r.text}</div>
+                  </div>
                 ))}
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <p className="text-[10px] text-center" style={{ color: "rgba(255,255,255,0.25)" }}>Cuando responda, verás su emoji acá</p>
+              <div className="grid grid-cols-2 gap-2 mt-3">
                 <button onClick={() => { if(contactos.length>0) enviarWhatsApp(contactos[0].telefono,"\u{1F6A8} SIGO EN PELIGRO"); }}
                   className="rounded-lg py-2 text-center active:scale-95" style={{ background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.3)" }}>
                   <div className="text-xl">{"\u{1F6A8}"}</div><div className="text-[8px] mt-0.5 text-red-400">Sigo en peligro</div>
