@@ -2,20 +2,16 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { signUp, signIn, signOut, getCurrentUser, supabase, getContactos, addContacto, deleteContacto, getMedicamentos, addMedicamento, deleteMedicamento, getTomasHoy, getTomasSemana, marcarTomado, crearTomasDelDia } from "./lib/supabase";
 
 /* ═══════════════════════════════════════════════════════════════
-   TRAZA 360 — App completa v17
-   Versión: 17.0 · Mayo 2026
+   TRAZA 360 — App completa v17.1
+   Versión: 17.1 · Mayo 2026
    ═══════════════════════════════════════════════════════════════
-   CAMBIOS v17 (Auditoría PM):
-   1. Onboarding guiado de 3 pasos
-   2. Dashboard "Estado del sistema" con semáforo
-   3. Módulos renombrados (Mi Escudo, Los Cuido, etc.)
-   4. Te Vigilo → "Próximamente" (oculto hasta fix)
-   5. Verificación de contactos (Safety Check)
-   6. Check-in temporizado en todos los módulos
-   7. Confirmación post-alerta con feedback visual
-   8. Política de Privacidad + Términos visibles
-   9. Freemium con límites y upgrade CTA
-   10. Sistema de estado WhatsApp visible
+   CAMBIOS v17.1:
+   1. Violencia: grabar video, ubicación en tiempo real, emojis corregidos
+   2. Adolescente: AYUDA (sin SOS), Voy a lo de..., Llegar a casa GPS, taxi
+   3. Adulto Mayor: simplificado a 6 botones + Pastillero, ambulancia configurable
+   4. Hogar: simplificado a 6 botones con grabar video
+   5. Trabajo: 9 botones, grabar video, taxi, ubicación en tiempo real
+   6. Te Vigilo: flujo solicitud → respuesta → tiempo (próximamente)
    ═══════════════════════════════════════════════════════════════ */
 
 // ─── CONFIG ─────────────────────────────────
@@ -1218,71 +1214,62 @@ const MODULES = [
     color: "from-fuchsia-500 to-rose-500", border: "border-fuchsia-500/20", accentBg: "bg-fuchsia-500/10", accentBorder: "border-fuchsia-500/30", accentText: "text-fuchsia-300",
     actions: [
       { key: "panico", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "ALERTA — Botón de pánico activado. Necesito ayuda urgente." },
-      { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío mi ubicación ahora.", type: "alert_contacts", message: "Compartiendo mi ubicación en vivo." },
-      { key: "checkin", icon: "\u23F1\u{FE0F}", name: "Check-in de seguridad", desc: "Timer: si no avisás, se alerta.", type: "checkin", titulo: "Check-in — Mi Escudo" },
-      { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar evidencia", desc: "Grabación silenciosa.", type: "record_audio" },
-      { key: "evidencias", icon: "\u{1F4C1}", name: "Mis Evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
-      { key: "entro", icon: "\u{1F3D8}\u{FE0F}", name: "Entro a la casa de...", desc: "Aviso con ubicación.", type: "alert_contacts", message: "Entro a la casa de [completar]." },
-      { key: "reuno", icon: "\u{1F465}", name: "Me reúno con...", desc: "Aviso.", type: "alert_contacts", message: "Me reúno con [completar]." },
-      { key: "uber", icon: "\u{1F697}", name: "Llamar transporte", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
-      { key: "taxi", icon: "\u{1F696}", name: "Llamar taxi de confianza", desc: "Llama a tu taxi preestablecido.", type: "taxi" },
+      { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación audio silenciosa → nube.", type: "record_audio" },
+      { key: "grabar_video", icon: "\u{1F3A5}", name: "Grabar video silencioso", desc: "Grabación video silenciosa → nube.", type: "record_video" },
+      { key: "evidencias", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver todas las grabaciones guardadas.", type: "evidencias" },
+      { key: "entro", icon: "\u{1F3D8}\u{FE0F}", name: "Entro a la casa de...", desc: "Avisa al contacto + ubicación.", type: "alert_contacts", message: "Entro a la casa de [completar]." },
+      { key: "reuno", icon: "\u{1F465}", name: "Me reúno con...", desc: "Avisa al contacto + ubicación.", type: "alert_contacts", message: "Me reúno con [completar]." },
+      { key: "checkin", icon: "\u23F1\u{FE0F}", name: "Ingreso a lugar desconocido", desc: "Timer + PIN: si no cancelás, se alerta.", type: "checkin", titulo: "Lugar desconocido — Mi Escudo" },
+      { key: "share", icon: "\u{1F4CD}", name: "Enviar ubicación en tiempo real", desc: "Comparte GPS en vivo con contacto.", type: "alert_contacts", message: "Compartiendo mi ubicación en vivo." },
+      { key: "uber", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber con destino.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
+      { key: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono de taxi.", type: "taxi" },
     ]},
   { key: "los_cuido", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Los Cuido", desc: "Adolescente seguro — Salidas, regresos y anti-bullying.",
     color: "from-sky-400 to-cyan-500", border: "border-sky-500/20", accentBg: "bg-sky-500/10", accentBorder: "border-sky-500/30", accentText: "text-sky-300",
     actions: [
-      { key: "peligro", icon: "\u{1F6A8}", name: "Estoy en peligro (SOS)", desc: "Alerta inmediata.", type: "alert_contacts", message: "SOS — Estoy en peligro." },
-      { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
-      { key: "checkin", icon: "\u23F1\u{FE0F}", name: "Check-in de seguridad", desc: "Timer automático.", type: "checkin", titulo: "Check-in — Los Cuido" },
-      { key: "cole", icon: "\u{1F3EB}", name: "Buscame por el cole", desc: "Aviso silencioso.", type: "alert_contacts", message: "URGENTE — Necesito que me busquen por el colegio." },
-      { key: "bullying", icon: "\u{1F399}\u{FE0F}", name: "Grabar evidencia de bullying", desc: "Grabación silenciosa.", type: "record_audio" },
-      { key: "evidencias", icon: "\u{1F4C1}", name: "Mis Evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
-      { key: "sali", icon: "\u{1F6B6}", name: "Salí de casa, voy a lo de...", desc: "Aviso.", type: "alert_contacts", message: "Salí de casa. Voy a lo de [completar]." },
-      { key: "maps", icon: "\u{1F5FA}\u{FE0F}", name: "Llegar a casa (GPS)", desc: "Abre Maps.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
-      { key: "llegue", icon: "\u2705", name: "Llegué bien", desc: "Confirmación.", type: "alert_contacts", message: "Llegué bien a casa." },
-      { key: "perdido", icon: "\u{1F4CD}", name: "Estoy perdido", desc: "Envía ubicación.", type: "alert_contacts", message: "Estoy perdido." },
-      { key: "uber", icon: "\u{1F697}", name: "Llamar transporte", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
+      { key: "ayuda", icon: "\u{1F6A8}", name: "AYUDA", desc: "Alerta máxima urgencia al padre.", type: "alert_contacts", message: "AYUDA — Necesito ayuda urgente." },
+      { key: "bullying", icon: "\u{1F399}\u{FE0F}", name: "Bullying - Grabar evidencia", desc: "Grabación silenciosa real.", type: "record_audio" },
+      { key: "cole", icon: "\u{1F3EB}", name: "Buscame por el cole", desc: "Pide al padre que lo busque.", type: "alert_contacts", message: "URGENTE — Necesito que me busquen por el colegio." },
+      { key: "voy_a", icon: "\u{1F3E0}", name: "Voy a lo de...", desc: "Avisa a dónde va + nombre.", type: "alert_contacts", message: "Voy a lo de [completar]." },
+      { key: "maps", icon: "\u{1F3E1}", name: "Llegar a casa", desc: "Activa GPS hasta llegar a casa.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
+      { key: "escribir", icon: "\u270F\u{FE0F}", name: "Escribir", desc: "Chat directo con el padre.", type: "escribir" },
+      { key: "evidencias", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
+      { key: "share", icon: "\u{1F4CD}", name: "Enviar ubicación", desc: "Comparte ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
+      { key: "uber", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
+      { key: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono taxi.", type: "taxi" },
     ]},
   { key: "los_protejo", emoji: "\u{1FAF6}", title: "Los Protejo", desc: "Adulto mayor seguro — Medicamentos, caídas y asistencia.",
     color: "from-amber-400 to-orange-500", border: "border-amber-500/20", accentBg: "bg-amber-500/10", accentBorder: "border-amber-500/30", accentText: "text-amber-300",
     actions: [
-      { key: "cai", icon: "\u{1F198}", name: "Me caí", desc: "Alerta inmediata.", type: "alert_contacts", message: "ALERTA — Me caí y necesito ayuda." },
-      { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
-      { key: "checkin", icon: "\u23F1\u{FE0F}", name: "Check-in de seguridad", desc: "Timer automático.", type: "checkin", titulo: "Check-in — Los Protejo" },
-      { key: "pastillero", icon: "\u{1F48A}", name: "Mis Medicamentos", desc: "Pastillero virtual con alarmas.", type: "pastillero" },
-      { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar evidencia", desc: "Grabación silenciosa.", type: "record_audio" },
-      { key: "evidencias", icon: "\u{1F4C1}", name: "Mis Evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
-      { key: "medicacion", icon: "\u2705", name: "Tomé la medicación", desc: "Confirmación.", type: "alert_contacts", message: "Tomé la medicación del horario." },
-      { key: "familiar", icon: "\u{1F4DE}", name: "Llamar a familiar", desc: "Contactar.", type: "alert_contacts", message: "Necesito hablar con mi familiar." },
-      { key: "perdi", icon: "\u{1F4CD}", name: "Me perdí", desc: "Envía ubicación.", type: "alert_contacts", message: "Me perdí. Estoy en esta ubicación." },
-      { key: "mal", icon: "\u{1F494}", name: "No me siento bien", desc: "Aviso.", type: "alert_contacts", message: "No me siento bien." },
-      { key: "casa", icon: "\u{1F3E0}", name: "Llegar a casa", desc: "Abre GPS.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
-      { key: "ambulancia", icon: "\u{1F691}", name: "Llamar ambulancia", desc: "Emergencia médica.", type: "ambulancia" },
+      { key: "cai", icon: "\u{1F691}", name: "Me caí", desc: "Alerta de caída + ubicación.", type: "alert_contacts", message: "ALERTA — Me caí y necesito ayuda." },
+      { key: "mal", icon: "\u{1F48A}", name: "No me siento bien", desc: "Alerta de salud.", type: "alert_contacts", message: "No me siento bien. Necesito asistencia." },
+      { key: "casa", icon: "\u{1F3E1}", name: "Llegar a casa", desc: "Activa GPS hasta llegar a casa.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
+      { key: "share", icon: "\u{1F4CD}", name: "Enviar ubicación", desc: "Comparte ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
+      { key: "ambulancia", icon: "\u{1F691}", name: "Llamar ambulancia", desc: "Llama al número configurado (SAME, 107, prepaga).", type: "ambulancia" },
+      { key: "pastillero", icon: "\u{1F48A}", name: "Pastillero Virtual", desc: "Recordatorios de medicación.", type: "pastillero" },
     ]},
-  { key: "mi_nido", emoji: "\u{1F3E0}", title: "Mi Nido", desc: "Hogar seguro — Intrusos, vecinos y emergencias.",
+  { key: "mi_nido", emoji: "\u{1F3E0}", title: "Mi Nido", desc: "Hogar seguro — Intrusos, accidentes y emergencias.",
     color: "from-violet-500 to-purple-500", border: "border-violet-500/20", accentBg: "bg-violet-500/10", accentBorder: "border-violet-500/30", accentText: "text-violet-300",
     actions: [
-      { key: "intruso", icon: "\u{1F6A8}", name: "Intruso en domicilio", desc: "Alerta inmediata.", type: "alert_contacts", message: "ALERTA — Posible intruso en mi domicilio." },
-      { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
-      { key: "checkin", icon: "\u23F1\u{FE0F}", name: "Check-in de seguridad", desc: "Timer automático.", type: "checkin", titulo: "Check-in — Mi Nido" },
-      { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar evidencia", desc: "Grabación silenciosa.", type: "record_audio" },
-      { key: "maps_casa", icon: "\u{1F5FA}\u{FE0F}", name: "Llegar a casa (GPS)", desc: "Abre Google Maps.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
-      { key: "ruido", icon: "\u{1F442}", name: "Ruido sospechoso", desc: "Aviso preventivo.", type: "alert_contacts", message: "Ruido sospechoso en mi domicilio." },
-      { key: "accidente", icon: "\u{1FA79}", name: "Accidente doméstico", desc: "Aviso.", type: "alert_contacts", message: "ALERTA — Accidente doméstico." },
-      { key: "emergencia", icon: "\u{1F198}", name: "Emergencia en el hogar", desc: "Alerta máxima.", type: "alert_contacts", message: "EMERGENCIA en el hogar." },
+      { key: "intruso", icon: "\u{1F6A8}", name: "Intruso", desc: "Alerta de intruso + ubicación.", type: "alert_contacts", message: "ALERTA — Posible intruso en mi domicilio." },
+      { key: "accidente", icon: "\u{1F198}", name: "Accidente", desc: "Alerta accidente doméstico.", type: "alert_contacts", message: "ALERTA — Accidente doméstico." },
+      { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación silenciosa.", type: "record_audio" },
+      { key: "grabar_video", icon: "\u{1F3A5}", name: "Grabar video", desc: "Grabación silenciosa.", type: "record_video" },
+      { key: "evidencias", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver grabaciones.", type: "evidencias" },
+      { key: "share", icon: "\u{1F4CD}", name: "Enviar ubicación", desc: "Comparte ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
     ]},
   { key: "turno_seguro", emoji: "\u{1F303}", title: "Turno Seguro", desc: "Trabajo de riesgo — Protección en áreas peligrosas.",
     color: "from-pink-500 to-purple-500", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.3)]", accentText: "text-[#d4af37]",
     actions: [
-      { key: "peligro", icon: "\u{1F6A8}", name: "Estoy en peligro (SOS)", desc: "Alerta inmediata.", type: "alert_contacts", message: "SOS — En peligro durante mi turno de trabajo." },
-      { key: "sospechoso_lugar", icon: "\u26A0\u{FE0F}", name: "Entro a lugar sospechoso", desc: "Timer automático.", type: "checkin", titulo: "Lugar sospechoso — Turno Seguro" },
-      { key: "share", icon: "\u{1F4E1}", name: "Compartir ubicación", desc: "Envío ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
-      { key: "checkin", icon: "\u23F1\u{FE0F}", name: "Check-in de turno", desc: "Timer de turno.", type: "checkin", titulo: "Check-in de turno" },
-      { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar evidencia", desc: "Grabación silenciosa.", type: "record_audio" },
-      { key: "evidencias", icon: "\u{1F4C1}", name: "Mis Evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
-      { key: "desconocido", icon: "\u{1F9D1}\u200D\u{1F91D}\u200D\u{1F9D1}", name: "Salgo con desconocido/a", desc: "Aviso.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
-      { key: "sospechoso", icon: "\u{1F440}", name: "Cliente sospechoso", desc: "Envía ubicación + aviso.", type: "alert_contacts", message: "ALERTA — Cliente con actitud sospechosa." },
-      { key: "uber", icon: "\u{1F697}", name: "Llamar transporte", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
-      { key: "llegue", icon: "\u2705", name: "Llegué bien al destino", desc: "Confirmación.", type: "alert_contacts", message: "Terminé mi turno y estoy bien." },
+      { key: "peligro", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "SOS — En peligro durante mi turno de trabajo." },
+      { key: "sospechoso_lugar", icon: "\u26A0\u{FE0F}", name: "Entro a lugar sospechoso", desc: "Elige contactos + activa timer.", type: "checkin", titulo: "Lugar sospechoso — Turno Seguro" },
+      { key: "desconocido", icon: "\u{1F6B6}", name: "Salgo con desconocido", desc: "Avisa a contactos que elija.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
+      { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación silenciosa → nube.", type: "record_audio" },
+      { key: "grabar_video", icon: "\u{1F3A5}", name: "Grabar video silencioso", desc: "Grabación silenciosa → nube.", type: "record_video" },
+      { key: "evidencias", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
+      { key: "share", icon: "\u{1F4CD}", name: "Enviar ubicación en tiempo real", desc: "GPS en vivo a contactos.", type: "alert_contacts", message: "Compartiendo mi ubicación en vivo." },
+      { key: "uber", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
+      { key: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono taxi.", type: "taxi" },
     ]},
 ];
 
