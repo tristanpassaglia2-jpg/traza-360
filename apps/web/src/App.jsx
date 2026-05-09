@@ -2,16 +2,20 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { signUp, signIn, signOut, getCurrentUser, supabase, getContactos, addContacto, deleteContacto, getMedicamentos, addMedicamento, deleteMedicamento, getTomasHoy, getTomasSemana, marcarTomado, crearTomasDelDia } from "./lib/supabase";
 
 /* ═══════════════════════════════════════════════════════════════
-   TRAZA 360 — App completa v17.1
-   Versión: 17.1 · Mayo 2026
+   TRAZA 360 — App completa v17.2
+   Versión: 17.2 · Mayo 2026
    ═══════════════════════════════════════════════════════════════
-   CAMBIOS v17.1:
-   1. Violencia: grabar video, ubicación en tiempo real, emojis corregidos
-   2. Adolescente: AYUDA (sin SOS), Voy a lo de..., Llegar a casa GPS, taxi
-   3. Adulto Mayor: simplificado a 6 botones + Pastillero, ambulancia configurable
-   4. Hogar: simplificado a 6 botones con grabar video
-   5. Trabajo: 9 botones, grabar video, taxi, ubicación en tiempo real
-   6. Te Vigilo: flujo solicitud → respuesta → tiempo (próximamente)
+   CAMBIOS v17.2:
+   1. Rediseño visual ULTRA PREMIUM — Plateado/blanco sobre negro
+   2. Paleta: Silver (#E0E0E0), White, Deep Black (#060608)
+   3. Estilo inspirado en JupiterStar: glassmorphism, glow sutil
+   4. Violencia: grabar video, ubicación en tiempo real, emojis corregidos
+   5. Adolescente: AYUDA, Voy a lo de..., Llegar a casa GPS, taxi
+   6. Adulto Mayor: simplificado a 6 botones + Pastillero, ambulancia
+   7. Hogar: simplificado a 6 botones con grabar video
+   8. Trabajo: 9 botones, grabar video, taxi, ubicación en tiempo real
+   9. Panel post-alerta: 3 botones contacto (Salgo, Recibí, Ubicación)
+   10. Módulos renombrados (Violencia de Género, Adolescente Seguro, etc.)
    ═══════════════════════════════════════════════════════════════ */
 
 // ─── CONFIG ─────────────────────────────────
@@ -53,7 +57,7 @@ const COLORES_MED = [
   { key: "green", bg: "bg-emerald-500/20", border: "border-emerald-500/40", text: "text-emerald-300", dot: "bg-emerald-400" },
   { key: "red", bg: "bg-red-500/20", border: "border-red-500/40", text: "text-red-300", dot: "bg-red-400" },
   { key: "purple", bg: "bg-purple-500/20", border: "border-purple-500/40", text: "text-purple-300", dot: "bg-purple-400" },
-  { key: "orange", bg: "bg-orange-500/20", border: "border-orange-500/40", text: "text-orange-300", dot: "bg-orange-400" },
+  { key: "orange", bg: "bg-slate-500/20", border: "border-slate-500/40", text: "text-gray-300", dot: "bg-slate-400" },
   { key: "pink", bg: "bg-pink-500/20", border: "border-pink-500/40", text: "text-pink-300", dot: "bg-pink-400" },
 ];
 
@@ -77,7 +81,7 @@ function PhoneInput({ value, onChange, prefix, onPrefixChange, placeholder }) {
           className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400/50 min-w-0" />
       </div>
       {open && (
-        <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-xl border border-white/10 bg-[#0d1426] shadow-2xl overflow-hidden max-h-72 overflow-y-auto">
+        <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-xl border border-white/10 bg-[#08080c] shadow-2xl overflow-hidden max-h-72 overflow-y-auto">
           {PAISES.map((p) => (
             <button key={p.code} type="button" onClick={() => { onPrefixChange(p.prefix); setOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/10 text-left ${p.prefix === prefix ? "bg-white/10 text-cyan-300" : "text-slate-200"}`}>
@@ -246,16 +250,16 @@ function OnboardingScreen({ onComplete }) {
       {/* Progress dots */}
       <div className="flex gap-2 mb-8">
         {steps.map((_, i) => (
-          <div key={i} className="h-1.5 rounded-full transition-all" style={{ width: i === step ? "32px" : "8px", background: i === step ? "#d4af37" : "rgba(212,175,55,0.2)" }} />
+          <div key={i} className="h-1.5 rounded-full transition-all" style={{ width: i === step ? "32px" : "8px", background: i === step ? "#E0E0E0" : "rgba(224,224,224,0.2)" }} />
         ))}
       </div>
 
       <div className="w-full max-w-sm">
         {/* Card */}
-        <div className="rounded-3xl p-8 text-center mb-6" style={{ background: "linear-gradient(145deg, #13131d, #0a0a12)", border: "1px solid rgba(212,175,55,0.15)", boxShadow: "8px 8px 24px rgba(0,0,0,0.6)" }}>
+        <div className="rounded-3xl p-8 text-center mb-6" style={{ background: "linear-gradient(145deg, #13131d, #0a0a12)", border: "1px solid rgba(224,224,224,0.15)", boxShadow: "8px 8px 24px rgba(0,0,0,0.6)" }}>
           <div className="text-6xl mb-4">{current.emoji}</div>
           <h2 className="text-xl font-bold text-white mb-1">{current.title}</h2>
-          <p className="text-xs font-semibold mb-3" style={{ color: "#d4af37" }}>{current.subtitle}</p>
+          <p className="text-xs font-semibold mb-3" style={{ color: "#E0E0E0" }}>{current.subtitle}</p>
           {current.desc && <p className="text-sm text-slate-400 leading-relaxed">{current.desc}</p>}
 
           {/* Step 2: selector de módulo */}
@@ -265,12 +269,12 @@ function OnboardingScreen({ onComplete }) {
                 <button key={m.key} onClick={() => setSelectedModule(m.key)}
                   className="w-full rounded-xl px-4 py-3 flex items-center gap-3 transition-all"
                   style={{
-                    background: selectedModule === m.key ? "rgba(212,175,55,0.12)" : "rgba(255,255,255,0.04)",
-                    border: selectedModule === m.key ? "1px solid rgba(212,175,55,0.4)" : "1px solid rgba(255,255,255,0.08)",
+                    background: selectedModule === m.key ? "rgba(224,224,224,0.12)" : "rgba(255,255,255,0.04)",
+                    border: selectedModule === m.key ? "1px solid rgba(224,224,224,0.4)" : "1px solid rgba(255,255,255,0.08)",
                   }}>
                   <span className="text-xl">{m.emoji}</span>
-                  <span className="text-sm font-semibold" style={{ color: selectedModule === m.key ? "#d4af37" : "rgba(255,255,255,0.7)" }}>{m.label}</span>
-                  {selectedModule === m.key && <span className="ml-auto text-sm" style={{ color: "#d4af37" }}>{"\u2713"}</span>}
+                  <span className="text-sm font-semibold" style={{ color: selectedModule === m.key ? "#E0E0E0" : "rgba(255,255,255,0.7)" }}>{m.label}</span>
+                  {selectedModule === m.key && <span className="ml-auto text-sm" style={{ color: "#E0E0E0" }}>{"\u2713"}</span>}
                 </button>
               ))}
             </div>
@@ -284,7 +288,7 @@ function OnboardingScreen({ onComplete }) {
                 { icon: "\u2705", text: "El contacto recibe una verificación automática" },
                 { icon: "\u{1F512}", text: "Solo vos podés ver tus contactos" },
               ].map((tip, i) => (
-                <div key={i} className="flex items-start gap-3 rounded-xl px-3 py-2" style={{ background: "rgba(212,175,55,0.05)", border: "1px solid rgba(212,175,55,0.08)" }}>
+                <div key={i} className="flex items-start gap-3 rounded-xl px-3 py-2" style={{ background: "rgba(224,224,224,0.05)", border: "1px solid rgba(224,224,224,0.08)" }}>
                   <span className="text-lg shrink-0">{tip.icon}</span>
                   <span className="text-xs text-slate-300">{tip.text}</span>
                 </div>
@@ -305,12 +309,12 @@ function OnboardingScreen({ onComplete }) {
           }}
           disabled={step === 1 && !selectedModule}
           className="w-full rounded-2xl py-4 font-bold text-black shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)", boxShadow: "0 8px 30px rgba(212,175,55,0.25)" }}>
+          style={{ background: "linear-gradient(135deg, #E0E0E0, #f5e6a3, #E0E0E0)", boxShadow: "0 8px 30px rgba(224,224,224,0.25)" }}>
           {current.cta}
         </button>
 
         {step > 0 && (
-          <button onClick={() => setStep(step - 1)} className="w-full mt-3 py-2 text-sm" style={{ color: "rgba(212,175,55,0.4)" }}>
+          <button onClick={() => setStep(step - 1)} className="w-full mt-3 py-2 text-sm" style={{ color: "rgba(224,224,224,0.4)" }}>
             ← Volver
           </button>
         )}
@@ -436,7 +440,7 @@ function GrabacionModal({ onClose }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 px-5 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-3xl border border-sky-500/30 bg-[#0d1426] p-6 shadow-2xl">
+      <div className="w-full max-w-sm rounded-3xl border border-sky-500/30 bg-[#08080c] p-6 shadow-2xl">
         <div className="text-center">
           <div className="mb-3 text-4xl">{guardado ? "\u2705" : "\u{1F399}\u{FE0F}"}</div>
           <div className="text-lg font-bold text-slate-100">{guardado ? "Evidencia guardada" : "Grabación silenciosa"}</div>
@@ -516,7 +520,7 @@ function CheckInModal({ onClose, contactos, titulo = "Check-in de seguridad" }) 
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 px-5 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-3xl border border-orange-500/30 bg-[#0d1426] p-6 shadow-2xl">
+      <div className="w-full max-w-sm rounded-3xl border border-white/20 bg-[#08080c] p-6 shadow-2xl">
         <div className="text-center">
           {alertaEnviada ? (
             <>
@@ -554,12 +558,12 @@ function CheckInModal({ onClose, contactos, titulo = "Check-in de seguridad" }) 
               <div className="grid grid-cols-4 gap-2 mb-4">
                 {[15, 30, 60, 120].map(m => (
                   <button key={m} onClick={() => setMinutos(m)}
-                    className={`rounded-xl border py-3 text-sm font-semibold ${minutos === m ? "border-orange-400/50 bg-orange-500/10 text-orange-300" : "border-white/10 bg-white/5 text-slate-400"}`}>
+                    className={`rounded-xl border py-3 text-sm font-semibold ${minutos === m ? "border-white/30 bg-white/10 text-gray-300" : "border-white/10 bg-white/5 text-slate-400"}`}>
                     {m >= 60 ? `${m/60}h` : `${m}m`}
                   </button>
                 ))}
               </div>
-              <button onClick={iniciar} className="w-full rounded-2xl bg-gradient-to-r from-orange-400 to-amber-500 py-3 text-sm font-semibold text-white shadow-lg mb-2">Activar check-in ({minutos} min)</button>
+              <button onClick={iniciar} className="w-full rounded-2xl bg-gradient-to-r from-slate-200 to-white py-3 text-sm font-semibold text-black shadow-lg mb-2">Activar check-in ({minutos} min)</button>
               <button onClick={onClose} className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-xs text-slate-400">Cancelar</button>
             </>
           )}
@@ -600,18 +604,18 @@ function EvidenciasScreen({ onBack }) {
   return (
     <div className="min-h-screen px-5 py-8 text-white" style={{ background: "linear-gradient(180deg, #0a0a10 0%, #0d0d16 40%, #0a0a10 100%)" }}>
       <div className="mx-auto max-w-3xl">
-        <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: "#d4af37" }}>{"\u2190"} Volver al panel</button>
-        <div className="mb-6 rounded-2xl p-6" style={{ background: "linear-gradient(145deg, #13131d, #0e0e16)", border: "1px solid rgba(212,175,55,0.1)" }}>
-          <p className="text-[10px] uppercase tracking-[3px]" style={{ color: "#d4af37" }}>Mis archivos protegidos</p>
+        <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: "#E0E0E0" }}>{"\u2190"} Volver al panel</button>
+        <div className="mb-6 rounded-2xl p-6" style={{ background: "linear-gradient(145deg, #13131d, #0e0e16)", border: "1px solid rgba(224,224,224,0.1)" }}>
+          <p className="text-[10px] uppercase tracking-[3px]" style={{ color: "#E0E0E0" }}>Mis archivos protegidos</p>
           <h2 className="mt-2 text-xl font-bold">Mis Evidencias</h2>
           <p className="mt-2 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>Grabaciones guardadas en la nube con cifrado.</p>
         </div>
 
         {audioUrl && (
-          <div className="mb-4 rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.15)" }}>
+          <div className="mb-4 rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #101018, #08080c)", border: "1px solid rgba(224,224,224,0.15)" }}>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">{"\u{1F3B5}"}</span>
-              <span className="text-xs font-semibold" style={{ color: "#d4af37" }}>Reproduciendo: {audioName}</span>
+              <span className="text-xs font-semibold" style={{ color: "#E0E0E0" }}>Reproduciendo: {audioName}</span>
               <button onClick={() => { setAudioUrl(null); setAudioName(null); }} className="ml-auto text-xs text-slate-500">{"\u2715"}</button>
             </div>
             <audio controls autoPlay src={audioUrl} style={{ width: "100%", height: "40px", borderRadius: "8px" }} />
@@ -620,7 +624,7 @@ function EvidenciasScreen({ onBack }) {
 
         {loading ? <div className="text-center py-8 text-slate-400">Cargando...</div>
         : archivos.length === 0 ? (
-          <div className="rounded-2xl p-8 text-center" style={{ background: "linear-gradient(145deg, #12121a, #0c0c12)", border: "1px solid rgba(212,175,55,0.08)" }}>
+          <div className="rounded-2xl p-8 text-center" style={{ background: "linear-gradient(145deg, #0c0c14, #08080c)", border: "1px solid rgba(224,224,224,0.08)" }}>
             <div className="text-5xl mb-3">{"\u{1F4C1}"}</div>
             <h3 className="text-lg font-semibold text-white">Sin evidencias</h3>
             <p className="mt-2 text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>Cuando grabes audio desde cualquier módulo, aparecerá acá.</p>
@@ -628,7 +632,7 @@ function EvidenciasScreen({ onBack }) {
         ) : (
           <div className="space-y-3">
             {archivos.map((f, i) => (
-              <div key={i} className="rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #12121a, #0c0c12)", border: audioName === f.name ? "1px solid rgba(212,175,55,0.3)" : "1px solid rgba(212,175,55,0.08)" }}>
+              <div key={i} className="rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #0c0c14, #08080c)", border: audioName === f.name ? "1px solid rgba(224,224,224,0.3)" : "1px solid rgba(224,224,224,0.08)" }}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <span className="text-2xl">{"\u{1F399}\u{FE0F}"}</span>
@@ -638,7 +642,7 @@ function EvidenciasScreen({ onBack }) {
                     </div>
                   </div>
                   <div className="flex gap-2 shrink-0">
-                    <button onClick={() => reproducir(f)} className="rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.2)", color: "#d4af37" }}>
+                    <button onClick={() => reproducir(f)} className="rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ background: "rgba(224,224,224,0.08)", border: "1px solid rgba(224,224,224,0.2)", color: "#E0E0E0" }}>
                       {audioName === f.name ? "\u{1F50A} Escuchando" : "\u25B6\u{FE0F} Escuchar"}
                     </button>
                     <button onClick={() => descargar(f)} className="rounded-lg px-2 py-1.5 text-xs" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)" }}>{"\u{2B07}\u{FE0F}"}</button>
@@ -772,19 +776,19 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
         <button onClick={onBack} className="mb-4 text-sm text-cyan-300">← Volver al panel</button>
         <div className="mb-6 rounded-3xl border border-white/10 bg-white/5 p-6">
           <div className="flex items-start justify-between gap-4">
-            <div><p className="text-xs uppercase tracking-[0.18em] text-amber-300">Adulto Mayor — Pastillero</p>
+            <div><p className="text-xs uppercase tracking-[0.18em] text-gray-300">Adulto Mayor — Pastillero</p>
               <h2 className="mt-2 text-2xl font-bold">Mis Medicamentos</h2></div>
             <span className="text-3xl">{"\u{1F48A}"}</span>
           </div>
           <p className="mt-2 text-sm text-slate-400">
-            Plan: <span className="text-amber-300 font-semibold">{PLAN_PRICES[userPlan]?.name || "Gratis"}</span> · {meds.length}/{maxMeds === -1 ? "∞" : maxMeds} medicamentos
+            Plan: <span className="text-gray-300 font-semibold">{PLAN_PRICES[userPlan]?.name || "Gratis"}</span> · {meds.length}/{maxMeds === -1 ? "∞" : maxMeds} medicamentos
           </p>
         </div>
 
         <div className="flex gap-2 mb-4">
           {[{k:"hoy",l:"Hoy"},{k:"semana",l:"Semana"},{k:"agregar",l:"+ Agregar"}].map(tab => (
             <button key={tab.k} onClick={() => setVista(tab.k)}
-              className={`rounded-xl px-4 py-2 text-sm font-semibold ${vista === tab.k ? "bg-amber-500/20 text-amber-300 border border-amber-500/40" : "bg-white/5 text-slate-400 border border-white/10"}`}>
+              className={`rounded-xl px-4 py-2 text-sm font-semibold ${vista === tab.k ? "bg-white/15 text-gray-300 border border-white/30" : "bg-white/5 text-slate-400 border border-white/10"}`}>
               {tab.l}
             </button>
           ))}
@@ -826,7 +830,7 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
                         {t.tomado ? (
                           <span className="text-xs text-emerald-300 font-semibold px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30">Tomado {t.tomado_en ? new Date(t.tomado_en).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }) : ""}</span>
                         ) : (
-                          <button onClick={() => handleTome(t.id)} className="rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2 text-xs font-semibold text-white shadow-lg shrink-0">Tomé</button>
+                          <button onClick={() => handleTome(t.id)} className="rounded-xl bg-gradient-to-r from-slate-300 to-gray-400 px-4 py-2 text-xs font-semibold text-white shadow-lg shrink-0">Tomé</button>
                         )}
                       </div>
                     </div>
@@ -865,7 +869,7 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
             <h3 className="text-sm font-semibold text-slate-300 mb-4">Calendario semanal</h3>
             <div className="grid grid-cols-7 gap-2 mb-6">
               {getCalendarioSemana().map(d => (
-                <div key={d.fecha} className={`rounded-xl border p-3 text-center ${d.hoy ? "border-amber-500/50 bg-amber-500/10" : "border-white/10 bg-white/5"}`}>
+                <div key={d.fecha} className={`rounded-xl border p-3 text-center ${d.hoy ? "border-white/30 bg-gray-400/10" : "border-white/10 bg-white/5"}`}>
                   <div className="text-xs text-slate-400 mb-1">{d.dia}</div>
                   <div className="text-lg mb-1">{d.total === 0 ? "\u2796" : d.tomadas === d.total ? "\u2705" : d.tomadas > 0 ? "\u26A0\u{FE0F}" : "\u274C"}</div>
                   <div className="text-[10px] text-slate-500">{d.total > 0 ? `${d.tomadas}/${d.total}` : "-"}</div>
@@ -892,12 +896,12 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
                     {horarios.length > 1 && <button onClick={() => removeHorario(i)} className="text-red-400 text-xs">Quitar</button>}
                   </div>
                 ))}
-                <button onClick={addHorario} className="text-xs text-amber-300 mt-1">+ Agregar horario</button></div>
+                <button onClick={addHorario} className="text-xs text-gray-300 mt-1">+ Agregar horario</button></div>
               <div><label className="text-xs text-slate-400 block mb-2">Días</label>
                 <div className="flex gap-2 flex-wrap">
                   {DIAS_SEMANA.map(d => (
                     <button key={d.num} onClick={() => toggleDia(d.num)}
-                      className={`rounded-xl border px-3 py-2 text-xs font-semibold ${diasSel.includes(d.num) ? "border-amber-400/50 bg-amber-500/10 text-amber-300" : "border-white/10 bg-white/5 text-slate-400"}`}>
+                      className={`rounded-xl border px-3 py-2 text-xs font-semibold ${diasSel.includes(d.num) ? "border-white/30 bg-gray-400/10 text-gray-300" : "border-white/10 bg-white/5 text-slate-400"}`}>
                       {d.short}
                     </button>
                   ))}
@@ -911,7 +915,7 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
                 </div></div>
               <div className="flex items-center gap-3">
                 <button onClick={() => setNotifFamiliar(!notifFamiliar)}
-                  className={`h-6 w-11 rounded-full shrink-0 ${notifFamiliar ? "bg-amber-500" : "bg-white/20"} relative`}>
+                  className={`h-6 w-11 rounded-full shrink-0 ${notifFamiliar ? "bg-white/80" : "bg-white/20"} relative`}>
                   <div className="h-5 w-5 rounded-full bg-white absolute top-0.5 transition-all" style={{ left: notifFamiliar ? "22px" : "2px" }} />
                 </button>
                 <span className="text-sm text-slate-300">Avisar a familiar si no confirmo en 10 min</span>
@@ -920,7 +924,7 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
               {maxMeds > 0 && meds.length >= maxMeds ? (
                 <UpgradeBanner feature="más medicamentos" />
               ) : (
-                <button onClick={handleAgregar} disabled={saving} className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-50">
+                <button onClick={handleAgregar} disabled={saving} className="w-full rounded-xl bg-gradient-to-r from-slate-300 to-gray-400 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-50">
                   {saving ? "Guardando..." : "Guardar medicamento"}</button>
               )}
             </div>
@@ -934,13 +938,13 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
 // ─── UPGRADE BANNER ──────────────────────────
 function UpgradeBanner({ feature }) {
   return (
-    <div className="rounded-2xl p-4" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.08), rgba(184,134,11,0.04))", border: "1px solid rgba(212,175,55,0.2)" }}>
+    <div className="rounded-2xl p-4" style={{ background: "linear-gradient(135deg, rgba(224,224,224,0.08), rgba(184,134,11,0.04))", border: "1px solid rgba(224,224,224,0.2)" }}>
       <div className="flex items-start gap-3">
         <span className="text-2xl">{"\u{1F451}"}</span>
         <div className="flex-1">
-          <div className="text-sm font-bold" style={{ color: "#d4af37" }}>Función Premium</div>
-          <p className="text-xs text-slate-400 mt-1">Desbloqueá {feature} con el plan Mensual por solo <span style={{ color: "#d4af37" }}>US$4.99/mes</span>.</p>
-          <button className="mt-2 rounded-xl px-4 py-2 text-xs font-bold text-black" style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3)" }}>Ver planes →</button>
+          <div className="text-sm font-bold" style={{ color: "#E0E0E0" }}>Función Premium</div>
+          <p className="text-xs text-slate-400 mt-1">Desbloqueá {feature} con el plan Mensual por solo <span style={{ color: "#E0E0E0" }}>US$4.99/mes</span>.</p>
+          <button className="mt-2 rounded-xl px-4 py-2 text-xs font-bold text-black" style={{ background: "linear-gradient(135deg, #E0E0E0, #f5e6a3)" }}>Ver planes →</button>
         </div>
       </div>
     </div>
@@ -1113,20 +1117,20 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0d1426] p-6 shadow-2xl">
+      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#08080c] p-6 shadow-2xl">
         {sent ? (
           <div className="text-center space-y-4">
             {/* Feedback visual premium */}
             <div className="py-4">
               <div className="text-5xl mb-3 animate-bounce">{sentOk ? "\u2705" : "\u{1F4F1}"}</div>
-              <h3 className="text-lg font-bold" style={{ color: "#d4af37" }}>{sentOk ? "Alerta enviada" : "Abriendo WhatsApp..."}</h3>
+              <h3 className="text-lg font-bold" style={{ color: "#E0E0E0" }}>{sentOk ? "Alerta enviada" : "Abriendo WhatsApp..."}</h3>
               <p className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
                 {sentOk ? "Tu contacto recibió el WhatsApp automáticamente." : "Enviando manualmente por WhatsApp."}
               </p>
             </div>
 
-            <div className="rounded-xl p-4" style={{ background: "rgba(212,175,55,0.05)", border: "1px solid rgba(212,175,55,0.1)" }}>
-              <div className="text-[9px] font-bold uppercase tracking-wider mb-3" style={{ color: "rgba(212,175,55,0.5)" }}>Tu contacto recibió</div>
+            <div className="rounded-xl p-4" style={{ background: "rgba(224,224,224,0.05)", border: "1px solid rgba(224,224,224,0.1)" }}>
+              <div className="text-[9px] font-bold uppercase tracking-wider mb-3" style={{ color: "rgba(224,224,224,0.5)" }}>Tu contacto recibió</div>
               <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>Tu contacto recibió el WhatsApp con tu ubicación y puede responderte con:</p>
               <div className="grid grid-cols-3 gap-3">
                 {[
@@ -1134,15 +1138,15 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
                   { emoji: "\u2705", text: "Recibí" },
                   { emoji: "\u{1F4CD}", text: "Ubicación" },
                 ].map((r, i) => (
-                  <div key={i} className="rounded-lg py-3 text-center" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.12)" }}>
+                  <div key={i} className="rounded-lg py-3 text-center" style={{ background: "linear-gradient(145deg, #101018, #08080c)", border: "1px solid rgba(224,224,224,0.12)" }}>
                     <div className="text-2xl">{r.emoji}</div>
-                    <div className="text-[9px] mt-1 font-medium" style={{ color: "rgba(212,175,55,0.5)" }}>{r.text}</div>
+                    <div className="text-[9px] mt-1 font-medium" style={{ color: "rgba(224,224,224,0.5)" }}>{r.text}</div>
                   </div>
                 ))}
               </div>
               <p className="text-[10px] mt-3 text-center" style={{ color: "rgba(255,255,255,0.25)" }}>Cuando responda, verás su emoji acá</p>
             </div>
-            <button onClick={onClose} className="w-full rounded-xl py-3 text-sm font-semibold" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>Cerrar</button>
+            <button onClick={onClose} className="w-full rounded-xl py-3 text-sm font-semibold" style={{ background: "linear-gradient(145deg, #101018, #08080c)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>Cerrar</button>
           </div>
         ) : (
           <>
@@ -1219,7 +1223,7 @@ const MODULES = [
       { key: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono taxi.", type: "taxi" },
     ]},
   { key: "los_protejo", emoji: "\u{1FAF6}", title: "Adulto Mayor Seguro", desc: "Adulto mayor seguro — Medicamentos, caídas y asistencia.",
-    color: "from-amber-400 to-orange-500", border: "border-amber-500/20", accentBg: "bg-amber-500/10", accentBorder: "border-amber-500/30", accentText: "text-amber-300",
+    color: "from-slate-300 to-gray-400", border: "border-gray-400/20", accentBg: "bg-gray-400/10", accentBorder: "border-gray-400/30", accentText: "text-gray-300",
     actions: [
       { key: "cai", icon: "\u{1F691}", name: "Me caí", desc: "Alerta de caída + ubicación.", type: "alert_contacts", message: "ALERTA — Me caí y necesito ayuda." },
       { key: "mal", icon: "\u{1F48A}", name: "No me siento bien", desc: "Alerta de salud.", type: "alert_contacts", message: "No me siento bien. Necesito asistencia." },
@@ -1239,7 +1243,7 @@ const MODULES = [
       { key: "share", icon: "\u{1F4CD}", name: "Enviar ubicación", desc: "Comparte ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
     ]},
   { key: "turno_seguro", emoji: "\u{1F303}", title: "Trabajo Seguro", desc: "Trabajo de riesgo — Protección en áreas peligrosas.",
-    color: "from-pink-500 to-purple-500", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.3)]", accentText: "text-[#d4af37]",
+    color: "from-slate-400 to-zinc-500", border: "border-[rgba(224,224,224,0.25)]", accentBg: "bg-[rgba(224,224,224,0.1)]", accentBorder: "border-[rgba(224,224,224,0.3)]", accentText: "text-[#E0E0E0]",
     actions: [
       { key: "peligro", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "SOS — En peligro durante mi turno de trabajo." },
       { key: "sospechoso_lugar", icon: "\u26A0\u{FE0F}", name: "Entro a lugar sospechoso", desc: "Elige contactos + activa timer.", type: "checkin", titulo: "Lugar sospechoso — Trabajo Seguro" },
@@ -1305,11 +1309,11 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
 
   return (
     <>
-      <div className="rounded-2xl p-5 flex flex-col" style={{ background: "linear-gradient(145deg, #12121a, #0c0c12)", border: "1px solid rgba(212,175,55,0.1)", boxShadow: "6px 6px 18px rgba(0,0,0,0.5), -3px -3px 10px rgba(212,175,55,0.01)" }}>
+      <div className="rounded-2xl p-5 flex flex-col" style={{ background: "linear-gradient(145deg, #0c0c14, #08080c)", border: "1px solid rgba(224,224,224,0.1)", boxShadow: "6px 6px 18px rgba(0,0,0,0.5), -3px -3px 10px rgba(224,224,224,0.01)" }}>
         <div className="mb-3 flex items-center gap-3">
           <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${m.color} shadow-lg`}><span className="text-2xl">{m.emoji}</span></div>
           <div>
-            <h4 className="text-base font-bold" style={{ color: "#d4af37" }}>{m.title}</h4>
+            <h4 className="text-base font-bold" style={{ color: "#E0E0E0" }}>{m.title}</h4>
             <p className="text-xs text-slate-500">{m.desc}</p>
           </div>
         </div>
@@ -1321,7 +1325,7 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
           <div className="mt-4 space-y-2">
             {m.actions.map(a => (
               <button key={a.key} onClick={() => handleAction(a)}
-                className="w-full rounded-xl px-4 py-3 text-left active:scale-[0.98] transition-all" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.06)", boxShadow: "3px 3px 8px rgba(0,0,0,0.4)" }}>
+                className="w-full rounded-xl px-4 py-3 text-left active:scale-[0.98] transition-all" style={{ background: "linear-gradient(145deg, #101018, #08080c)", border: "1px solid rgba(224,224,224,0.06)", boxShadow: "3px 3px 8px rgba(0,0,0,0.4)" }}>
                 <div className="flex items-start gap-3">
                   <span className="text-xl shrink-0">{a.icon}</span>
                   <div><div className="text-sm font-semibold text-white">{a.name}</div><div className="mt-0.5 text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{a.desc}</div></div>
@@ -1340,12 +1344,12 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
 
 // ─── AUTH SCREENS ────────────────────────────
 function Field({ label, type = "text", placeholder, value, onChange }) {
-  return (<label className="block space-y-2 text-left"><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(212,175,55,0.6)" }}>{label}</span>
+  return (<label className="block space-y-2 text-left"><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(224,224,224,0.6)" }}>{label}</span>
     <input type={type} value={value} onChange={onChange} placeholder={placeholder}
-      className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600" style={{ background: "linear-gradient(145deg, #121218, #0a0a0e)", border: "1px solid rgba(212,175,55,0.1)", boxShadow: "inset 3px 3px 6px rgba(0,0,0,0.4)" }} /></label>);
+      className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600" style={{ background: "linear-gradient(145deg, #121218, #0a0a0e)", border: "1px solid rgba(224,224,224,0.1)", boxShadow: "inset 3px 3px 6px rgba(0,0,0,0.4)" }} /></label>);
 }
 
-function AccessCard({ children }) { return <div className="w-full max-w-md rounded-3xl p-6 shadow-2xl md:p-8" style={{ background: "linear-gradient(145deg, #13131d, #0a0a12)", border: "1px solid rgba(212,175,55,0.1)", boxShadow: "8px 8px 24px rgba(0,0,0,0.6)" }}>{children}</div>; }
+function AccessCard({ children }) { return <div className="w-full max-w-md rounded-3xl p-6 shadow-2xl md:p-8" style={{ background: "linear-gradient(145deg, #13131d, #0a0a12)", border: "1px solid rgba(224,224,224,0.1)", boxShadow: "8px 8px 24px rgba(0,0,0,0.6)" }}>{children}</div>; }
 
 function LoginScreen({ onBack, onSuccess }) {
   const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [loading, setLoading] = useState(false); const [error, setError] = useState("");
@@ -1355,13 +1359,13 @@ function LoginScreen({ onBack, onSuccess }) {
     if (r.success) onSuccess(); else setError(r.error.includes("Invalid") ? "Email o contraseña incorrectos." : r.error);
   }
   return (<div className="flex min-h-screen items-center justify-center px-5 py-8 text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 100%)" }}><AccessCard>
-    <button onClick={onBack} className="text-sm font-semibold" style={{ color: "#d4af37" }}>← Volver</button>
+    <button onClick={onBack} className="text-sm font-semibold" style={{ color: "#E0E0E0" }}>← Volver</button>
     <h2 className="mt-5 text-center text-2xl font-bold text-white">Ingresar</h2>
     <div className="mt-6 space-y-4">
       <Field label="Email" type="email" placeholder="tu@email.com" value={email} onChange={e => setEmail(e.target.value)} />
       <Field label="Contraseña" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
       {error && <p className="text-xs text-red-400 text-center">{error}</p>}
-      <button onClick={handle} disabled={loading} className="w-full rounded-xl py-3.5 font-bold text-black shadow-lg disabled:opacity-50" style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)" }}>{loading ? "Ingresando..." : "Ingresar"}</button>
+      <button onClick={handle} disabled={loading} className="w-full rounded-xl py-3.5 font-bold text-black shadow-lg disabled:opacity-50" style={{ background: "linear-gradient(135deg, #E0E0E0, #f5e6a3, #E0E0E0)" }}>{loading ? "Ingresando..." : "Ingresar"}</button>
     </div></AccessCard></div>);
 }
 
@@ -1375,14 +1379,14 @@ function RegisterScreen({ onBack, onSuccess, setPendingName }) {
     if (r.success) onSuccess(); else setError(r.error.includes("already") ? "Email ya registrado." : r.error);
   }
   return (<div className="flex min-h-screen items-center justify-center px-5 py-8 text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 100%)" }}><AccessCard>
-    <button onClick={onBack} className="text-sm font-semibold" style={{ color: "#d4af37" }}>← Volver</button>
+    <button onClick={onBack} className="text-sm font-semibold" style={{ color: "#E0E0E0" }}>← Volver</button>
     <h2 className="mt-5 text-center text-2xl font-bold text-white">Crear cuenta</h2>
     <div className="mt-6 space-y-4">
       <Field label="Nombre completo" placeholder="Nombre y apellido" value={name} onChange={e => setName(e.target.value)} />
       <Field label="Email" type="email" placeholder="tu@email.com" value={email} onChange={e => setEmail(e.target.value)} />
       <Field label="Contraseña" type="password" placeholder="Mínimo 6 caracteres" value={password} onChange={e => setPassword(e.target.value)} />
       {error && <p className="text-xs text-red-400 text-center">{error}</p>}
-      <button onClick={handle} disabled={loading} className="w-full rounded-xl py-3.5 font-bold text-black shadow-lg disabled:opacity-50" style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)" }}>{loading ? "Creando..." : "Crear cuenta"}</button>
+      <button onClick={handle} disabled={loading} className="w-full rounded-xl py-3.5 font-bold text-black shadow-lg disabled:opacity-50" style={{ background: "linear-gradient(135deg, #E0E0E0, #f5e6a3, #E0E0E0)" }}>{loading ? "Creando..." : "Crear cuenta"}</button>
     </div></AccessCard></div>);
 }
 
@@ -1392,22 +1396,22 @@ function EagleEyeLogo({ size = 80 }) {
     <div style={{ display: "inline-block" }}>
       <svg viewBox="0 0 200 200" width={size} height={size}>
         <defs>
-          <linearGradient id="shieldGold" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#d4af37"/><stop offset="50%" stopColor="#f5e6a3"/><stop offset="100%" stopColor="#d4af37"/></linearGradient>
-          <linearGradient id="shieldDark" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#1a1a2e"/><stop offset="100%" stopColor="#0a0a14"/></linearGradient>
-          <linearGradient id="eyeGlow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#d4af37"/><stop offset="100%" stopColor="#b8860b"/></linearGradient>
+          <linearGradient id="shieldGold" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#E0E0E0"/><stop offset="50%" stopColor="#f5e6a3"/><stop offset="100%" stopColor="#E0E0E0"/></linearGradient>
+          <linearGradient id="shieldDark" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#101020"/><stop offset="100%" stopColor="#0a0a14"/></linearGradient>
+          <linearGradient id="eyeGlow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#E0E0E0"/><stop offset="100%" stopColor="#b8860b"/></linearGradient>
           <filter id="goldGlow"><feGaussianBlur stdDeviation="3" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter>
         </defs>
         <path d="M100 10 L185 50 L185 110 C185 155 145 185 100 195 C55 185 15 155 15 110 L15 50 Z" fill="url(#shieldDark)" stroke="url(#shieldGold)" strokeWidth="3"/>
-        <path d="M100 22 L175 57 L175 112 C175 150 140 177 100 186 C60 177 25 150 25 112 L25 57 Z" fill="none" stroke="rgba(212,175,55,0.25)" strokeWidth="1"/>
+        <path d="M100 22 L175 57 L175 112 C175 150 140 177 100 186 C60 177 25 150 25 112 L25 57 Z" fill="none" stroke="rgba(224,224,224,0.25)" strokeWidth="1"/>
         <ellipse cx="100" cy="105" rx="52" ry="32" fill="none" stroke="url(#eyeGlow)" strokeWidth="2.5" filter="url(#goldGlow)"/>
         <circle cx="100" cy="105" r="20" fill="url(#eyeGlow)" opacity="0.9"/>
         <circle cx="100" cy="105" r="10" fill="#0a0a14"/>
         <circle cx="106" cy="99" r="4" fill="rgba(245,230,163,0.7)"/>
         <path d="M48 90 Q74 65 100 68" fill="none" stroke="url(#eyeGlow)" strokeWidth="2" strokeLinecap="round"/>
         <path d="M152 90 Q126 65 100 68" fill="none" stroke="url(#eyeGlow)" strokeWidth="2" strokeLinecap="round"/>
-        <polygon points="100,28 103,36 111,36 105,41 107,49 100,45 93,49 95,41 89,36 97,36" fill="#d4af37" opacity="0.9"/>
-        <text x="100" y="165" textAnchor="middle" fill="#d4af37" fontSize="11" fontWeight="800" letterSpacing="4" fontFamily="sans-serif">TRAZA 360</text>
-        <text x="100" y="178" textAnchor="middle" fill="rgba(212,175,55,0.5)" fontSize="7" letterSpacing="2" fontFamily="sans-serif">PROTECCIÓN</text>
+        <polygon points="100,28 103,36 111,36 105,41 107,49 100,45 93,49 95,41 89,36 97,36" fill="#E0E0E0" opacity="0.9"/>
+        <text x="100" y="165" textAnchor="middle" fill="#E0E0E0" fontSize="11" fontWeight="800" letterSpacing="4" fontFamily="sans-serif">TRAZA 360</text>
+        <text x="100" y="178" textAnchor="middle" fill="rgba(224,224,224,0.5)" fontSize="7" letterSpacing="2" fontFamily="sans-serif">PROTECCIÓN</text>
       </svg>
     </div>
   );
@@ -1419,22 +1423,22 @@ function LandingScreen({ onScreen }) {
     <div className="min-h-screen text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 50%, #050508 100%)" }}>
       <section className="px-5 pt-16 pb-12 text-center">
         <div className="mb-4 flex justify-center"><EagleEyeLogo size={100} /></div>
-        <p className="text-[10px] font-semibold uppercase tracking-[5px]" style={{ color: "rgba(212,175,55,0.4)" }}>Última señal. Respuesta real.</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[5px]" style={{ color: "rgba(224,224,224,0.4)" }}>Última señal. Respuesta real.</p>
         <h2 className="mt-4 max-w-3xl text-2xl font-bold leading-tight md:text-4xl mx-auto text-white">
-          Cuando cada segundo importa,<br/><span style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Traza 360 responde.</span>
+          Cuando cada segundo importa,<br/><span style={{ background: "linear-gradient(135deg, #E0E0E0, #f5e6a3, #E0E0E0)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Traza 360 responde.</span>
         </h2>
         {/* Propuesta de valor */}
         <div className="mt-6 flex flex-col gap-2 items-center max-w-xs mx-auto">
           {["Un botón → alerta a tu familia", "Ubicación automática en segundos", "Funciona con WhatsApp. Sin apps extra"].map((feat, i) => (
             <div key={i} className="flex items-center gap-2 text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
-              <span style={{ color: "#d4af37" }}>{"\u2713"}</span> {feat}
+              <span style={{ color: "#E0E0E0" }}>{"\u2713"}</span> {feat}
             </div>
           ))}
         </div>
       </section>
       <div className="px-5 pb-12"><div className="mx-auto flex w-full max-w-sm flex-col gap-3">
-        <button onClick={() => onScreen("register")} className="w-full rounded-2xl px-4 py-4 font-semibold text-black shadow-lg" style={{ background: "linear-gradient(135deg, #d4af37, #f5e6a3, #d4af37)", boxShadow: "0 8px 30px rgba(212,175,55,0.25)" }}>Empezar gratis →</button>
-        <button onClick={() => onScreen("login")} className="w-full rounded-2xl px-4 py-4 font-semibold text-white" style={{ background: "linear-gradient(145deg, #13131d, #0e0e16)", border: "1px solid rgba(212,175,55,0.15)" }}>Ya tengo cuenta</button>
+        <button onClick={() => onScreen("register")} className="w-full rounded-2xl px-4 py-4 font-semibold text-black shadow-lg" style={{ background: "linear-gradient(135deg, #E0E0E0, #f5e6a3, #E0E0E0)", boxShadow: "0 8px 30px rgba(224,224,224,0.25)" }}>Empezar gratis →</button>
+        <button onClick={() => onScreen("login")} className="w-full rounded-2xl px-4 py-4 font-semibold text-white" style={{ background: "linear-gradient(145deg, #13131d, #0e0e16)", border: "1px solid rgba(224,224,224,0.15)" }}>Ya tengo cuenta</button>
       </div></div>
 
       {/* Footer con privacidad */}
@@ -1517,16 +1521,16 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
         {/* Header */}
         <div className="mb-6 text-center">
           <EagleEyeLogo size={70} />
-          <p className="text-[10px] uppercase tracking-[4px] mt-1" style={{ color: "rgba(212,175,55,0.4)" }}>Sistema de protección</p>
+          <p className="text-[10px] uppercase tracking-[4px] mt-1" style={{ color: "rgba(224,224,224,0.4)" }}>Sistema de protección</p>
         </div>
 
         {/* Dashboard Estado del Sistema */}
-        <div className="mb-4 rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #13131d, #0e0e16)", border: "1px solid rgba(212,175,55,0.1)" }}>
+        <div className="mb-4 rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #13131d, #0e0e16)", border: "1px solid rgba(224,224,224,0.1)" }}>
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <p className="text-[10px] uppercase tracking-[3px] mb-1" style={{ color: "rgba(212,175,55,0.4)" }}>Estado del sistema</p>
+              <p className="text-[10px] uppercase tracking-[3px] mb-1" style={{ color: "rgba(224,224,224,0.4)" }}>Estado del sistema</p>
               <p className="text-sm font-semibold text-white">Bienvenido/a, {nombreUsuario} {"\u{1F44B}"}</p>
-              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>Plan: <span style={{ color: "#d4af37" }}>{PLAN_PRICES[userPlan]?.name}</span></p>
+              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>Plan: <span style={{ color: "#E0E0E0" }}>{PLAN_PRICES[userPlan]?.name}</span></p>
             </div>
             <div className="flex flex-col gap-2 items-end">
               <SystemStatusBadge status={systemStatus} />
@@ -1550,7 +1554,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
             <button onClick={handleLogout} disabled={loggingOut} className="rounded-xl px-3 py-1.5 text-xs text-slate-400 border border-white/10 bg-white/5 disabled:opacity-50">
               {loggingOut ? "Saliendo..." : "Cerrar sesión"}
             </button>
-            <button onClick={checkSystemStatus} className="rounded-xl px-3 py-1.5 text-xs border border-white/10 bg-white/5" style={{ color: "rgba(212,175,55,0.6)" }}>
+            <button onClick={checkSystemStatus} className="rounded-xl px-3 py-1.5 text-xs border border-white/10 bg-white/5" style={{ color: "rgba(224,224,224,0.6)" }}>
               {"\u{1F504}"} Verificar sistema
             </button>
           </div>
@@ -1558,12 +1562,12 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
 
         {activeModule ? (
           <div className="mb-8">
-            <button onClick={() => setActiveModule(null)} className="mb-4 rounded-xl px-5 py-3 text-sm font-bold" style={{ color: "#d4af37", background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.15)" }}>{"\u2190"} Volver al panel</button>
+            <button onClick={() => setActiveModule(null)} className="mb-4 rounded-xl px-5 py-3 text-sm font-bold" style={{ color: "#E0E0E0", background: "linear-gradient(145deg, #101018, #08080c)", border: "1px solid rgba(224,224,224,0.15)" }}>{"\u2190"} Volver al panel</button>
             <ModuleCard m={activeModule} autoExpand={true} contactos={contactos} onOpenPastillero={() => { setActiveModule(null); setActiveScreen("pastillero"); }} onOpenEvidencias={() => { setActiveModule(null); setActiveScreen("evidencias"); }} />
           </div>
         ) : (
           <>
-            <h3 className="mb-3 text-sm font-bold uppercase tracking-[2px]" style={{ color: "rgba(212,175,55,0.5)" }}>¿Qué necesitás hoy?</h3>
+            <h3 className="mb-3 text-sm font-bold uppercase tracking-[2px]" style={{ color: "rgba(224,224,224,0.5)" }}>¿Qué necesitás hoy?</h3>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {quickCards.map(card => (
                 <button key={card.key} onClick={() => handleCard(card.key)}
@@ -1571,35 +1575,35 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
                   style={{
                     background: card.key === "contactos" && contactos.length === 0
                       ? "linear-gradient(135deg, rgba(234,88,12,0.1), rgba(234,88,12,0.05))"
-                      : card.coming ? "linear-gradient(145deg, #0f0f15, #0a0a10)" : "linear-gradient(145deg, #12121a, #0c0c12)",
+                      : card.coming ? "linear-gradient(145deg, #0f0f15, #0a0a10)" : "linear-gradient(145deg, #0c0c14, #08080c)",
                     border: card.key === "contactos" && contactos.length === 0
                       ? "1px solid rgba(234,88,12,0.3)"
-                      : card.coming ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(212,175,55,0.08)",
+                      : card.coming ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(224,224,224,0.08)",
                     boxShadow: "5px 5px 14px rgba(0,0,0,0.4)",
                     opacity: card.coming ? 0.7 : 1,
                   }}>
                   {card.coming && (
-                    <div className="absolute top-3 right-3 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider" style={{ background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)", color: "#d4af37" }}>Próximamente</div>
+                    <div className="absolute top-3 right-3 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider" style={{ background: "rgba(224,224,224,0.1)", border: "1px solid rgba(224,224,224,0.2)", color: "#E0E0E0" }}>Próximamente</div>
                   )}
                   <div className="mb-2 text-2xl">{card.emoji}</div>
-                  <div className="text-sm font-bold" style={{ color: card.coming ? "rgba(212,175,55,0.4)" : "#d4af37" }}>{card.title}</div>
+                  <div className="text-sm font-bold" style={{ color: card.coming ? "rgba(224,224,224,0.4)" : "#E0E0E0" }}>{card.title}</div>
                   <p className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{card.text}</p>
-                  {!card.coming && <div className="mt-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: "rgba(212,175,55,0.4)" }}>Abrir {"\u2192"}</div>}
+                  {!card.coming && <div className="mt-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: "rgba(224,224,224,0.4)" }}>Abrir {"\u2192"}</div>}
                 </button>
               ))}
             </div>
 
             {/* Upgrade Banner para plan gratis */}
             {userPlan === "gratis" && (
-              <div className="mt-4 rounded-2xl p-4" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.06), rgba(184,134,11,0.03))", border: "1px solid rgba(212,175,55,0.15)" }}>
+              <div className="mt-4 rounded-2xl p-4" style={{ background: "linear-gradient(135deg, rgba(224,224,224,0.06), rgba(184,134,11,0.03))", border: "1px solid rgba(224,224,224,0.15)" }}>
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{"\u{1F451}"}</span>
                   <div className="flex-1">
-                    <div className="text-sm font-bold" style={{ color: "#d4af37" }}>Desbloqueá la protección completa</div>
+                    <div className="text-sm font-bold" style={{ color: "#E0E0E0" }}>Desbloqueá la protección completa</div>
                     <p className="text-xs text-slate-400 mt-0.5">5 contactos, medicamentos ilimitados, historial 90 días y más.</p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <div className="text-sm font-bold" style={{ color: "#d4af37" }}>US$4.99</div>
+                    <div className="text-sm font-bold" style={{ color: "#E0E0E0" }}>US$4.99</div>
                     <div className="text-[10px] text-slate-500">/mes</div>
                   </div>
                 </div>
@@ -1623,23 +1627,23 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
       {/* PANEL POST-PÁNICO */}
       {panicoEnviado && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl p-6 shadow-2xl" style={{ background: "linear-gradient(145deg, #13131d, #0a0a12)", border: "1px solid rgba(212,175,55,0.15)" }}>
+          <div className="w-full max-w-md rounded-3xl p-6 shadow-2xl" style={{ background: "linear-gradient(145deg, #13131d, #0a0a12)", border: "1px solid rgba(224,224,224,0.15)" }}>
             <div className="text-center mb-4">
               <div className="text-5xl mb-2 animate-bounce">{"\u{1F6A8}"}</div>
-              <h3 className="text-lg font-bold" style={{ color: "#d4af37" }}>Alerta enviada</h3>
+              <h3 className="text-lg font-bold" style={{ color: "#E0E0E0" }}>Alerta enviada</h3>
               <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>Tu contacto recibió el WhatsApp con tu ubicación</p>
             </div>
-            <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(212,175,55,0.05)", border: "1px solid rgba(212,175,55,0.1)" }}>
-              <div className="text-[9px] font-bold uppercase tracking-wider mb-3" style={{ color: "rgba(212,175,55,0.5)" }}>Tu contacto puede responder con</div>
+            <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(224,224,224,0.05)", border: "1px solid rgba(224,224,224,0.1)" }}>
+              <div className="text-[9px] font-bold uppercase tracking-wider mb-3" style={{ color: "rgba(224,224,224,0.5)" }}>Tu contacto puede responder con</div>
               <div className="grid grid-cols-3 gap-3 mb-3">
                 {[
                   { emoji: "\u{1F697}", text: "Salgo" },
                   { emoji: "\u2705", text: "Recibí" },
                   { emoji: "\u{1F4CD}", text: "Ubicación" },
                 ].map((r, i) => (
-                  <div key={i} className="rounded-lg py-3 text-center" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(212,175,55,0.12)" }}>
+                  <div key={i} className="rounded-lg py-3 text-center" style={{ background: "linear-gradient(145deg, #101018, #08080c)", border: "1px solid rgba(224,224,224,0.12)" }}>
                     <div className="text-2xl">{r.emoji}</div>
-                    <div className="text-[9px] mt-1 font-medium" style={{ color: "rgba(212,175,55,0.5)" }}>{r.text}</div>
+                    <div className="text-[9px] mt-1 font-medium" style={{ color: "rgba(224,224,224,0.5)" }}>{r.text}</div>
                   </div>
                 ))}
               </div>
@@ -1655,7 +1659,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
                 </button>
               </div>
             </div>
-            <button onClick={() => setPanicoEnviado(false)} className="w-full rounded-xl py-3 text-sm" style={{ background: "linear-gradient(145deg, #16161f, #0c0c12)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>Cerrar</button>
+            <button onClick={() => setPanicoEnviado(false)} className="w-full rounded-xl py-3 text-sm" style={{ background: "linear-gradient(145deg, #101018, #08080c)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>Cerrar</button>
           </div>
         </div>
       )}
@@ -1663,13 +1667,13 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
       {/* BOTÓN PÁNICO FLOTANTE */}
       <div className="fixed bottom-5 right-5 z-50">
         <div style={{ position: "relative" }}>
-          <div style={{ position: "absolute", inset: "-6px", borderRadius: "50%", border: "1px solid rgba(212,175,55,0.12)", animation: "panicPulse 2.5s infinite", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", inset: "-6px", borderRadius: "50%", border: "1px solid rgba(224,224,224,0.12)", animation: "panicPulse 2.5s infinite", pointerEvents: "none" }} />
           <button onClick={handlePanico} className="flex h-16 w-16 items-center justify-center rounded-full text-white active:scale-95"
-            style={{ background: "linear-gradient(145deg, #b91c1c, #991b1b)", border: "2px solid rgba(212,175,55,0.25)", boxShadow: "6px 6px 18px rgba(0,0,0,0.7), 0 0 40px rgba(185,28,28,0.15)" }}>
+            style={{ background: "linear-gradient(145deg, #b91c1c, #991b1b)", border: "2px solid rgba(224,224,224,0.25)", boxShadow: "6px 6px 18px rgba(0,0,0,0.7), 0 0 40px rgba(185,28,28,0.15)" }}>
             <span className="text-2xl">{"\u{1F6A8}"}</span>
           </button>
         </div>
-        <div className="text-[9px] text-center mt-1 font-bold uppercase tracking-wider" style={{ color: "#d4af37" }}>Pánico</div>
+        <div className="text-[9px] text-center mt-1 font-bold uppercase tracking-wider" style={{ color: "#E0E0E0" }}>Pánico</div>
       </div>
       <WhatsAppFloatingButton />
       <style>{`@keyframes panicPulse { 0%,100%{opacity:0.3;transform:scale(1)} 50%{opacity:0.7;transform:scale(1.08)} }`}</style>
@@ -1765,7 +1769,7 @@ export default function App() {
     <div className="flex min-h-screen items-center justify-center text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 100%)" }}>
       <div className="text-center">
         <div className="mb-4 flex items-center justify-center"><EagleEyeLogo size={80} /></div>
-        <div className="text-xs mt-2" style={{ color: "rgba(212,175,55,0.4)" }}>Cargando...</div>
+        <div className="text-xs mt-2" style={{ color: "rgba(224,224,224,0.4)" }}>Cargando...</div>
       </div>
     </div>
   );
