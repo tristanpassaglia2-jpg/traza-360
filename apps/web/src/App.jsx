@@ -76,10 +76,10 @@ function PhoneInput({ value, onChange, prefix, onPrefixChange, placeholder }) {
       <div className="flex gap-2">
         <button type="button" onClick={() => setOpen(!open)}
           className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white whitespace-nowrap hover:bg-white/10 shrink-0">
-          <span>{pais.flag}</span><span className="text-slate-300">+{pais.prefix}</span><span className="text-slate-500 text-xs">{"\u25BC"}</span>
+          <span>{pais.flag}</span><span className="text-slate-300">+{pais.prefix}</span><span className="text-slate-400 text-xs">{"\u25BC"}</span>
         </button>
         <input type="tel" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder || "Número sin 0 ni 15"}
-          className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400/50 min-w-0" />
+          className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-400 focus:border-cyan-400/50 min-w-0" />
       </div>
       {open && (
         <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-xl border border-white/10 bg-[#08080c] shadow-2xl overflow-hidden max-h-72 overflow-y-auto">
@@ -261,7 +261,7 @@ function OnboardingScreen({ onComplete }) {
           <div className="text-6xl mb-4">{current.emoji}</div>
           <h2 className="text-xl font-bold text-white mb-1">{current.title}</h2>
           <p className="text-xs font-semibold mb-3" style={{ color: "#E0E0E0" }}>{current.subtitle}</p>
-          {current.desc && <p className="text-sm text-slate-400 leading-relaxed">{current.desc}</p>}
+          {current.desc && <p className="text-sm text-slate-300 leading-relaxed">{current.desc}</p>}
 
           {/* Step 2: selector de módulo */}
           {step === 1 && current.modules && (
@@ -271,7 +271,7 @@ function OnboardingScreen({ onComplete }) {
                   className="w-full rounded-xl px-4 py-3 flex items-center gap-3 transition-all"
                   style={{
                     background: selectedModule === m.key ? "rgba(224,224,224,0.12)" : "rgba(255,255,255,0.04)",
-                    border: selectedModule === m.key ? "1px solid rgba(224,224,224,0.4)" : "1px solid rgba(255,255,255,0.08)",
+                    border: selectedModule === m.key ? "1px solid rgba(224,224,224,0.7)" : "1px solid rgba(255,255,255,0.08)",
                   }}>
                   <span className="text-xl">{m.emoji}</span>
                   <span className="text-sm font-semibold" style={{ color: selectedModule === m.key ? "#E0E0E0" : "rgba(255,255,255,0.7)" }}>{m.label}</span>
@@ -315,7 +315,7 @@ function OnboardingScreen({ onComplete }) {
         </button>
 
         {step > 0 && (
-          <button onClick={() => setStep(step - 1)} className="w-full mt-3 py-2 text-sm" style={{ color: "rgba(224,224,224,0.4)" }}>
+          <button onClick={() => setStep(step - 1)} className="w-full mt-3 py-2 text-sm" style={{ color: "rgba(224,224,224,0.7)" }}>
             ← Volver
           </button>
         )}
@@ -446,7 +446,7 @@ function GrabacionModal({ onClose }) {
           <div className="mb-3 text-4xl">{guardado ? "\u2705" : "\u{1F399}\u{FE0F}"}</div>
           <div className="text-lg font-bold text-slate-100">{guardado ? "Evidencia guardada" : "Grabación silenciosa"}</div>
           {guardado ? (
-            <><p className="mt-2 text-xs text-slate-400">{guardado === "nube" ? "Guardado en la nube. Accedé desde Mis Evidencias." : "Descargado en tu dispositivo."}</p>
+            <><p className="mt-2 text-xs text-slate-300">{guardado === "nube" ? "Guardado en la nube. Accedé desde Mis Evidencias." : "Descargado en tu dispositivo."}</p>
             <button onClick={onClose} className="mt-4 w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white">Listo</button></>
           ) : grabando ? (
             <><div className="my-6 rounded-2xl border border-red-500/30 bg-red-500/10 py-6">
@@ -455,10 +455,10 @@ function GrabacionModal({ onClose }) {
             </div>
             <button onClick={detener} className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white shadow-lg">Detener y guardar</button></>
           ) : (
-            <><p className="mt-2 text-xs text-slate-400">Graba audio del entorno sin hacer ruido.</p>
+            <><p className="mt-2 text-xs text-slate-300">Graba audio del entorno sin hacer ruido.</p>
             {error && <p className="text-xs text-red-400 my-2">{error}</p>}
             <button onClick={iniciar} className="mt-4 w-full rounded-2xl bg-gradient-to-r from-sky-500 to-cyan-500 py-3 text-sm font-semibold text-white shadow-lg mb-2">Iniciar grabación silenciosa</button>
-            <button onClick={onClose} className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-xs text-slate-400">Cancelar</button></>
+            <button onClick={onClose} className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-xs text-slate-300">Cancelar</button></>
           )}
         </div>
       </div>
@@ -527,14 +527,14 @@ function CheckInModal({ onClose, contactos, titulo = "Check-in de seguridad" }) 
             <>
               <div className="text-5xl mb-3">{"\u{1F6A8}"}</div>
               <div className="text-lg font-bold text-red-300">Alerta enviada automáticamente</div>
-              <p className="mt-2 text-xs text-slate-400">Se alertó a tus contactos porque no confirmaste.</p>
+              <p className="mt-2 text-xs text-slate-300">Se alertó a tus contactos porque no confirmaste.</p>
               <button onClick={onClose} className="mt-4 w-full rounded-2xl bg-white/10 border border-white/10 py-3 text-sm text-white">Cerrar</button>
             </>
           ) : activo ? (
             <>
               <div className="text-4xl mb-2">{"\u23F1\u{FE0F}"}</div>
               <div className="text-base font-bold text-slate-100">{titulo}</div>
-              <p className="mt-1 text-xs text-slate-400 mb-4">Si no tocás "Estoy bien" antes de que termine, se alerta a tus contactos.</p>
+              <p className="mt-1 text-xs text-slate-300 mb-4">Si no tocás "Estoy bien" antes de que termine, se alerta a tus contactos.</p>
               {/* Progress ring */}
               <div className="relative mx-auto mb-4" style={{ width: 120, height: 120 }}>
                 <svg viewBox="0 0 120 120" className="rotate-[-90deg]" width={120} height={120}>
@@ -549,23 +549,26 @@ function CheckInModal({ onClose, contactos, titulo = "Check-in de seguridad" }) 
                 </div>
               </div>
               <button onClick={estoyBien} className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white shadow-lg mb-2">{"\u2705"} Estoy bien</button>
-              <button onClick={() => { clearInterval(timerRef.current); setActivo(false); }} className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-xs text-slate-400">Cancelar timer</button>
+              <button onClick={() => { clearInterval(timerRef.current); setActivo(false); }} className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-xs text-slate-300">Cancelar timer</button>
             </>
           ) : (
             <>
               <div className="text-4xl mb-2">{"\u23F1\u{FE0F}"}</div>
               <div className="text-base font-bold text-slate-100">{titulo}</div>
-              <p className="mt-2 text-xs text-slate-400 mb-4">Elegí cuánto tiempo. Si no confirmás, se alerta automáticamente.</p>
+              <p className="mt-2 text-xs text-slate-300 mb-4">Elegí cuánto tiempo. Si no confirmás, se alerta automáticamente.</p>
               <div className="grid grid-cols-4 gap-2 mb-4">
                 {[15, 30, 60, 120].map(m => (
                   <button key={m} onClick={() => setMinutos(m)}
-                    className={`rounded-xl border py-3 text-sm font-semibold ${minutos === m ? "border-white/30 bg-white/10 text-gray-300" : "border-white/10 bg-white/5 text-slate-400"}`}>
+                    className={`rounded-xl border py-3 text-sm font-semibold ${minutos === m ? "border-white/30 bg-white/10 text-gray-300" : "border-white/10 bg-white/5 text-slate-300"}`}>
                     {m >= 60 ? `${m/60}h` : `${m}m`}
                   </button>
                 ))}
               </div>
+              <div className="rounded-xl p-3 mb-3" style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)" }}>
+                <p className="text-xs text-red-300 text-center">⚠️ Si no desactivás el timer, se enviará tu ubicación y alerta automática a tus contactos.</p>
+              </div>
               <button onClick={iniciar} className="w-full rounded-2xl bg-gradient-to-r from-slate-200 to-white py-3 text-sm font-semibold text-black shadow-lg mb-2">Activar check-in ({minutos} min)</button>
-              <button onClick={onClose} className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-xs text-slate-400">Cancelar</button>
+              <button onClick={onClose} className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-xs text-slate-300">Cancelar</button>
             </>
           )}
         </div>
@@ -607,7 +610,7 @@ function EvidenciasScreen({ onBack }) {
       <div className="mx-auto max-w-3xl">
         <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: "#E0E0E0" }}>{"\u2190"} Volver al panel</button>
         <div className="mb-6 rounded-2xl p-6" style={{ background: "linear-gradient(145deg, #13131d, #0e0e16)", border: "1px solid rgba(224,224,224,0.1)" }}>
-          <p className="text-[10px] uppercase tracking-[3px]" style={{ color: "#E0E0E0" }}>Mis archivos protegidos</p>
+          <p className="text-[12px] uppercase tracking-[3px]" style={{ color: "#E0E0E0" }}>Mis archivos protegidos</p>
           <h2 className="mt-2 text-xl font-bold">Mis Evidencias</h2>
           <p className="mt-2 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>Grabaciones guardadas en la nube con cifrado.</p>
         </div>
@@ -617,13 +620,13 @@ function EvidenciasScreen({ onBack }) {
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">{"\u{1F3B5}"}</span>
               <span className="text-xs font-semibold" style={{ color: "#E0E0E0" }}>Reproduciendo: {audioName}</span>
-              <button onClick={() => { setAudioUrl(null); setAudioName(null); }} className="ml-auto text-xs text-slate-500">{"\u2715"}</button>
+              <button onClick={() => { setAudioUrl(null); setAudioName(null); }} className="ml-auto text-xs text-slate-400">{"\u2715"}</button>
             </div>
             <audio controls autoPlay src={audioUrl} style={{ width: "100%", height: "40px", borderRadius: "8px" }} />
           </div>
         )}
 
-        {loading ? <div className="text-center py-8 text-slate-400">Cargando...</div>
+        {loading ? <div className="text-center py-8 text-slate-300">Cargando...</div>
         : archivos.length === 0 ? (
           <div className="rounded-2xl p-8 text-center" style={{ background: "linear-gradient(145deg, #0c0c14, #08080c)", border: "1px solid rgba(224,224,224,0.08)" }}>
             <div className="text-5xl mb-3">{"\u{1F4C1}"}</div>
@@ -781,7 +784,7 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
               <h2 className="mt-2 text-2xl font-bold">Mis Medicamentos</h2></div>
             <span className="text-3xl">{"\u{1F48A}"}</span>
           </div>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-slate-300">
             Plan: <span className="text-gray-300 font-semibold">{PLAN_PRICES[userPlan]?.name || "Gratis"}</span> · {meds.length}/{maxMeds === -1 ? "∞" : maxMeds} medicamentos
           </p>
         </div>
@@ -789,13 +792,13 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
         <div className="flex gap-2 mb-4">
           {[{k:"hoy",l:"Hoy"},{k:"semana",l:"Semana"},{k:"agregar",l:"+ Agregar"}].map(tab => (
             <button key={tab.k} onClick={() => setVista(tab.k)}
-              className={`rounded-xl px-4 py-2 text-sm font-semibold ${vista === tab.k ? "bg-white/15 text-gray-300 border border-white/30" : "bg-white/5 text-slate-400 border border-white/10"}`}>
+              className={`rounded-xl px-4 py-2 text-sm font-semibold ${vista === tab.k ? "bg-white/15 text-gray-300 border border-white/30" : "bg-white/5 text-slate-300 border border-white/10"}`}>
               {tab.l}
             </button>
           ))}
         </div>
 
-        {loading ? <div className="text-center py-8 text-slate-400">Cargando...</div> : null}
+        {loading ? <div className="text-center py-8 text-slate-300">Cargando...</div> : null}
 
         {!loading && vista === "hoy" && (
           <>
@@ -803,7 +806,7 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
               <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
                 <div className="text-5xl mb-3">{"\u{1F48A}"}</div>
                 <h3 className="text-lg font-semibold text-slate-100">Sin medicamentos</h3>
-                <p className="mt-2 text-sm text-slate-400">Agregá el primer medicamento.</p>
+                <p className="mt-2 text-sm text-slate-300">Agregá el primer medicamento.</p>
               </div>
             ) : tomasHoy.length === 0 ? (
               <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
@@ -825,7 +828,7 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
                           <div className={`h-3 w-3 rounded-full shrink-0 ${t.tomado ? "bg-emerald-400" : pasado ? "bg-red-400 animate-pulse" : col.dot}`}></div>
                           <div className="min-w-0">
                             <div className="text-sm font-semibold text-slate-100">{t.medicamentos?.nombre}</div>
-                            <div className="text-xs text-slate-400">{t.medicamentos?.dosis} · {t.horario_programado}hs</div>
+                            <div className="text-xs text-slate-300">{t.medicamentos?.dosis} · {t.horario_programado}hs</div>
                           </div>
                         </div>
                         {t.tomado ? (
@@ -851,8 +854,8 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
                           <div className={`h-2.5 w-2.5 rounded-full ${col.dot}`}></div>
                           <div className="min-w-0">
                             <span className="text-sm font-semibold text-slate-100">{med.nombre}</span>
-                            <span className="text-xs text-slate-400 ml-2">{med.dosis}</span>
-                            <div className="text-[11px] text-slate-500">{(med.horarios || []).join(" · ")}hs</div>
+                            <span className="text-xs text-slate-300 ml-2">{med.dosis}</span>
+                            <div className="text-[11px] text-slate-400">{(med.horarios || []).join(" · ")}hs</div>
                           </div>
                         </div>
                         <button onClick={() => handleEliminar(med.id)} className="text-xs text-red-300 border border-red-500/30 bg-red-500/10 rounded-lg px-3 py-1.5 shrink-0">Eliminar</button>
@@ -871,9 +874,9 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
             <div className="grid grid-cols-7 gap-2 mb-6">
               {getCalendarioSemana().map(d => (
                 <div key={d.fecha} className={`rounded-xl border p-3 text-center ${d.hoy ? "border-white/30 bg-gray-400/10" : "border-white/10 bg-white/5"}`}>
-                  <div className="text-xs text-slate-400 mb-1">{d.dia}</div>
+                  <div className="text-xs text-slate-300 mb-1">{d.dia}</div>
                   <div className="text-lg mb-1">{d.total === 0 ? "\u2796" : d.tomadas === d.total ? "\u2705" : d.tomadas > 0 ? "\u26A0\u{FE0F}" : "\u274C"}</div>
-                  <div className="text-[10px] text-slate-500">{d.total > 0 ? `${d.tomadas}/${d.total}` : "-"}</div>
+                  <div className="text-[12px] text-slate-400">{d.total > 0 ? `${d.tomadas}/${d.total}` : "-"}</div>
                 </div>
               ))}
             </div>
@@ -884,13 +887,13 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
             <h3 className="text-lg font-bold mb-4">Agregar medicamento</h3>
             <div className="space-y-4">
-              <div><label className="text-xs text-slate-400 block mb-1">Nombre</label>
+              <div><label className="text-xs text-slate-300 block mb-1">Nombre</label>
                 <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Losartán"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500" /></div>
-              <div><label className="text-xs text-slate-400 block mb-1">Dosis</label>
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-400" /></div>
+              <div><label className="text-xs text-slate-300 block mb-1">Dosis</label>
                 <input type="text" value={dosis} onChange={e => setDosis(e.target.value)} placeholder="Ej: 50mg"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500" /></div>
-              <div><label className="text-xs text-slate-400 block mb-2">Horarios</label>
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-400" /></div>
+              <div><label className="text-xs text-slate-300 block mb-2">Horarios</label>
                 {horarios.map((h, i) => (
                   <div key={i} className="flex items-center gap-2 mb-2">
                     <input type="time" value={h} onChange={e => updateHorario(i, e.target.value)} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none" />
@@ -898,16 +901,16 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
                   </div>
                 ))}
                 <button onClick={addHorario} className="text-xs text-gray-300 mt-1">+ Agregar horario</button></div>
-              <div><label className="text-xs text-slate-400 block mb-2">Días</label>
+              <div><label className="text-xs text-slate-300 block mb-2">Días</label>
                 <div className="flex gap-2 flex-wrap">
                   {DIAS_SEMANA.map(d => (
                     <button key={d.num} onClick={() => toggleDia(d.num)}
-                      className={`rounded-xl border px-3 py-2 text-xs font-semibold ${diasSel.includes(d.num) ? "border-white/30 bg-gray-400/10 text-gray-300" : "border-white/10 bg-white/5 text-slate-400"}`}>
+                      className={`rounded-xl border px-3 py-2 text-xs font-semibold ${diasSel.includes(d.num) ? "border-white/30 bg-gray-400/10 text-gray-300" : "border-white/10 bg-white/5 text-slate-300"}`}>
                       {d.short}
                     </button>
                   ))}
                 </div></div>
-              <div><label className="text-xs text-slate-400 block mb-2">Color</label>
+              <div><label className="text-xs text-slate-300 block mb-2">Color</label>
                 <div className="flex gap-2">
                   {COLORES_MED.map(c => (
                     <button key={c.key} onClick={() => setColorSel(c.key)}
@@ -995,7 +998,7 @@ function PlanesScreen({ onBack, currentPlan = "gratis" }) {
           <div className="flex items-center gap-2">
             <span className="text-lg">{currentPlan === "gratis" ? "\u{1F513}" : "\u{1F451}"}</span>
             <div>
-              <div className="text-xs text-slate-400">Plan actual</div>
+              <div className="text-xs text-slate-300">Plan actual</div>
               <div className="text-sm font-bold text-white">{currentPlan === "gratis" ? "Gratis" : currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)}</div>
             </div>
           </div>
@@ -1008,21 +1011,21 @@ function PlanesScreen({ onBack, currentPlan = "gratis" }) {
               style={{ background: `linear-gradient(145deg, ${plan.color}, rgba(8,8,12,0.9))`, border: `1px solid ${plan.border}` }}>
               
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-[10px] font-bold text-black" style={{ background: "linear-gradient(135deg, #E0E0E0, #ffffff)" }}>
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-[12px] font-bold text-black" style={{ background: "linear-gradient(135deg, #E0E0E0, #ffffff)" }}>
                   MÁS POPULAR
                 </div>
               )}
               {plan.badge && (
-                <div className="absolute -top-3 right-4 rounded-full px-3 py-1 text-[10px] font-bold text-black bg-green-400">
+                <div className="absolute -top-3 right-4 rounded-full px-3 py-1 text-[12px] font-bold text-black bg-green-400">
                   {plan.badge}
                 </div>
               )}
 
               <div className="flex items-baseline gap-2 mb-1 mt-1">
                 <span className="text-2xl font-bold text-white">{plan.price}</span>
-                <span className="text-sm text-slate-400">{plan.period}</span>
+                <span className="text-sm text-slate-300">{plan.period}</span>
               </div>
-              <div className="text-xs text-slate-500 mb-3">{plan.priceARS}{plan.period}</div>
+              <div className="text-xs text-slate-400 mb-3">{plan.priceARS}{plan.period}</div>
               <div className="text-lg font-bold text-white mb-3">{plan.name}</div>
 
               <div className="space-y-2 mb-4">
@@ -1037,7 +1040,7 @@ function PlanesScreen({ onBack, currentPlan = "gratis" }) {
               <button
                 onClick={() => handleSubscribe(plan)}
                 disabled={plan.key === currentPlan || processing}
-                className={`w-full rounded-xl py-3 text-sm font-bold active:scale-95 ${plan.key === currentPlan ? "bg-white/10 text-slate-500 cursor-not-allowed" : "text-black"}`}
+                className={`w-full rounded-xl py-3 text-sm font-bold active:scale-95 ${plan.key === currentPlan ? "bg-white/10 text-slate-400 cursor-not-allowed" : "text-black"}`}
                 style={plan.key !== currentPlan ? { background: plan.popular ? "linear-gradient(135deg, #ffffff, #E0E0E0)" : "linear-gradient(135deg, rgba(224,224,224,0.3), rgba(224,224,224,0.1))", color: plan.popular ? "#000" : "#fff" } : {}}>
                 {plan.key === currentPlan ? "Plan actual" : processing && selectedPlan === plan.key ? "Procesando..." : `Suscribirme a ${plan.name}`}
               </button>
@@ -1047,14 +1050,14 @@ function PlanesScreen({ onBack, currentPlan = "gratis" }) {
 
         {/* Garantía */}
         <div className="mt-6 text-center">
-          <div className="text-xs text-slate-500">{"\u{1F512}"} Pago seguro con MercadoPago</div>
-          <div className="text-[10px] text-slate-600 mt-1">Cancelá cuando quieras. Sin permanencia.</div>
+          <div className="text-xs text-slate-400">{"\u{1F512}"} Pago seguro con MercadoPago</div>
+          <div className="text-[12px] text-slate-400 mt-1">Cancelá cuando quieras. Sin permanencia.</div>
         </div>
 
         {/* MercadoPago badge */}
         <div className="mt-4 flex justify-center">
           <div className="rounded-lg px-4 py-2" style={{ background: "rgba(224,224,224,0.05)", border: "1px solid rgba(224,224,224,0.1)" }}>
-            <div className="text-[10px] text-slate-400 text-center">Procesado por</div>
+            <div className="text-[12px] text-slate-300 text-center">Procesado por</div>
             <div className="text-sm font-bold text-white text-center">MercadoPago</div>
           </div>
         </div>
@@ -1071,7 +1074,7 @@ function UpgradeBanner({ feature, onViewPlans }) {
         <span className="text-2xl">{"\u{1F451}"}</span>
         <div className="flex-1">
           <div className="text-sm font-bold text-white">Función Premium</div>
-          <p className="text-xs text-slate-400 mt-1">Desbloqueá {feature} desde <span className="text-white font-semibold">US$2.99/mes</span> con el plan Plus.</p>
+          <p className="text-xs text-slate-300 mt-1">Desbloqueá {feature} desde <span className="text-white font-semibold">US$2.99/mes</span> con el plan Plus.</p>
           <button onClick={onViewPlans} className="mt-2 rounded-xl px-4 py-2 text-xs font-bold text-black" style={{ background: "linear-gradient(135deg, #E0E0E0, #ffffff)" }}>Ver planes →</button>
         </div>
       </div>
@@ -1133,7 +1136,7 @@ function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "" }) {
               <h2 className="mt-2 text-2xl font-bold">Mis Contactos de Confianza</h2></div>
             <span className="text-3xl">{"\u{1F465}"}</span>
           </div>
-          <p className="mt-2 text-sm text-slate-400">Plan: <span className="text-cyan-300 font-semibold">{PLAN_PRICES[userPlan]?.name || "Gratis"}</span> · {contactos.length}/{maxContactos} contactos.</p>
+          <p className="mt-2 text-sm text-slate-300">Plan: <span className="text-cyan-300 font-semibold">{PLAN_PRICES[userPlan]?.name || "Gratis"}</span> · {contactos.length}/{maxContactos} contactos.</p>
           {contactos.length === 0 && (
             <div className="mt-3 rounded-xl p-3" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
               <p className="text-xs text-red-300">{"\u26A0\u{FE0F}"} Sin contactos el botón de pánico no puede alertar a nadie.</p>
@@ -1143,12 +1146,12 @@ function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "" }) {
 
         {vista === "lista" && (
           <>
-            {loading ? <div className="text-center py-8 text-slate-400">Cargando...</div>
+            {loading ? <div className="text-center py-8 text-slate-300">Cargando...</div>
             : contactos.length === 0 ? (
               <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
                 <div className="text-5xl mb-3">{"\u{1F465}"}</div>
                 <h3 className="text-lg font-semibold">Sin contactos</h3>
-                <p className="mt-2 text-sm text-slate-400">Agregá al menos 1 contacto para que la app pueda protegerte.</p>
+                <p className="mt-2 text-sm text-slate-300">Agregá al menos 1 contacto para que la app pueda protegerte.</p>
               </div>
             ) : (
               <div className="space-y-3 mb-6">
@@ -1160,7 +1163,7 @@ function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "" }) {
                         <div>
                           <div className="text-base font-semibold">{c.nombre}</div>
                           <div className="text-xs text-cyan-300">{c.relacion}</div>
-                          <div className="text-xs text-slate-400 mt-1">+{c.telefono}</div>
+                          <div className="text-xs text-slate-300 mt-1">+{c.telefono}</div>
                         </div>
                       </div>
                       <div className="flex flex-col gap-2 shrink-0">
@@ -1182,13 +1185,13 @@ function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "" }) {
 
         {vista === "agregar" && (
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <button onClick={() => { setVista("lista"); setError(""); }} className="text-xs text-slate-400 mb-4">← Volver</button>
+            <button onClick={() => { setVista("lista"); setError(""); }} className="text-xs text-slate-300 mb-4">← Volver</button>
             <h3 className="text-lg font-bold mb-4">Agregar contacto</h3>
             <div className="space-y-4">
-              <div><label className="text-xs text-slate-400 block mb-1">Nombre</label>
+              <div><label className="text-xs text-slate-300 block mb-1">Nombre</label>
                 <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: María"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400/50" /></div>
-              <div><label className="text-xs text-slate-400 block mb-2">Relación</label>
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-400 focus:border-cyan-400/50" /></div>
+              <div><label className="text-xs text-slate-300 block mb-2">Relación</label>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {RELACIONES.map(r => (
                     <button key={r} onClick={() => setRelacion(r)}
@@ -1196,7 +1199,7 @@ function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "" }) {
                       {getRelEmoji(r)} {r}
                     </button>))}
                 </div></div>
-              <div><label className="text-xs text-slate-400 block mb-1">Teléfono (con WhatsApp)</label>
+              <div><label className="text-xs text-slate-300 block mb-1">Teléfono (con WhatsApp)</label>
                 <PhoneInput value={telefono} onChange={setTelefono} prefix={prefijo} onPrefixChange={setPrefijo} /></div>
 
               {/* Aviso Safety Check */}
@@ -1258,7 +1261,7 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
             </div>
 
             <div className="rounded-xl p-4" style={{ background: "rgba(224,224,224,0.05)", border: "1px solid rgba(224,224,224,0.1)" }}>
-              <div className="text-[9px] font-bold uppercase tracking-wider mb-3" style={{ color: "rgba(224,224,224,0.5)" }}>Tu contacto recibió</div>
+              <div className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: "rgba(224,224,224,0.8)" }}>Tu contacto recibió</div>
               <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>Tu contacto recibió el WhatsApp con tu ubicación y puede responderte con:</p>
               <div className="grid grid-cols-3 gap-3">
                 {[
@@ -1268,11 +1271,11 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
                 ].map((r, i) => (
                   <div key={i} className="rounded-lg py-3 text-center" style={{ background: "linear-gradient(145deg, #101018, #08080c)", border: "1px solid rgba(224,224,224,0.12)" }}>
                     <div className="text-2xl">{r.emoji}</div>
-                    <div className="text-[9px] mt-1 font-medium" style={{ color: "rgba(224,224,224,0.5)" }}>{r.text}</div>
+                    <div className="text-[11px] mt-1 font-medium" style={{ color: "rgba(224,224,224,0.8)" }}>{r.text}</div>
                   </div>
                 ))}
               </div>
-              <p className="text-[10px] mt-3 text-center" style={{ color: "rgba(255,255,255,0.25)" }}>Cuando responda, verás su emoji acá</p>
+              <p className="text-[12px] mt-3 text-center" style={{ color: "rgba(255,255,255,0.55)" }}>Cuando responda, verás su emoji acá</p>
             </div>
             <button onClick={onClose} className="w-full rounded-xl py-3 text-sm font-semibold" style={{ background: "linear-gradient(145deg, #101018, #08080c)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>Cerrar</button>
           </div>
@@ -1280,17 +1283,17 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
           <>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold">¿A quién avisar?</h3>
-              <button onClick={onClose} className="text-slate-400 text-2xl">×</button>
+              <button onClick={onClose} className="text-slate-300 text-2xl">×</button>
             </div>
             {tieneCompletar && (
               <div className="mb-4">
-                <label className="text-xs text-slate-400 block mb-1">Completá el detalle</label>
+                <label className="text-xs text-slate-300 block mb-1">Completá el detalle</label>
                 <input type="text" value={detalle} onChange={e => setDetalle(e.target.value)} placeholder="Nombre de la persona o lugar"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500" />
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-400" />
               </div>
             )}
             {contactos.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-6">No tenés contactos configurados.</p>
+              <p className="text-sm text-slate-300 text-center py-6">No tenés contactos configurados.</p>
             ) : (
               <>
                 <button onClick={() => setSeleccionados(contactos.map(c => c.id))} className="w-full mb-3 rounded-xl border border-cyan-400/30 bg-cyan-500/10 py-2.5 text-sm font-semibold text-cyan-300">Seleccionar todos ({contactos.length})</button>
@@ -1300,7 +1303,7 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
                       className={`w-full rounded-xl border px-4 py-3 text-left ${seleccionados.includes(c.id) ? "border-cyan-400/50 bg-cyan-500/10" : "border-white/10 bg-white/5"}`}>
                       <div className="flex items-center gap-3">
                         <div className="text-2xl shrink-0">{getRelEmoji(c.relacion)}</div>
-                        <div className="flex-1 min-w-0"><div className="text-sm font-semibold">{c.nombre}</div><div className="text-[11px] text-slate-400">{c.relacion} · +{c.telefono}</div></div>
+                        <div className="flex-1 min-w-0"><div className="text-sm font-semibold">{c.nombre}</div><div className="text-[11px] text-slate-300">{c.relacion} · +{c.telefono}</div></div>
                         <div className={`h-5 w-5 rounded-full border-2 shrink-0 ${seleccionados.includes(c.id) ? "border-cyan-400 bg-cyan-400" : "border-slate-500"}`}>
                           {seleccionados.includes(c.id) && <div className="text-slate-950 text-xs text-center leading-4">{"\u2713"}</div>}
                         </div>
@@ -1442,7 +1445,7 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
           <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${m.color} shadow-lg`}><span className="text-2xl">{m.emoji}</span></div>
           <div>
             <h4 className="text-base font-bold" style={{ color: "#E0E0E0" }}>{m.title}</h4>
-            <p className="text-xs text-slate-500">{m.desc}</p>
+            <p className="text-xs text-slate-400">{m.desc}</p>
           </div>
         </div>
         <button onClick={() => setExpanded(!expanded)}
@@ -1474,7 +1477,7 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
 function Field({ label, type = "text", placeholder, value, onChange }) {
   return (<label className="block space-y-2 text-left"><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(224,224,224,0.6)" }}>{label}</span>
     <input type={type} value={value} onChange={onChange} placeholder={placeholder}
-      className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600" style={{ background: "linear-gradient(145deg, #121218, #0a0a0e)", border: "1px solid rgba(224,224,224,0.1)", boxShadow: "inset 3px 3px 6px rgba(0,0,0,0.4)" }} /></label>);
+      className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-slate-400" style={{ background: "linear-gradient(145deg, #121218, #0a0a0e)", border: "1px solid rgba(224,224,224,0.1)", boxShadow: "inset 3px 3px 6px rgba(0,0,0,0.4)" }} /></label>);
 }
 
 function AccessCard({ children }) { return <div className="w-full max-w-md rounded-3xl p-6 shadow-2xl md:p-8" style={{ background: "linear-gradient(145deg, #13131d, #0a0a12)", border: "1px solid rgba(224,224,224,0.1)", boxShadow: "8px 8px 24px rgba(0,0,0,0.6)" }}>{children}</div>; }
@@ -1499,7 +1502,7 @@ function LoginScreen({ onBack, onSuccess }) {
         <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
         Continuar con Google
       </button>
-      <div className="flex items-center gap-3"><div className="flex-1 h-px bg-white/10"></div><span className="text-xs text-slate-500">o con email</span><div className="flex-1 h-px bg-white/10"></div></div>
+      <div className="flex items-center gap-3"><div className="flex-1 h-px bg-white/10"></div><span className="text-xs text-slate-400">o con email</span><div className="flex-1 h-px bg-white/10"></div></div>
       <Field label="Email" type="email" placeholder="tu@email.com" value={email} onChange={e => setEmail(e.target.value)} />
       <Field label="Contraseña" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
       {error && <p className="text-xs text-red-400 text-center">{error}</p>}
@@ -1529,7 +1532,7 @@ function RegisterScreen({ onBack, onSuccess, setPendingName }) {
         <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
         Continuar con Google
       </button>
-      <div className="flex items-center gap-3"><div className="flex-1 h-px bg-white/10"></div><span className="text-xs text-slate-500">o con email</span><div className="flex-1 h-px bg-white/10"></div></div>
+      <div className="flex items-center gap-3"><div className="flex-1 h-px bg-white/10"></div><span className="text-xs text-slate-400">o con email</span><div className="flex-1 h-px bg-white/10"></div></div>
       <Field label="Nombre completo" placeholder="Nombre y apellido" value={name} onChange={e => setName(e.target.value)} />
       <Field label="Email" type="email" placeholder="tu@email.com" value={email} onChange={e => setEmail(e.target.value)} />
       <Field label="Contraseña" type="password" placeholder="Mínimo 6 caracteres" value={password} onChange={e => setPassword(e.target.value)} />
@@ -1559,7 +1562,7 @@ function EagleEyeLogo({ size = 80 }) {
         <path d="M152 90 Q126 65 100 68" fill="none" stroke="url(#eyeGlow)" strokeWidth="2" strokeLinecap="round"/>
         <polygon points="100,28 103,36 111,36 105,41 107,49 100,45 93,49 95,41 89,36 97,36" fill="#E0E0E0" opacity="0.9"/>
         <text x="100" y="165" textAnchor="middle" fill="#E0E0E0" fontSize="11" fontWeight="800" letterSpacing="4" fontFamily="sans-serif">TRAZA 360</text>
-        <text x="100" y="178" textAnchor="middle" fill="rgba(224,224,224,0.5)" fontSize="7" letterSpacing="2" fontFamily="sans-serif">PROTECCIÓN</text>
+        <text x="100" y="178" textAnchor="middle" fill="rgba(224,224,224,0.8)" fontSize="7" letterSpacing="2" fontFamily="sans-serif">PROTECCIÓN</text>
       </svg>
     </div>
   );
@@ -1571,7 +1574,7 @@ function LandingScreen({ onScreen }) {
     <div className="min-h-screen text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 50%, #050508 100%)" }}>
       <section className="px-5 pt-16 pb-12 text-center">
         <div className="mb-4 flex justify-center"><EagleEyeLogo size={100} /></div>
-        <p className="text-[10px] font-semibold uppercase tracking-[5px]" style={{ color: "rgba(224,224,224,0.4)" }}>Última señal. Respuesta real.</p>
+        <p className="text-[12px] font-semibold uppercase tracking-[5px]" style={{ color: "rgba(224,224,224,0.7)" }}>Última señal. Respuesta real.</p>
         <h2 className="mt-4 max-w-3xl text-2xl font-bold leading-tight md:text-4xl mx-auto text-white">
           Cuando cada segundo importa,<br/><span style={{ background: "linear-gradient(135deg, #E0E0E0, #f5e6a3, #E0E0E0)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Traza 360 responde.</span>
         </h2>
@@ -1669,14 +1672,14 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
         {/* Header */}
         <div className="mb-6 text-center">
           <EagleEyeLogo size={70} />
-          <p className="text-[10px] uppercase tracking-[4px] mt-1" style={{ color: "rgba(224,224,224,0.4)" }}>Sistema de protección</p>
+          <p className="text-[12px] uppercase tracking-[4px] mt-1" style={{ color: "rgba(224,224,224,0.7)" }}>Sistema de protección</p>
         </div>
 
         {/* Dashboard Estado del Sistema */}
         <div className="mb-4 rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #13131d, #0e0e16)", border: "1px solid rgba(224,224,224,0.1)" }}>
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <p className="text-[10px] uppercase tracking-[3px] mb-1" style={{ color: "rgba(224,224,224,0.4)" }}>Estado del sistema</p>
+              <p className="text-[12px] uppercase tracking-[3px] mb-1" style={{ color: "rgba(224,224,224,0.7)" }}>Estado del sistema</p>
               <p className="text-sm font-semibold text-white">Bienvenido/a, {nombreUsuario} {"\u{1F44B}"}</p>
               <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>Plan: <span style={{ color: "#E0E0E0" }}>{PLAN_PRICES[userPlan]?.name}</span></p>
             </div>
@@ -1699,7 +1702,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
           )}
 
           <div className="mt-3 flex gap-2">
-            <button onClick={handleLogout} disabled={loggingOut} className="rounded-xl px-3 py-1.5 text-xs text-slate-400 border border-white/10 bg-white/5 disabled:opacity-50">
+            <button onClick={handleLogout} disabled={loggingOut} className="rounded-xl px-3 py-1.5 text-xs text-slate-300 border border-white/10 bg-white/5 disabled:opacity-50">
               {loggingOut ? "Saliendo..." : "Cerrar sesión"}
             </button>
             <button onClick={checkSystemStatus} className="rounded-xl px-3 py-1.5 text-xs border border-white/10 bg-white/5" style={{ color: "rgba(224,224,224,0.6)" }}>
@@ -1715,7 +1718,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
           </div>
         ) : (
           <>
-            <h3 className="mb-3 text-sm font-bold uppercase tracking-[2px]" style={{ color: "rgba(224,224,224,0.5)" }}>¿Qué necesitás hoy?</h3>
+            <h3 className="mb-3 text-sm font-bold uppercase tracking-[2px]" style={{ color: "rgba(224,224,224,0.8)" }}>¿Qué necesitás hoy?</h3>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {quickCards.map(card => (
                 <button key={card.key} onClick={() => handleCard(card.key)}
@@ -1731,12 +1734,12 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
                     opacity: card.coming ? 0.7 : 1,
                   }}>
                   {card.coming && (
-                    <div className="absolute top-3 right-3 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider" style={{ background: "rgba(224,224,224,0.1)", border: "1px solid rgba(224,224,224,0.2)", color: "#E0E0E0" }}>Próximamente</div>
+                    <div className="absolute top-3 right-3 rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider" style={{ background: "rgba(224,224,224,0.1)", border: "1px solid rgba(224,224,224,0.2)", color: "#E0E0E0" }}>Próximamente</div>
                   )}
                   <div className="mb-2 text-2xl">{card.emoji}</div>
-                  <div className="text-sm font-bold" style={{ color: card.coming ? "rgba(224,224,224,0.4)" : "#E0E0E0" }}>{card.title}</div>
+                  <div className="text-sm font-bold" style={{ color: card.coming ? "rgba(224,224,224,0.7)" : "#E0E0E0" }}>{card.title}</div>
                   <p className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{card.text}</p>
-                  {!card.coming && <div className="mt-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: "rgba(224,224,224,0.4)" }}>Abrir {"\u2192"}</div>}
+                  {!card.coming && <div className="mt-2 text-[12px] font-bold uppercase tracking-wider" style={{ color: "rgba(224,224,224,0.7)" }}>Abrir {"\u2192"}</div>}
                 </button>
               ))}
             </div>
@@ -1748,11 +1751,11 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
                   <span className="text-2xl">{"\u{1F451}"}</span>
                   <div className="flex-1">
                     <div className="text-sm font-bold text-white">Protección completa desde US$2.99</div>
-                    <p className="text-xs text-slate-400 mt-0.5">Más módulos, grabación, Te Cuido y soporte prioritario.</p>
+                    <p className="text-xs text-slate-300 mt-0.5">Más módulos, grabación, Te Cuido y soporte prioritario.</p>
                   </div>
                   <div className="shrink-0 text-right">
                     <div className="text-sm font-bold text-white">US$2.99</div>
-                    <div className="text-[10px] text-slate-500">/mes</div>
+                    <div className="text-[12px] text-slate-400">/mes</div>
                   </div>
                 </div>
               </button>
@@ -1782,7 +1785,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
               <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>Tu contacto recibió el WhatsApp con tu ubicación</p>
             </div>
             <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(224,224,224,0.05)", border: "1px solid rgba(224,224,224,0.1)" }}>
-              <div className="text-[9px] font-bold uppercase tracking-wider mb-3" style={{ color: "rgba(224,224,224,0.5)" }}>Tu contacto puede responder con</div>
+              <div className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: "rgba(224,224,224,0.8)" }}>Tu contacto puede responder con</div>
               <div className="grid grid-cols-3 gap-3 mb-3">
                 {[
                   { emoji: "\u{1F697}", text: "Salgo" },
@@ -1791,19 +1794,19 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
                 ].map((r, i) => (
                   <div key={i} className="rounded-lg py-3 text-center" style={{ background: "linear-gradient(145deg, #101018, #08080c)", border: "1px solid rgba(224,224,224,0.12)" }}>
                     <div className="text-2xl">{r.emoji}</div>
-                    <div className="text-[9px] mt-1 font-medium" style={{ color: "rgba(224,224,224,0.5)" }}>{r.text}</div>
+                    <div className="text-[11px] mt-1 font-medium" style={{ color: "rgba(224,224,224,0.8)" }}>{r.text}</div>
                   </div>
                 ))}
               </div>
-              <p className="text-[10px] text-center" style={{ color: "rgba(255,255,255,0.25)" }}>Cuando responda, verás su emoji acá</p>
+              <p className="text-[12px] text-center" style={{ color: "rgba(255,255,255,0.55)" }}>Cuando responda, verás su emoji acá</p>
               <div className="grid grid-cols-2 gap-2 mt-3">
                 <button onClick={() => { if(contactos.length>0) enviarWhatsApp(contactos[0].telefono,"\u{1F6A8} SIGO EN PELIGRO"); }}
                   className="rounded-lg py-2 text-center active:scale-95" style={{ background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.3)" }}>
-                  <div className="text-xl">{"\u{1F6A8}"}</div><div className="text-[8px] mt-0.5 text-red-400">Sigo en peligro</div>
+                  <div className="text-xl">{"\u{1F6A8}"}</div><div className="text-[11px] mt-0.5 text-red-400">Sigo en peligro</div>
                 </button>
                 <button onClick={() => { if(contactos.length>0) enviarWhatsApp(contactos[0].telefono,"\u2705 Estoy bien. Falsa alarma."); setPanicoEnviado(false); }}
                   className="rounded-lg py-2 text-center active:scale-95" style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
-                  <div className="text-xl">{"\u2705"}</div><div className="text-[8px] mt-0.5 text-green-400">Estoy bien</div>
+                  <div className="text-xl">{"\u2705"}</div><div className="text-[11px] mt-0.5 text-green-400">Estoy bien</div>
                 </button>
               </div>
             </div>
@@ -1821,7 +1824,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
             <span className="text-2xl">{"\u{1F6A8}"}</span>
           </button>
         </div>
-        <div className="text-[9px] text-center mt-1 font-bold uppercase tracking-wider" style={{ color: "#E0E0E0" }}>Pánico</div>
+        <div className="text-[11px] text-center mt-1 font-bold uppercase tracking-wider" style={{ color: "#E0E0E0" }}>Pánico</div>
       </div>
       <WhatsAppFloatingButton />
       <style>{`@keyframes panicPulse { 0%,100%{opacity:0.3;transform:scale(1)} 50%{opacity:0.7;transform:scale(1.08)} }`}</style>
@@ -1846,7 +1849,7 @@ function CalculadoraScreen({ onUnlock }) {
   const keys = ["7","8","9","÷","4","5","6","×","1","2","3","-","0",".","=","+","C"];
   return (
     <div className="min-h-screen bg-[#1a1a1a] flex flex-col items-center justify-end pb-8 px-4">
-      <div className="w-full max-w-sm mt-8 mb-auto"><div className="text-center text-slate-500 text-xs mb-2">Calculadora</div></div>
+      <div className="w-full max-w-sm mt-8 mb-auto"><div className="text-center text-slate-400 text-xs mb-2">Calculadora</div></div>
       <div className="w-full max-w-sm mb-4"><div className="rounded-2xl bg-[#222] p-6 text-right"><div className="text-4xl font-light text-white font-mono">{display}</div></div></div>
       <div className="w-full max-w-sm grid grid-cols-4 gap-2">
         {keys.map(k => (
@@ -1856,7 +1859,7 @@ function CalculadoraScreen({ onUnlock }) {
           </button>
         ))}
       </div>
-      <div className="mt-6 text-center"><p className="text-[10px] text-slate-700">Ingresá {pin} y tocá = para acceder</p></div>
+      <div className="mt-6 text-center"><p className="text-[12px] text-slate-700">Ingresá {pin} y tocá = para acceder</p></div>
     </div>
   );
 }
@@ -1917,7 +1920,7 @@ export default function App() {
     <div className="flex min-h-screen items-center justify-center text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 100%)" }}>
       <div className="text-center">
         <div className="mb-4 flex items-center justify-center"><EagleEyeLogo size={80} /></div>
-        <div className="text-xs mt-2" style={{ color: "rgba(224,224,224,0.4)" }}>Cargando...</div>
+        <div className="text-xs mt-2" style={{ color: "rgba(224,224,224,0.7)" }}>Cargando...</div>
       </div>
     </div>
   );
