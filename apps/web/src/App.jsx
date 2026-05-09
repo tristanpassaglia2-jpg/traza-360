@@ -24,15 +24,16 @@ const PIN_DEFAULT = "1234";
 const HOME_ADDRESS_DEFAULT = "Mi casa";
 
 const PLAN_LIMITS = {
-  gratis: { contactos: 2, terceros: 1, zonas: 2, medicamentos: 1, audioMax: 300, storage: "100 MB" },
-  mensual: { contactos: 5, terceros: 1, zonas: 5, medicamentos: 5, audioMax: 1800, storage: "1 GB" },
-  anual: { contactos: 10, terceros: 5, zonas: -1, medicamentos: -1, audioMax: -1, storage: "10 GB" },
+  gratis: { contactos: 2, terceros: 0, zonas: 1, medicamentos: 0, audioMax: 0, storage: "0", modulos: 1 },
+  plus: { contactos: 5, terceros: 1, zonas: 3, medicamentos: 3, audioMax: 1800, storage: "1 GB", modulos: 3 },
+  premium: { contactos: 10, terceros: 5, zonas: -1, medicamentos: -1, audioMax: -1, storage: "10 GB", modulos: -1 },
 };
 
 const PLAN_PRICES = {
-  gratis: { name: "Gratis", price: "US$0" },
-  mensual: { name: "Mensual", price: "US$4.99/mes" },
-  anual: { name: "Anual", price: "US$39.99/año (33% OFF)" },
+  gratis: { name: "Gratis", price: "US$0", priceARS: "$0", monthly: 0, features: ["1 módulo activo", "2 contactos", "Alertas básicas WhatsApp", "Sin grabación"] },
+  plus: { name: "Plus", price: "US$2.99/mes", priceARS: "$2.500/mes", monthly: 2.99, features: ["3 módulos activos", "5 contactos", "Grabación de audio", "Check-in temporizado", "Historial 30 días"] },
+  premium: { name: "Premium", price: "US$5.99/mes", priceARS: "$5.000/mes", monthly: 5.99, features: ["TODOS los módulos", "10 contactos", "Audio + Video", "Te Cuido (remoto)", "Pastillero Virtual", "Almacenamiento ilimitado", "Soporte prioritario"] },
+  anual: { name: "Premium Anual", price: "US$49.99/año", priceARS: "$42.000/año", monthly: 4.17, features: ["Todo lo del Premium", "Ahorrás 30%", "2 meses gratis"] },
 };
 
 // ─── PAÍSES ─────────────────────────────────
@@ -935,16 +936,143 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
   );
 }
 
-// ─── UPGRADE BANNER ──────────────────────────
-function UpgradeBanner({ feature }) {
+// ─── PLANES SCREEN (MercadoPago) ────────────
+const MP_PUBLIC_KEY = "TEST-f2d4a30b-ff92-496d-a1d6-bee7900bdddf";
+
+function PlanesScreen({ onBack, currentPlan = "gratis" }) {
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [processing, setProcessing] = useState(false);
+
+  const planes = [
+    { key: "plus", name: "Plus", price: "US$2.99", priceARS: "$2.500", period: "/mes", popular: false,
+      features: ["3 módulos activos", "5 contactos", "Grabación de audio", "Check-in temporizado", "Historial 30 días"],
+      color: "rgba(224,224,224,0.1)", border: "rgba(224,224,224,0.2)" },
+    { key: "premium", name: "Premium", price: "US$5.99", priceARS: "$5.000", period: "/mes", popular: true,
+      features: ["TODOS los módulos", "10 contactos", "Audio + Video", "Te Cuido (remoto)", "Pastillero Virtual", "Almacenamiento ilimitado", "Soporte prioritario"],
+      color: "rgba(224,224,224,0.15)", border: "rgba(255,255,255,0.3)" },
+    { key: "anual", name: "Premium Anual", price: "US$49.99", priceARS: "$42.000", period: "/año", popular: false,
+      features: ["Todo lo del Premium", "Ahorrás 30%", "2 meses gratis"],
+      color: "rgba(224,224,224,0.08)", border: "rgba(224,224,224,0.15)", badge: "30% OFF" },
+  ];
+
+  async function handleSubscribe(plan) {
+    setSelectedPlan(plan.key);
+    setProcessing(true);
+    try {
+      // En producción esto llama a Supabase Edge Function que crea la preferencia de pago
+      // Por ahora abre MercadoPago checkout directamente
+      const priceMap = { plus: 2500, premium: 5000, anual: 42000 };
+      const titleMap = { plus: "Traza 360 Plus - Mensual", premium: "Traza 360 Premium - Mensual", anual: "Traza 360 Premium - Anual" };
+      
+      // Crear preferencia de pago via MercadoPago API (esto se moverá a Edge Function)
+      const preference = {
+        items: [{ title: titleMap[plan.key], unit_price: priceMap[plan.key], quantity: 1, currency_id: "ARS" }],
+        back_urls: { success: window.location.origin + "?plan=" + plan.key, failure: window.location.origin, pending: window.location.origin },
+        auto_return: "approved",
+      };
+
+      alert(`Suscripción ${plan.name} seleccionada.\n\nPrecio: ${plan.priceARS}${plan.period}\n\nLa integración con MercadoPago se activará cuando se configuren las Edge Functions de Supabase.\n\nPor ahora tu plan se actualizará a ${plan.name} en modo prueba.`);
+      setProcessing(false);
+      setSelectedPlan(null);
+    } catch (err) {
+      alert("Error al procesar el pago. Intentá de nuevo.");
+      setProcessing(false);
+      setSelectedPlan(null);
+    }
+  }
+
   return (
-    <div className="rounded-2xl p-4" style={{ background: "linear-gradient(135deg, rgba(224,224,224,0.08), rgba(184,134,11,0.04))", border: "1px solid rgba(224,224,224,0.2)" }}>
+    <div className="min-h-screen px-4 py-8" style={{ background: "linear-gradient(180deg, #060608 0%, #0a0a12 100%)" }}>
+      <div className="w-full max-w-md mx-auto">
+        {/* Header */}
+        <div className="flex items-center mb-6">
+          <button onClick={onBack} className="text-white text-2xl mr-3">{"\u2190"}</button>
+          <h1 className="text-xl font-bold text-white">Elegí tu plan</h1>
+        </div>
+
+        {/* Plan actual */}
+        <div className="rounded-xl p-3 mb-6" style={{ background: "rgba(224,224,224,0.05)", border: "1px solid rgba(224,224,224,0.1)" }}>
+          <div className="flex items-center gap-2">
+            <span className="text-lg">{currentPlan === "gratis" ? "\u{1F513}" : "\u{1F451}"}</span>
+            <div>
+              <div className="text-xs text-slate-400">Plan actual</div>
+              <div className="text-sm font-bold text-white">{currentPlan === "gratis" ? "Gratis" : currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Cards de planes */}
+        <div className="space-y-4">
+          {planes.map((plan) => (
+            <div key={plan.key} className={`rounded-2xl p-5 relative ${plan.key === currentPlan ? "opacity-50" : ""}`}
+              style={{ background: `linear-gradient(145deg, ${plan.color}, rgba(8,8,12,0.9))`, border: `1px solid ${plan.border}` }}>
+              
+              {plan.popular && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-[10px] font-bold text-black" style={{ background: "linear-gradient(135deg, #E0E0E0, #ffffff)" }}>
+                  MÁS POPULAR
+                </div>
+              )}
+              {plan.badge && (
+                <div className="absolute -top-3 right-4 rounded-full px-3 py-1 text-[10px] font-bold text-black bg-green-400">
+                  {plan.badge}
+                </div>
+              )}
+
+              <div className="flex items-baseline gap-2 mb-1 mt-1">
+                <span className="text-2xl font-bold text-white">{plan.price}</span>
+                <span className="text-sm text-slate-400">{plan.period}</span>
+              </div>
+              <div className="text-xs text-slate-500 mb-3">{plan.priceARS}{plan.period}</div>
+              <div className="text-lg font-bold text-white mb-3">{plan.name}</div>
+
+              <div className="space-y-2 mb-4">
+                {plan.features.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="text-green-400 text-xs">{"\u2713"}</span>
+                    <span className="text-xs text-slate-300">{f}</span>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => handleSubscribe(plan)}
+                disabled={plan.key === currentPlan || processing}
+                className={`w-full rounded-xl py-3 text-sm font-bold active:scale-95 ${plan.key === currentPlan ? "bg-white/10 text-slate-500 cursor-not-allowed" : "text-black"}`}
+                style={plan.key !== currentPlan ? { background: plan.popular ? "linear-gradient(135deg, #ffffff, #E0E0E0)" : "linear-gradient(135deg, rgba(224,224,224,0.3), rgba(224,224,224,0.1))", color: plan.popular ? "#000" : "#fff" } : {}}>
+                {plan.key === currentPlan ? "Plan actual" : processing && selectedPlan === plan.key ? "Procesando..." : `Suscribirme a ${plan.name}`}
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Garantía */}
+        <div className="mt-6 text-center">
+          <div className="text-xs text-slate-500">{"\u{1F512}"} Pago seguro con MercadoPago</div>
+          <div className="text-[10px] text-slate-600 mt-1">Cancelá cuando quieras. Sin permanencia.</div>
+        </div>
+
+        {/* MercadoPago badge */}
+        <div className="mt-4 flex justify-center">
+          <div className="rounded-lg px-4 py-2" style={{ background: "rgba(224,224,224,0.05)", border: "1px solid rgba(224,224,224,0.1)" }}>
+            <div className="text-[10px] text-slate-400 text-center">Procesado por</div>
+            <div className="text-sm font-bold text-white text-center">MercadoPago</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── UPGRADE BANNER ──────────────────────────
+function UpgradeBanner({ feature, onViewPlans }) {
+  return (
+    <div className="rounded-2xl p-4" style={{ background: "linear-gradient(135deg, rgba(224,224,224,0.06), rgba(224,224,224,0.02))", border: "1px solid rgba(224,224,224,0.15)" }}>
       <div className="flex items-start gap-3">
         <span className="text-2xl">{"\u{1F451}"}</span>
         <div className="flex-1">
-          <div className="text-sm font-bold" style={{ color: "#E0E0E0" }}>Función Premium</div>
-          <p className="text-xs text-slate-400 mt-1">Desbloqueá {feature} con el plan Mensual por solo <span style={{ color: "#E0E0E0" }}>US$4.99/mes</span>.</p>
-          <button className="mt-2 rounded-xl px-4 py-2 text-xs font-bold text-black" style={{ background: "linear-gradient(135deg, #E0E0E0, #f5e6a3)" }}>Ver planes →</button>
+          <div className="text-sm font-bold text-white">Función Premium</div>
+          <p className="text-xs text-slate-400 mt-1">Desbloqueá {feature} desde <span className="text-white font-semibold">US$2.99/mes</span> con el plan Plus.</p>
+          <button onClick={onViewPlans} className="mt-2 rounded-xl px-4 py-2 text-xs font-bold text-black" style={{ background: "linear-gradient(135deg, #E0E0E0, #ffffff)" }}>Ver planes →</button>
         </div>
       </div>
     </div>
@@ -1457,7 +1585,7 @@ function LandingScreen({ onScreen }) {
 }
 
 // ─── HOME SCREEN ────────────────────────────
-function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
+function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans }) {
   const [activeScreen, setActiveScreen] = useState("home");
   const [activeModule, setActiveModule] = useState(null);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -1595,19 +1723,19 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
 
             {/* Upgrade Banner para plan gratis */}
             {userPlan === "gratis" && (
-              <div className="mt-4 rounded-2xl p-4" style={{ background: "linear-gradient(135deg, rgba(224,224,224,0.06), rgba(184,134,11,0.03))", border: "1px solid rgba(224,224,224,0.15)" }}>
+              <button onClick={onViewPlans} className="mt-4 w-full rounded-2xl p-4 text-left active:scale-[0.98]" style={{ background: "linear-gradient(135deg, rgba(224,224,224,0.06), rgba(224,224,224,0.02))", border: "1px solid rgba(224,224,224,0.15)" }}>
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{"\u{1F451}"}</span>
                   <div className="flex-1">
-                    <div className="text-sm font-bold" style={{ color: "#E0E0E0" }}>Desbloqueá la protección completa</div>
-                    <p className="text-xs text-slate-400 mt-0.5">5 contactos, medicamentos ilimitados, historial 90 días y más.</p>
+                    <div className="text-sm font-bold text-white">Protección completa desde US$2.99</div>
+                    <p className="text-xs text-slate-400 mt-0.5">Más módulos, grabación, Te Cuido y soporte prioritario.</p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <div className="text-sm font-bold" style={{ color: "#E0E0E0" }}>US$4.99</div>
+                    <div className="text-sm font-bold text-white">US$2.99</div>
                     <div className="text-[10px] text-slate-500">/mes</div>
                   </div>
                 </div>
-              </div>
+              </button>
             )}
 
             {/* Footer privacidad */}
@@ -1617,7 +1745,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
                 <span>·</span>
                 <button onClick={() => alert("Traza 360 no reemplaza a los servicios de emergencia oficiales (911, 107, policía).\n\nEn caso de emergencia real, llamá primero al número de emergencias de tu país.")} className="hover:text-white underline">Términos</button>
                 <span>·</span>
-                <span>v17.0</span>
+                <span>v17.2</span>
               </div>
             </div>
           </>
@@ -1779,6 +1907,7 @@ export default function App() {
 
   if (screen === "login") return <LoginScreen onBack={() => setScreen("landing")} onSuccess={handleLoginSuccess} />;
   if (screen === "register") return <RegisterScreen onBack={() => setScreen("landing")} onSuccess={handleLoginSuccess} setPendingName={setPendingName} />;
-  if (screen === "home") return <HomeScreen userProfile={userProfile} authUser={authUser} pendingName={pendingName} onLogout={handleLogout} />;
+  if (screen === "planes") return <PlanesScreen onBack={() => setScreen("home")} currentPlan={userProfile?.plan || "gratis"} />;
+  if (screen === "home") return <HomeScreen userProfile={userProfile} authUser={authUser} pendingName={pendingName} onLogout={handleLogout} onViewPlans={() => setScreen("planes")} />;
   return <LandingScreen onScreen={setScreen} />;
 }
