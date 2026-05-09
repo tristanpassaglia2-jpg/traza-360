@@ -1494,7 +1494,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
     { key: "los_protejo", emoji: "\u{1FAF6}", title: "Adulto Mayor Seguro", text: "Adulto mayor — Medicamentos, caídas y asistencia." },
     { key: "turno_seguro",emoji: "\u{1F303}", title: "Trabajo Seguro", text: "Trabajo de riesgo — Protección nocturna y áreas peligrosas." },
     { key: "mi_nido",     emoji: "\u{1F3E0}", title: "Hogar Seguro",     text: "Hogar seguro — Intrusos, accidentes y emergencias." },
-    { key: "oidos_atentos", emoji: "\u{1F3A7}", title: "Oídos Atentos", text: "Vigilancia remota — Próximamente.", coming: true },
+    { key: "te_cuido", emoji: "\u{1F985}", title: "Te Cuido", text: "Cuidado remoto — Próximamente.", coming: true },
     { key: "contactos",   emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} configurados` },
   ];
 
@@ -1502,7 +1502,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout }) {
     if (key === "contactos") setActiveScreen("contactos");
     else if (key === "pastillero") setActiveScreen("pastillero");
     else if (key === "evidencias") setActiveScreen("evidencias");
-    else if (key === "oidos_atentos") return; // Próximamente, no hace nada
+    else if (key === "te_cuido") return; // Próximamente, no hace nada
     else { const mod = MODULES.find(m => m.key === key); if (mod) setActiveModule(mod); }
   }
 
