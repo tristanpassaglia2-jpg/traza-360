@@ -124,7 +124,7 @@ async function sendWhatsAppAPI(numero, text) {
     const response = await fetch("/api/send-whatsapp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: numLimpio, message: text }),
+      body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [text] }),
     });
     const data = await response.json();
     if (data.success) { console.log("WhatsApp enviado OK:", data.sid); return { success: true, sid: data.sid }; }
