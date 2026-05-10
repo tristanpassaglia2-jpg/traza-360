@@ -121,7 +121,7 @@ function buildMapLink(loc) { return loc ? `https://www.google.com/maps?q=${loc.l
 async function sendWhatsAppAPI(numero, text) {
   try {
     const numLimpio = numero.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
-    const response = await fetch("/api/send-whatsapp", {
+    const response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [text] }),
