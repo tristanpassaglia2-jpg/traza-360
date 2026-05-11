@@ -138,7 +138,7 @@ async function sendWhatsAppAPI(numero, text) {
       const response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [nombre.substring(0,60), "Alerta activada - necesito ayuda", hora, modulo] }),
+        body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [nombre.substring(0,60), "Alerta activada - necesito ayuda", hora, "Seguridad"] }),
       });
       const data = await response.json();
       if (data.messages) { console.log("WhatsApp enviado OK:", data.messages[0].id); return { success: true, data }; }
