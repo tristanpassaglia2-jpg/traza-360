@@ -119,18 +119,32 @@ function buildMapLink(loc) { return loc ? `https://www.google.com/maps?q=${loc.l
 
 // ─── WHATSAPP VÍA API ────────────────────────
 async function sendWhatsAppAPI(numero, text) {
-  try {
-    const numLimpio = numero.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
-    const response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [text] }),
-    });
-    const data = await response.json();
-    if (data.messages) { console.log("WhatsApp enviado OK:", data.messages[0].id); return { success: true, sid: data.messages[0].id }; }
-    else { console.warn("WhatsApp API error:", data.error); return { success: false, error: data.error }; }
-  } catch (error) { console.error("WhatsApp fetch error:", error); return { success: false, error: error.message }; }
-}
+    try {
+      const numLimpio = numero.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
+      const userData = await supabase.auth.getUser();
+      const nombre = userData?.data?.user?.user_metadata?.nombre || userData?.data?.user?.user_metadata?.full_name || userData?.data?.user?.email?.split('@')[0] || "Usuario";
+      let ubicacion = "No disponible";
+      try { const { location } = await getCurrentLocationWithFallback(); if (location) ubicacion = location; } catch(e) { }
+      const ahora = new Date();
+      const hora = ahora.toLocaleString('es-AR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+      let modulo = "General";
+      const t = text.toLowerCase();
+      if (t.includes("violencia") || t.includes("género")) modulo = "Violencia de Género";
+      else if (t.includes("adulto") || t.includes("mayor") || t.includes("medicación")) modulo = "Adulto Mayor";
+      else if (t.includes("niño") || t.includes("child")) modulo = "Niño Seguro";
+      else if (t.includes("hogar") || t.includes("adolescente")) modulo = "Hogar Seguro";
+      else if (t.includes("trabajo")) modulo = "Trabajo Seguro";
+      else if (t.includes("check-in") || t.includes("confirmo") || t.includes("automática")) modulo = "Check-in";
+      const response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [nombre, text, hora, modulo] }),
+      });
+      const data = await response.json();
+      if (data.messages) { console.log("WhatsApp enviado OK:", data.messages[0].id); return { success: true, data }; }
+      else { console.warn("WhatsApp API error:", data.error); return { success: false, error: data.error }; }
+    } catch (error) { console.error("WhatsApp fetch error:", error); return { success: false, error: error.message }; }
+  }
 
 async function enviarWhatsApp(numero, text) {
   const result = await sendWhatsAppAPI(numero, text);
