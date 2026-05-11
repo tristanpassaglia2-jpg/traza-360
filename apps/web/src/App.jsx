@@ -127,7 +127,7 @@ async function sendWhatsAppAPI(numero, text) {
       body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [text] }),
     });
     const data = await response.json();
-    if (data.success) { console.log("WhatsApp enviado OK:", data.sid); return { success: true, sid: data.sid }; }
+    if (data.messages) { console.log("WhatsApp enviado OK:", data.messages[0].id); return { success: true, sid: data.messages[0].id }; }
     else { console.warn("WhatsApp API error:", data.error); return { success: false, error: data.error }; }
   } catch (error) { console.error("WhatsApp fetch error:", error); return { success: false, error: error.message }; }
 }
