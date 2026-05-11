@@ -119,38 +119,39 @@ function buildMapLink(loc) { return loc ? `https://www.google.com/maps?q=${loc.l
 
 // ─── WHATSAPP VÍA API ────────────────────────
 async function sendWhatsAppAPI(numero, text) {
+  try {
+    const numLimpio = numero.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
+    // Obtener nombre del usuario
+    const userData = await supabase.auth.getUser();
+    const nombre = userData?.data?.user?.user_metadata?.nombre || userData?.data?.user?.user_metadata?.full_name || userData?.data?.user?.email?.split('@')[0] || "Usuario";
+    // Obtener ubicación GPS
+    let ubicacionTexto = "No disponible";
     try {
-      const numLimpio = numero.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
-      const userData = await supabase.auth.getUser();
-      const nombre = userData?.data?.user?.user_metadata?.nombre || userData?.data?.user?.user_metadata?.full_name || userData?.data?.user?.email?.split('@')[0] || "Usuario";
-      let ubicacion = "No disponible";
-      try { const { location } = await getCurrentLocationWithFallback(); if (location) ubicacion = location; } catch(e) { }
-      const ahora = new Date();
-      const hora = ahora.toLocaleString('es-AR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
-      let modulo = "General";
-      const t = text.toLowerCase();
-      if (t.includes("violencia") || t.includes("género")) modulo = "Violencia de Género";
-      else if (t.includes("adulto") || t.includes("mayor") || t.includes("medicación")) modulo = "Adulto Mayor";
-      else if (t.includes("niño") || t.includes("child")) modulo = "Niño Seguro";
-      else if (t.includes("hogar") || t.includes("adolescente")) modulo = "Hogar Seguro";
-      else if (t.includes("trabajo")) modulo = "Trabajo Seguro";
-      else if (t.includes("check-in") || t.includes("confirmo") || t.includes("automática")) modulo = "Check-in";
-      const response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [nombre.substring(0,60), "Alerta activada - necesito ayuda", hora, "Seguridad"] }),
-      });
-      const data = await response.json();
-      if (data.messages) { console.log("WhatsApp enviado OK:", data.messages[0].id); return { success: true, data }; }
-      else { console.warn("WhatsApp API error:", data.error); return { success: false, error: data.error }; }
-    } catch (error) { console.error("WhatsApp fetch error:", error); return { success: false, error: error.message }; }
-  }
+      const { location } = await getCurrentLocationWithFallback();
+      if (location) ubicacionTexto = `${location.lat.toFixed(4)},${location.lng.toFixed(4)}`;
+    } catch(e) { }
+    // Hora actual
+    const ahora = new Date();
+    const hora = ahora.toLocaleString('es-AR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+    // Limpiar texto para Meta (sin emojis ni caracteres especiales)
+    const textoLimpio = text.replace(/[^\w\sáéíóúñüÁÉÍÓÚÑÜ.,!?()\-:]/gi, '').substring(0, 60) || "Alerta activada";
+    // Enviar via Edge Function
+    const response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [nombre.substring(0,60), textoLimpio, hora, "Seguridad"] }),
+    });
+    const data = await response.json();
+    if (data.messages) { console.log("WhatsApp enviado OK:", data.messages[0].id); return { success: true, data }; }
+    else { console.warn("WhatsApp API error:", data.error); return { success: false, error: data.error }; }
+  } catch (error) { console.error("WhatsApp fetch error:", error); return { success: false, error: error.message }; }
+}
 
 async function enviarWhatsApp(numero, text) {
   const result = await sendWhatsAppAPI(numero, text);
   if (!result.success) {
-    const numLimpio = numero.replace(/\+/g, "").replace(/\s/g, "");
-    window.open(`https://wa.me/${numLimpio}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+    // Fallback silencioso: loguear pero NO abrir WhatsApp Web (molesta en PC)
+    console.warn("WhatsApp API falló, fallback desactivado para evitar abrir WhatsApp Web");
   }
   return result;
 }
@@ -526,7 +527,7 @@ function CheckInModal({ onClose, contactos, titulo = "Check-in de seguridad" }) 
   function estoyBien() {
     clearInterval(timerRef.current);
     setActivo(false);
-    if (contactos.length > 0) enviarWhatsApp(contactos[0].telefono, "\u2705 Estoy bien. Todo en orden.");
+    if (contactos.length > 0) enviarWhatsApp(contactos[0].telefono, "Estoy bien. Todo en orden.");
     onClose();
   }
 
@@ -1814,11 +1815,11 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
               </div>
               <p className="text-[12px] text-center" style={{ color: "rgba(255,255,255,0.55)" }}>Cuando responda, verás su emoji acá</p>
               <div className="grid grid-cols-2 gap-2 mt-3">
-                <button onClick={() => { if(contactos.length>0) enviarWhatsApp(contactos[0].telefono,"\u{1F6A8} SIGO EN PELIGRO"); }}
+                <button onClick={() => { if(contactos.length>0) enviarWhatsApp(contactos[0].telefono,"SIGO EN PELIGRO - necesito ayuda urgente"); }}
                   className="rounded-lg py-2 text-center active:scale-95" style={{ background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.3)" }}>
                   <div className="text-xl">{"\u{1F6A8}"}</div><div className="text-[11px] mt-0.5 text-red-400">Sigo en peligro</div>
                 </button>
-                <button onClick={() => { if(contactos.length>0) enviarWhatsApp(contactos[0].telefono,"\u2705 Estoy bien. Falsa alarma."); setPanicoEnviado(false); }}
+                <button onClick={() => { if(contactos.length>0) enviarWhatsApp(contactos[0].telefono,"Estoy bien. Falsa alarma."); setPanicoEnviado(false); }}
                   className="rounded-lg py-2 text-center active:scale-95" style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
                   <div className="text-xl">{"\u2705"}</div><div className="text-[11px] mt-0.5 text-green-400">Estoy bien</div>
                 </button>
