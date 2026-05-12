@@ -19,6 +19,6 @@ jobs:
           version: latest
 
       - name: Deploy whatsapp-webhook
-        run: supabase functions deploy whatsapp-webhook --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} --no-verify-jwt
+        run: supabase functions deploy whatsapp-webhook-v2 --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} --no-verify-jwt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
