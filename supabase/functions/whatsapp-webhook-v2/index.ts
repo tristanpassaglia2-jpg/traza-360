@@ -1,4 +1,4 @@
-// Deploy trigger v3 - 2026 - Maneja botones type:button Y type:interactive
+// Deploy v4 - 2026 - Vincula respuestas con alertas via context.id (wamid)
 const VERIFY_TOKEN = "traza360_webhook_secret";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -8,6 +8,22 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
+
+async function buscarAlertaPorWamid(wamid: string): Promise<string | null> {
+  if (!wamid) return null;
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/alertas?wamid=eq.${encodeURIComponent(wamid)}&select=id`,
+    {
+      headers: {
+        "apikey": SERVICE_KEY,
+        "Authorization": `Bearer ${SERVICE_KEY}`,
+      },
+    }
+  );
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data?.[0]?.id || null;
+}
 
 async function insertRespuesta(data: Record<string, unknown>) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/respuestas_contacto`, {
@@ -70,7 +86,16 @@ Deno.serve(async (req) => {
       }
 
       if (buttonId) {
+        // Buscar la alerta original por el wamid del mensaje al que está respondiendo
+        const contextWamid = message.context?.id || null;
+        let alertaId = null;
+        if (contextWamid) {
+          alertaId = await buscarAlertaPorWamid(contextWamid);
+          console.log("Alerta vinculada:", alertaId, "via wamid:", contextWamid);
+        }
+
         await insertRespuesta({
+          alerta_id: alertaId,
           from_number: message.from,
           button_id: buttonId,
           mensaje_id: message.id,
