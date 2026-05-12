@@ -1,18 +1,33 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
 const VERIFY_TOKEN = "traza360_webhook_secret";
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+async function insertRespuesta(data: Record<string, unknown>) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/respuestas_contacto`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SERVICE_KEY,
+      "Authorization": `Bearer ${SERVICE_KEY}`,
+      "Prefer": "return=minimal",
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    console.error("DB insert failed:", res.status, txt);
+    return false;
+  }
+  return true;
+}
 
 Deno.serve(async (req) => {
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-  };
-
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -23,6 +38,7 @@ Deno.serve(async (req) => {
     const mode = url.searchParams.get("hub.mode");
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
+    console.log("GET verify:", { mode, token });
     if (mode === "subscribe" && token === VERIFY_TOKEN) {
       return new Response(challenge, { status: 200 });
     }
@@ -30,33 +46,44 @@ Deno.serve(async (req) => {
   }
 
   if (req.method === "POST") {
-    const body = await req.json();
-    console.log("Webhook recibido:", JSON.stringify(body));
+    try {
+      const body = await req.json();
+      console.log("Webhook recibido:", JSON.stringify(body));
 
-    const entry = body?.entry?.[0];
-    const changes = entry?.changes?.[0];
-    const message = changes?.value?.messages?.[0];
+      const message = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
 
-    if (message?.type === "interactive") {
-      const buttonId = message.interactive?.button_reply?.id;
-      const from = message.from;
-      const messageId = message.id;
+      if (!message) {
+        return new Response("OK", { status: 200, headers: corsHeaders });
+      }
 
-      console.log(`Boton presionado: ${buttonId} por ${from}`);
+      if (message.type === "interactive") {
+        const buttonId = message.interactive?.button_reply?.id 
+                       || message.interactive?.list_reply?.id;
+        console.log("Boton presionado:", message.from, buttonId);
+        await insertRespuesta({
+          from_number: message.from,
+          button_id: buttonId,
+          mensaje_id: message.id,
+          raw_data: message,
+        });
+      }
 
-      const { error } = await supabase.from("respuestas_contacto").insert({
-        from_number: from,
-        button_id: buttonId,
-        mensaje_id: messageId,
-        raw_data: message,
-      });
+      if (message.type === "text") {
+        console.log("Texto recibido:", message.from, message.text?.body);
+        await insertRespuesta({
+          from_number: message.from,
+          button_id: "TEXTO_LIBRE",
+          mensaje_id: message.id,
+          raw_data: message,
+        });
+      }
 
-      if (error) console.error("Error guardando respuesta:", error);
-      else console.log("Respuesta guardada OK");
+      return new Response("OK", { status: 200, headers: corsHeaders });
+    } catch (err) {
+      console.error("Error:", err);
+      return new Response("Error", { status: 500, headers: corsHeaders });
     }
-
-    return new Response("OK", { status: 200, headers: corsHeaders });
   }
 
-  return new Response("Method not allowed", { status: 405 });
+  return new Response("Method not allowed", { status: 405, headers: corsHeaders });
 });
