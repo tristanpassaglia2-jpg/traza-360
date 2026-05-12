@@ -139,8 +139,19 @@ async function sendWhatsAppAPI(numero, text) {
     const response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [nombre.substring(0,60), textoLimpio, hora, "Seguridad"] }),
-    });
+      body: JSON.stringify({ 
+  to: numLimpio, 
+  template: "alerta_emergencia", 
+  params: [nombre.substring(0,60), textoLimpio, hora, "Seguridad"],
+  usuario_id: userData?.data?.user?.id || null,
+  modulo: "violencia de genero",
+  mensaje: textoLimpio,
+  latitud: location?.lat || null,
+  longitud: location?.lng || null,
+  link_mapa: location ? `https://maps.google.com/?q=${location.lat},${location.lng}` : null,
+}),
+});
+    
     const data = await response.json();
     if (data.messages) { console.log("WhatsApp enviado OK:", data.messages[0].id); return { success: true, data }; }
     else { console.warn("WhatsApp API error:", data.error); return { success: false, error: data.error }; }
