@@ -1,4 +1,4 @@
-// Deploy trigger v2 - 2026
+// Deploy trigger v3 - 2026 - Maneja botones type:button Y type:interactive
 const VERIFY_TOKEN = "traza360_webhook_secret";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -54,11 +54,22 @@ Deno.serve(async (req) => {
         return new Response("OK", { status: 200, headers: corsHeaders });
       }
 
-      if (message.type === "interactive") {
-        const buttonId =
-          message.interactive?.button_reply?.id ||
-          message.interactive?.list_reply?.id;
-        console.log("Botón presionado:", buttonId, "de", message.from);
+      let buttonId: string | null = null;
+
+      // Caso 1: Botones de templates (type: "button")
+      if (message.type === "button") {
+        buttonId = message.button?.payload || message.button?.text || null;
+        console.log("Botón template presionado:", buttonId, "de", message.from);
+      }
+      // Caso 2: Botones interactivos (type: "interactive")
+      else if (message.type === "interactive") {
+        buttonId = message.interactive?.button_reply?.id ||
+                   message.interactive?.list_reply?.id ||
+                   null;
+        console.log("Botón interactive presionado:", buttonId, "de", message.from);
+      }
+
+      if (buttonId) {
         await insertRespuesta({
           from_number: message.from,
           button_id: buttonId,
@@ -66,6 +77,7 @@ Deno.serve(async (req) => {
           raw_data: message,
         });
       }
+
       return new Response("OK", { status: 200, headers: corsHeaders });
     } catch (err) {
       console.error("Error:", err);
