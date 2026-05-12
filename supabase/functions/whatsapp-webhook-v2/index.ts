@@ -1,3 +1,4 @@
+// Deploy trigger v2 - 2026
 const VERIFY_TOKEN = "traza360_webhook_secret";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
