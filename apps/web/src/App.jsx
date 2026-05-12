@@ -134,7 +134,7 @@ async function sendWhatsAppAPI(numero, text) {
     const ahora = new Date();
     const hora = ahora.toLocaleString('es-AR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
     // Limpiar texto para Meta (sin emojis ni caracteres especiales)
-    const textoLimpio = text.replace(/[^\w\sáéíóúñüÁÉÍÓÚÑÜ.,!?()\-:]/gi, '').substring(0, 60) || "Alerta activada";
+    const textoLimpio = "Alerta activada - necesito ayuda";
     // Enviar via Edge Function
     const response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
       method: "POST",
