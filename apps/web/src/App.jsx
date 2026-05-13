@@ -2,10 +2,18 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { signUp, signIn, signOut, getCurrentUser, supabase, getContactos, addContacto, deleteContacto, getMedicamentos, addMedicamento, deleteMedicamento, getTomasHoy, getTomasSemana, marcarTomado, crearTomasDelDia } from "./lib/supabase";
 
 /* ═══════════════════════════════════════════════════════════════
-   TRAZA 360 — App completa v17.2
-   Versión: 17.2 · Mayo 2026
+   TRAZA 360 — App completa v18.0
+   Versión: 18.0 · Mayo 2026
    ═══════════════════════════════════════════════════════════════
-   CAMBIOS v17.2:
+   CAMBIOS v18.0 (LIMPIEZA UI):
+   1. Hogar Seguro y Adulto Mayor COMENTADOS (no borrados, para futuras apps)
+   2. Sacado "Grabar video silencioso" de Violencia de Género
+   3. Sacado "Grabar video silencioso" de Trabajo Seguro
+   4. Sacado "Escribir" de Adolescente Seguro
+   5. Fusionado "Entro a la casa de..." + "Me reúno con..." → "Estoy en..."
+   6. Renombrado "Te Cuido" → "Te Cuido a Distancia"
+
+   CAMBIOS v17.2 (anterior):
    1. Rediseño visual ULTRA PREMIUM — Plateado/blanco sobre negro
    2. Paleta: Silver (#E0E0E0), White, Deep Black (#060608)
    3. Estilo inspirado en JupiterStar: glassmorphism, glow sutil
@@ -126,8 +134,10 @@ async function sendWhatsAppAPI(numero, text) {
     const nombre = userData?.data?.user?.user_metadata?.nombre || userData?.data?.user?.user_metadata?.full_name || userData?.data?.user?.email?.split('@')[0] || "Usuario";
     // Obtener ubicación GPS
     let ubicacionTexto = "No disponible";
+    let location = null;
     try {
-      const { location } = await getCurrentLocationWithFallback();
+      const r = await getCurrentLocationWithFallback();
+      location = r.location;
       if (location) ubicacionTexto = `${location.lat.toFixed(4)},${location.lng.toFixed(4)}`;
     } catch(e) { }
     // Hora actual
@@ -256,9 +266,8 @@ function OnboardingScreen({ onComplete }) {
       modules: [
         { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", label: "Para mí — Violencia o riesgo" },
         { key: "los_cuido",    emoji: "\u{1F9D1}\u200D\u{1F393}", label: "Mi hijo/a adolescente" },
-        { key: "los_protejo",  emoji: "\u{1FAF6}", label: "Mis padres / adultos mayores" },
         { key: "turno_seguro", emoji: "\u{1F303}", label: "Trabajo de riesgo" },
-        { key: "mi_nido",      emoji: "\u{1F3E0}", label: "Seguridad en el hogar" },
+        { key: "te_cuido",     emoji: "\u{1F985}", label: "Cuidar a alguien a distancia" },
       ],
     },
     {
@@ -690,6 +699,10 @@ function EvidenciasScreen({ onBack }) {
 
 // ═══════════════════════════════════════════════
 // PASTILLERO VIRTUAL
+// (Componente conservado — no se elimina código,
+//  solo se oculta el módulo Adulto Mayor del panel.
+//  Si en el futuro reactivás el módulo, el Pastillero
+//  ya está listo para usar.)
 // ═══════════════════════════════════════════════
 function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
   const [meds, setMeds] = useState([]);
@@ -1349,17 +1362,22 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
   );
 }
 
-// ─── MÓDULOS (Renombrados v17) ────────────────
+// ─── MÓDULOS (v18 — Limpieza UI) ──────────────
+// CAMBIOS v18:
+// - "Hogar Seguro" (mi_nido) y "Adulto Mayor Seguro" (los_protejo) COMENTADOS
+// - Sacado "Grabar video silencioso" de Violencia de Género y Trabajo Seguro
+// - Sacado "Escribir" de Adolescente Seguro
+// - Fusionados "Entro a la casa de..." y "Me reúno con..." → "Estoy en..."
 const MODULES = [
   { key: "mi_escudo", emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género", desc: "Violencia de género — Alerta silenciosa, ubicación y red de apoyo.",
     color: "from-fuchsia-500 to-rose-500", border: "border-fuchsia-500/20", accentBg: "bg-fuchsia-500/10", accentBorder: "border-fuchsia-500/30", accentText: "text-fuchsia-300",
     actions: [
       { key: "panico", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "ALERTA — Botón de pánico activado. Necesito ayuda urgente." },
       { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación audio silenciosa → nube.", type: "record_audio" },
-      { key: "grabar_video", icon: "\u{1F3A5}", name: "Grabar video silencioso", desc: "Grabación video silenciosa → nube.", type: "record_video" },
+      // ❌ v18: Sacado "Grabar video silencioso"
       { key: "evidencias", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver todas las grabaciones guardadas.", type: "evidencias" },
-      { key: "entro", icon: "\u{1F3D8}\u{FE0F}", name: "Entro a la casa de...", desc: "Avisa al contacto + ubicación.", type: "alert_contacts", message: "Entro a la casa de [completar]." },
-      { key: "reuno", icon: "\u{1F465}", name: "Me reúno con...", desc: "Avisa al contacto + ubicación.", type: "alert_contacts", message: "Me reúno con [completar]." },
+      // 🔀 v18: Fusionados "Entro a la casa de..." + "Me reúno con..." → "Estoy en..."
+      { key: "estoy_en", icon: "\u{1F4CD}", name: "Estoy en...", desc: "Avisa dónde estás + ubicación GPS.", type: "alert_contacts", message: "Estoy en [completar]." },
       { key: "checkin", icon: "\u23F1\u{FE0F}", name: "Ingreso a lugar desconocido", desc: "Timer + PIN: si no cancelás, se alerta.", type: "checkin", titulo: "Lugar desconocido — Violencia de Género" },
       { key: "share", icon: "\u{1F4CD}", name: "Enviar ubicación en tiempo real", desc: "Comparte GPS en vivo con contacto.", type: "alert_contacts", message: "Compartiendo mi ubicación en vivo." },
       { key: "uber", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber con destino.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
@@ -1373,12 +1391,21 @@ const MODULES = [
       { key: "cole", icon: "\u{1F3EB}", name: "Buscame por el cole", desc: "Pide al padre que lo busque.", type: "alert_contacts", message: "URGENTE — Necesito que me busquen por el colegio." },
       { key: "voy_a", icon: "\u{1F3E0}", name: "Voy a lo de...", desc: "Avisa a dónde va + nombre.", type: "alert_contacts", message: "Voy a lo de [completar]." },
       { key: "maps", icon: "\u{1F3E1}", name: "Llegar a casa", desc: "Activa GPS hasta llegar a casa.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
-      { key: "escribir", icon: "\u270F\u{FE0F}", name: "Escribir", desc: "Chat directo con el padre.", type: "escribir" },
+      // ❌ v18: Sacado "Escribir" (redundante con WhatsApp normal)
       { key: "evidencias", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
       { key: "share", icon: "\u{1F4CD}", name: "Enviar ubicación", desc: "Comparte ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
       { key: "uber", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
       { key: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono taxi.", type: "taxi" },
     ]},
+
+  /* ═══════════════════════════════════════════════════════════
+     ❌ v18: ADULTO MAYOR SEGURO — COMENTADO (NO BORRADO)
+     Motivo: Decisión estratégica — foco en Violencia de Género,
+     Adolescente, Trabajo Seguro y Te Cuido a Distancia.
+     Este módulo se reservará para una futura app independiente.
+     Para reactivarlo: descomentar el bloque de abajo.
+  ═══════════════════════════════════════════════════════════ */
+  /*
   { key: "los_protejo", emoji: "\u{1FAF6}", title: "Adulto Mayor Seguro", desc: "Adulto mayor seguro — Medicamentos, caídas y asistencia.",
     color: "from-slate-300 to-gray-400", border: "border-gray-400/20", accentBg: "bg-gray-400/10", accentBorder: "border-gray-400/30", accentText: "text-gray-300",
     actions: [
@@ -1389,6 +1416,16 @@ const MODULES = [
       { key: "ambulancia", icon: "\u{1F691}", name: "Llamar ambulancia", desc: "Llama al número configurado (SAME, 107, prepaga).", type: "ambulancia" },
       { key: "pastillero", icon: "\u{1F48A}", name: "Pastillero Virtual", desc: "Recordatorios de medicación.", type: "pastillero" },
     ]},
+  */
+
+  /* ═══════════════════════════════════════════════════════════
+     ❌ v18: HOGAR SEGURO — COMENTADO (NO BORRADO)
+     Motivo: Decisión estratégica — foco en Violencia de Género,
+     Adolescente, Trabajo Seguro y Te Cuido a Distancia.
+     Este módulo se reservará para una futura app independiente.
+     Para reactivarlo: descomentar el bloque de abajo.
+  ═══════════════════════════════════════════════════════════ */
+  /*
   { key: "mi_nido", emoji: "\u{1F3E0}", title: "Hogar Seguro", desc: "Hogar seguro — Intrusos, accidentes y emergencias.",
     color: "from-violet-500 to-purple-500", border: "border-violet-500/20", accentBg: "bg-violet-500/10", accentBorder: "border-violet-500/30", accentText: "text-violet-300",
     actions: [
@@ -1399,6 +1436,8 @@ const MODULES = [
       { key: "evidencias", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver grabaciones.", type: "evidencias" },
       { key: "share", icon: "\u{1F4CD}", name: "Enviar ubicación", desc: "Comparte ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
     ]},
+  */
+
   { key: "turno_seguro", emoji: "\u{1F303}", title: "Trabajo Seguro", desc: "Trabajo de riesgo — Protección en áreas peligrosas.",
     color: "from-slate-400 to-zinc-500", border: "border-[rgba(224,224,224,0.25)]", accentBg: "bg-[rgba(224,224,224,0.1)]", accentBorder: "border-[rgba(224,224,224,0.3)]", accentText: "text-[#E0E0E0]",
     actions: [
@@ -1406,7 +1445,7 @@ const MODULES = [
       { key: "sospechoso_lugar", icon: "\u26A0\u{FE0F}", name: "Entro a lugar sospechoso", desc: "Elige contactos + activa timer.", type: "checkin", titulo: "Lugar sospechoso — Trabajo Seguro" },
       { key: "desconocido", icon: "\u{1F6B6}", name: "Salgo con desconocido", desc: "Avisa a contactos que elija.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
       { key: "grabar", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación silenciosa → nube.", type: "record_audio" },
-      { key: "grabar_video", icon: "\u{1F3A5}", name: "Grabar video silencioso", desc: "Grabación silenciosa → nube.", type: "record_video" },
+      // ❌ v18: Sacado "Grabar video silencioso"
       { key: "evidencias", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
       { key: "share", icon: "\u{1F4CD}", name: "Enviar ubicación en tiempo real", desc: "GPS en vivo a contactos.", type: "alert_contacts", message: "Compartiendo mi ubicación en vivo." },
       { key: "uber", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
@@ -1665,13 +1704,22 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
   if (activeScreen === "pastillero") return <PastilleroScreen onBack={() => setActiveScreen("home")} userPlan={userPlan} contactos={contactos} />;
   if (activeScreen === "evidencias") return <EvidenciasScreen onBack={() => setActiveScreen("home")} />;
 
+  // ─── QUICK CARDS (v18 — Limpieza UI) ──────────
+  // CAMBIOS v18:
+  // - "Hogar Seguro" (mi_nido) y "Adulto Mayor Seguro" (los_protejo) COMENTADOS
+  // - Renombrado "Te Cuido" → "Te Cuido a Distancia"
   const quickCards = [
     { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género",    text: "Violencia de género — Alerta silenciosa, ubicación y red de apoyo." },
     { key: "los_cuido",   emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro",   text: "Adolescente seguro — Salidas, regresos y anti-bullying." },
+    /* ❌ v18: Adulto Mayor comentado
     { key: "los_protejo", emoji: "\u{1FAF6}", title: "Adulto Mayor Seguro", text: "Adulto mayor — Medicamentos, caídas y asistencia." },
+    */
     { key: "turno_seguro",emoji: "\u{1F303}", title: "Trabajo Seguro", text: "Trabajo de riesgo — Protección nocturna y áreas peligrosas." },
+    /* ❌ v18: Hogar Seguro comentado
     { key: "mi_nido",     emoji: "\u{1F3E0}", title: "Hogar Seguro",     text: "Hogar seguro — Intrusos, accidentes y emergencias." },
-    { key: "te_cuido", emoji: "\u{1F985}", title: "Te Cuido", text: "Cuidado remoto — Próximamente.", coming: true },
+    */
+    // 🔄 v18: Renombrado "Te Cuido" → "Te Cuido a Distancia"
+    { key: "te_cuido", emoji: "\u{1F985}", title: "Te Cuido a Distancia", text: "Cuidado remoto — Próximamente.", coming: true },
     { key: "contactos",   emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} configurados` },
   ];
 
@@ -1794,7 +1842,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
                 <span>·</span>
                 <button onClick={() => alert("Traza 360 no reemplaza a los servicios de emergencia oficiales (911, 107, policía).\n\nEn caso de emergencia real, llamá primero al número de emergencias de tu país.")} className="hover:text-white underline">Términos</button>
                 <span>·</span>
-                <span>v17.2</span>
+                <span>v18.0</span>
               </div>
             </div>
           </>
