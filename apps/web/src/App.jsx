@@ -2,28 +2,22 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { signUp, signIn, signOut, getCurrentUser, supabase, getContactos, addContacto, deleteContacto, getMedicamentos, addMedicamento, deleteMedicamento, getTomasHoy, getTomasSemana, marcarTomado, crearTomasDelDia } from "./lib/supabase";
 
 /* ═══════════════════════════════════════════════════════════════
-   TRAZA 360 — App completa v18.0
-   Versión: 18.0 · Mayo 2026
+   TRAZA 360 — App completa v19.11
+   Versión: 19.11 · Mayo 2026
    ═══════════════════════════════════════════════════════════════
-   CAMBIOS v18.0 (LIMPIEZA UI):
-   1. Hogar Seguro y Adulto Mayor COMENTADOS (no borrados, para futuras apps)
-   2. Sacado "Grabar video silencioso" de Violencia de Género
-   3. Sacado "Grabar video silencioso" de Noche Segura
-   4. Sacado "Escribir" de Adolescente Seguro
-   5. Fusionado "Entro a la casa de..." + "Me reúno con..." → "Estoy en..."
-   6. Renombrado "Te Cuido" → "Te Cuido a Distancia"
-
-   CAMBIOS v17.2 (anterior):
-   1. Rediseño visual ULTRA PREMIUM — Plateado/blanco sobre negro
-   2. Paleta: Silver (#E0E0E0), White, Deep Black (#060608)
-   3. Estilo inspirado en JupiterStar: glassmorphism, glow sutil
-   4. Violencia: grabar video, ubicación en tiempo real, emojis corregidos
-   5. Adolescente: AYUDA, Voy a lo de..., Llegar a casa GPS, taxi
-   6. Adulto Mayor: simplificado a 6 botones + Pastillero, ambulancia
-   7. Hogar: simplificado a 6 botones con grabar video
-   8. Trabajo: 9 botones, grabar video, taxi, ubicación en tiempo real
-   9. Panel post-alerta: 3 botones contacto (Salgo, Recibí, Ubicación)
-   10. Módulos renombrados (Violencia de Género, Adolescente Seguro, etc.)
+   CAMBIOS v19.11:
+   1. Modo Testigo (audio + fotos + nube al activar pánico)
+   2. Ruta Segura en Vivo (link público /live/:token)
+   3. Geocercas Emocionales (zonas seguras con alertas horarias)
+   4. Panel público /live/:token para contactos
+   5. Hero landing: "Si algo pasa, alguien ya sabe."
+   6. Privacidad + T&C reales, checkbox obligatorio al registrar
+   7. Borrar cuenta funcional, recuperar contraseña
+   8. Tour Demo onboarding (5 pasos)
+   9. Modal GPS explicativo
+   10. PIN de acceso rápido
+   11. Email soporte centralizado (SUPPORT_EMAIL)
+   12. Sobre nosotros, disclaimer visible, responsable legal
    ═══════════════════════════════════════════════════════════════ */
 
 // ─── CONFIG ─────────────────────────────────
