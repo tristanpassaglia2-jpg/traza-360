@@ -287,17 +287,156 @@ function WhatsAppFloatingButton() {
 }
 
 // ─── SISTEMA DE ESTADO (Semáforo) ────────────
+// ─── SYSTEM STATUS v19.8 — Panel de estado detallado ────────────
+// Muestra GPS, WhatsApp, contactos y qué hacer si algo falla
 function SystemStatusBadge({ status }) {
   const configs = {
-    ok:      { color: "#22c55e", label: "Sistema activo",    dot: "bg-green-400",  bg: "rgba(34,197,94,0.1)",  border: "rgba(34,197,94,0.3)" },
-    warning: { color: "#f59e0b", label: "Verificando...",    dot: "bg-yellow-400", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.3)" },
-    error:   { color: "#ef4444", label: "WhatsApp inactivo", dot: "bg-red-400",    bg: "rgba(239,68,68,0.1)",  border: "rgba(239,68,68,0.3)" },
+    ok:      { color: "#22c55e", label: "Sistema listo",     dot: "bg-green-400",  bg: "rgba(34,197,94,0.1)",  border: "rgba(34,197,94,0.3)" },
+    warning: { color: "#f59e0b", label: "Acción necesaria",  dot: "bg-yellow-400", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.3)" },
+    error:   { color: "#ef4444", label: "Sin conexión",      dot: "bg-red-400",    bg: "rgba(239,68,68,0.1)",  border: "rgba(239,68,68,0.3)" },
   };
   const cfg = configs[status] || configs.warning;
   return (
     <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}>
-      <div className={`h-2 w-2 rounded-full ${cfg.dot} animate-pulse`} />
+      <div className={`h-2 w-2 rounded-full ${cfg.dot} animate-pulse shrink-0`} />
       <span className="text-xs font-semibold" style={{ color: cfg.color }}>{cfg.label}</span>
+    </div>
+  );
+}
+
+function SystemStatusPanel({ contactos, onGoToContactos, onClose }) {
+  const [gpsOk, setGpsOk] = useState(null);   // null=checking, true=ok, false=error
+  const [waOk, setWaOk]   = useState(null);
+  const [expanded, setExpanded] = useState(false);
+
+  const cantContactos = contactos?.length || 0;
+  const contactosOk = cantContactos >= 1;
+
+  useEffect(() => {
+    // Chequear GPS
+    if (!navigator.geolocation) { setGpsOk(false); return; }
+    navigator.geolocation.getCurrentPosition(
+      () => setGpsOk(true),
+      () => setGpsOk(false),
+      { timeout: 5000, maximumAge: 60000 }
+    );
+    // Chequear WhatsApp API
+    fetch("/api/send-whatsapp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to: "test", message: "ping", test: true })
+    })
+      .then(r => r.json())
+      .then(d => setWaOk(d.active === true))
+      .catch(() => setWaOk(false));
+  }, []);
+
+  const todoOk = gpsOk === true && waOk === true && contactosOk;
+  const hayProblema = gpsOk === false || waOk === false || !contactosOk;
+
+  function Indicador({ ok, label, detalleFalla, accion, onAccion }) {
+    const checking = ok === null;
+    return (
+      <div className="flex items-start gap-3 py-2.5" style={{ borderBottom: `1px solid ${BRAND.border}` }}>
+        <div className="shrink-0 mt-0.5">
+          {checking
+            ? <div className="h-4 w-4 rounded-full border-2 border-dashed animate-spin" style={{ borderColor: BRAND.textDim }} />
+            : ok
+              ? <div className="h-4 w-4 rounded-full flex items-center justify-center" style={{ background: "rgba(34,197,94,0.15)" }}><span className="text-[10px]" style={{ color: "#22c55e" }}>✓</span></div>
+              : <div className="h-4 w-4 rounded-full flex items-center justify-center" style={{ background: "rgba(239,68,68,0.15)" }}><span className="text-[10px]" style={{ color: "#ef4444" }}>✗</span></div>
+          }
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold" style={{ color: ok === null ? BRAND.textDim : ok ? BRAND.white : "#fca5a5" }}>
+              {label}
+            </p>
+            {!ok && !checking && accion && (
+              <button onClick={onAccion} className="text-[11px] font-bold ml-2 shrink-0 underline" style={{ color: BRAND.gold }}>
+                {accion}
+              </button>
+            )}
+          </div>
+          {!ok && !checking && detalleFalla && (
+            <p className="text-[11px] mt-0.5 leading-relaxed" style={{ color: BRAND.textDim }}>{detalleFalla}</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: "linear-gradient(145deg, #0d0d0d, #000000)", border: `1px solid ${hayProblema ? "rgba(239,68,68,0.4)" : "rgba(34,197,94,0.3)"}` }}>
+      {/* Header — siempre visible */}
+      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <div className={`h-2.5 w-2.5 rounded-full shrink-0 ${hayProblema ? "bg-red-500" : todoOk ? "bg-green-400" : "bg-yellow-400"} animate-pulse`} />
+          <span className="text-xs font-bold" style={{ color: hayProblema ? "#fca5a5" : todoOk ? "#22c55e" : "#f59e0b" }}>
+            {hayProblema ? "Acción necesaria" : todoOk ? "Sistema listo para emergencias" : "Verificando sistema..."}
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Íconos de estado rápido */}
+          <div className="flex gap-1.5">
+            {[
+              { label: "WA", ok: waOk },
+              { label: "GPS", ok: gpsOk },
+              { label: `${cantContactos}c`, ok: contactosOk },
+            ].map((item, i) => (
+              <span key={i} className="text-[10px] font-bold rounded-md px-1.5 py-0.5"
+                style={{
+                  background: item.ok === null ? "rgba(255,255,255,0.05)" : item.ok ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)",
+                  color: item.ok === null ? BRAND.textDim : item.ok ? "#22c55e" : "#ef4444",
+                  border: `1px solid ${item.ok === null ? BRAND.border : item.ok ? "rgba(34,197,94,0.25)" : "rgba(239,68,68,0.25)"}`,
+                }}>
+                {item.label}
+              </span>
+            ))}
+          </div>
+          <span className="text-[11px]" style={{ color: BRAND.textDim }}>{expanded ? "▲" : "▼"}</span>
+        </div>
+      </button>
+
+      {/* Detalle expandible */}
+      {expanded && (
+        <div className="px-4 pb-4">
+          <Indicador
+            ok={waOk}
+            label="WhatsApp Business"
+            detalleFalla="El servicio de mensajes puede estar caído. Los mensajes quedarán en cola hasta que se restablezca."
+            accion={null}
+          />
+          <Indicador
+            ok={gpsOk}
+            label="Ubicación GPS"
+            detalleFalla="Tu dispositivo bloqueó la ubicación. Sin GPS, tus contactos recibirán alertas sin ubicación."
+            accion="Cómo activarlo"
+            onAccion={() => alert("Para activar el GPS:\n\n📱 Android: Configuración → Privacidad → Permisos de ubicación → Traza 360 → Permitir\n\n🍎 iPhone: Configuración → Safari → Ubicación → Permitir\n\nDespués de activarlo, recargá la app.")}
+          />
+          <Indicador
+            ok={contactosOk}
+            label={contactosOk ? `${cantContactos} contacto${cantContactos > 1 ? "s" : ""} activo${cantContactos > 1 ? "s" : ""}` : "Sin contactos de confianza"}
+            detalleFalla="Sin al menos 1 contacto, las alertas no llegan a nadie. Agregá un contacto ahora."
+            accion="Agregar contacto"
+            onAccion={onGoToContactos}
+          />
+
+          {/* Qué pasa si falla la app */}
+          <div className="mt-3 rounded-xl p-3" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
+            <p className="text-[11px] font-bold mb-2" style={{ color: BRAND.gold }}>⚡ Si la app falla en una emergencia</p>
+            <div className="space-y-1.5 text-[11px]" style={{ color: BRAND.textMute }}>
+              <p><strong style={{ color: BRAND.white }}>Sin internet:</strong> llamá directo al 911 desde Teléfono.</p>
+              <p><strong style={{ color: BRAND.white }}>Sin GPS:</strong> la alerta se manda igual, sin ubicación.</p>
+              <p><strong style={{ color: BRAND.white }}>WhatsApp caído:</strong> el mensaje se envía cuando se restablece.</p>
+              <p><strong style={{ color: BRAND.white }}>App colgada:</strong> reintentá, o mandá un mensaje manual a tu contacto.</p>
+            </div>
+          </div>
+
+          <button onClick={() => setExpanded(false)} className="w-full text-center text-[11px] mt-3" style={{ color: BRAND.textDim }}>
+            Cerrar ▲
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -520,6 +659,323 @@ async function getEvidenciaUrl(path) {
 async function eliminarEvidencia(path) {
   const { error } = await supabase.storage.from("evidencias").remove([path]);
   return !error;
+}
+
+// ─── MODO TESTIGO (v19.11) ──────────────────────────────────
+// Audio + fotos cámara frontal + trasera + subida inmediata a nube
+// Inspirado en bSafe. Legal: el usuario lo activa conscientemente.
+
+async function capturarFoto(facingMode = "environment") {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    const video = document.createElement("video");
+    video.srcObject = stream;
+    video.setAttribute("playsinline", true);
+    await new Promise(r => { video.onloadedmetadata = r; });
+    await video.play();
+    await new Promise(r => setTimeout(r, 300)); // pequeña espera para que el sensor se ajuste
+    const canvas = document.createElement("canvas");
+    canvas.width  = video.videoWidth  || 1280;
+    canvas.height = video.videoHeight || 720;
+    canvas.getContext("2d").drawImage(video, 0, 0);
+    stream.getTracks().forEach(t => t.stop());
+    return new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.82));
+  } catch(e) {
+    console.warn(`Cámara ${facingMode} no disponible:`, e.message);
+    return null;
+  }
+}
+
+async function subirFotoEvidencia(blob, etiqueta = "foto") {
+  if (!blob) return null;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const ts   = new Date().toISOString().replace(/[:.]/g, "-");
+    const path = `${user.id}/${etiqueta}_${ts}.jpg`;
+    const { data, error } = await supabase.storage
+      .from("evidencias")
+      .upload(path, blob, { contentType: "image/jpeg", upsert: false });
+    if (error) throw error;
+    return { path: data.path, cloud: true };
+  } catch(e) {
+    console.warn("Error subiendo foto:", e.message);
+    return null;
+  }
+}
+
+// ── Componente principal ─────────────────────────────────────
+function ModoTestigoModal({ onClose, contactos }) {
+  const [fase,        setFase]        = useState("confirmar"); // confirmar | activo | detenido
+  const [tiempo,      setTiempo]      = useState(0);
+  const [eventos,     setEventos]     = useState([]);   // log de acciones
+  const [fotosCount,  setFotosCount]  = useState(0);
+  const [audioOk,     setAudioOk]     = useState(false);
+  const [error,       setError]       = useState("");
+
+  const timerRef    = useRef(null);
+  const fotoRef     = useRef(null);
+  const streamRef   = useRef(null); // track del audio para parar
+
+  // Limpiar al desmontar
+  useEffect(() => () => {
+    clearInterval(timerRef.current);
+    clearInterval(fotoRef.current);
+    try { detenerGrabacion(); } catch(e) {}
+    streamRef.current?.getTracks?.().forEach(t => t.stop());
+  }, []);
+
+  function agregarEvento(icono, texto) {
+    const hora = new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    setEventos(prev => [{ id: Date.now(), icono, texto, hora }, ...prev.slice(0, 29)]);
+  }
+
+  async function activar() {
+    setFase("activo");
+    setTiempo(0);
+    setFotosCount(0);
+    setEventos([]);
+    setError("");
+
+    // ── 1. Iniciar audio ──────────────────────────────────────
+    const audioResult = await iniciarGrabacion();
+    if (audioResult.success) {
+      setAudioOk(true);
+      streamRef.current = audioResult.stream;
+      agregarEvento("🎙️", "Audio iniciado — grabando entorno");
+    } else {
+      agregarEvento("⚠️", "Micrófono no disponible");
+    }
+
+    // ── 2. Fotos inmediatas (frontal + trasera) ───────────────
+    capturarYSubir();
+
+    // ── 3. Timer de tiempo transcurrido ──────────────────────
+    timerRef.current = setInterval(() => setTiempo(t => t + 1), 1000);
+
+    // ── 4. Foto cada 30 segundos ──────────────────────────────
+    fotoRef.current = setInterval(() => capturarYSubir(), 30000);
+  }
+
+  async function capturarYSubir() {
+    // Frontal
+    agregarEvento("📸", "Capturando cámara frontal...");
+    const fotoFrontal  = await capturarFoto("user");
+    if (fotoFrontal) {
+      const r = await subirFotoEvidencia(fotoFrontal, "frontal");
+      agregarEvento("☁️", r ? "Foto frontal → nube ✓" : "Foto frontal → guardada local");
+      setFotosCount(n => n + 1);
+    } else {
+      agregarEvento("⚠️", "Cámara frontal no disponible");
+    }
+
+    // Trasera
+    agregarEvento("📸", "Capturando cámara trasera...");
+    const fotoTrasera = await capturarFoto("environment");
+    if (fotoTrasera) {
+      const r = await subirFotoEvidencia(fotoTrasera, "trasera");
+      agregarEvento("☁️", r ? "Foto trasera → nube ✓" : "Foto trasera → guardada local");
+      setFotosCount(n => n + 1);
+    } else {
+      agregarEvento("⚠️", "Cámara trasera no disponible");
+    }
+  }
+
+  async function detener() {
+    clearInterval(timerRef.current);
+    clearInterval(fotoRef.current);
+
+    // Detener y guardar audio
+    if (audioOk) {
+      agregarEvento("🎙️", "Guardando audio...");
+      const blob = await detenerGrabacion();
+      if (blob) {
+        const r = await guardarEvidencia(blob, "audio");
+        agregarEvento("☁️", r.cloud ? "Audio guardado en nube ✓" : "Audio guardado localmente");
+      }
+    }
+
+    setFase("detenido");
+    agregarEvento("✅", "Modo Testigo detenido. Evidencias guardadas.");
+  }
+
+  const fmt = s => `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/95 backdrop-blur-sm"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div className="w-full max-w-md rounded-t-3xl overflow-hidden"
+        style={{ background: "#000", border: `2px solid ${fase === "activo" ? BRAND.red : BRAND.borderStrong}`, maxHeight: "92vh", overflowY: "auto" }}>
+
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="h-1 w-12 rounded-full" style={{ background: BRAND.borderStrong }} />
+        </div>
+
+        {/* ── CONFIRMACIÓN ── */}
+        {fase === "confirmar" && (
+          <div className="px-5 pb-7 pt-3">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-lg font-bold" style={{ color: BRAND.white }}>Modo Testigo</h2>
+                <p className="text-xs mt-0.5" style={{ color: BRAND.textMute }}>Audio + fotos + nube automática</p>
+              </div>
+              <button onClick={onClose} style={{ color: BRAND.textDim, fontSize: 22 }}>✕</button>
+            </div>
+
+            {/* Qué va a pasar */}
+            <div className="rounded-2xl p-4 mb-5 space-y-3"
+              style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
+              <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: BRAND.gold }}>
+                Al activar, simultáneamente:
+              </p>
+              {[
+                ["🎙️", "Audio del entorno", "Grabación continua hasta que detengas"],
+                ["📸", "Foto cámara frontal", "Inmediata + cada 30 segundos"],
+                ["📸", "Foto cámara trasera", "Inmediata + cada 30 segundos"],
+                ["☁️", "Subida automática", "Todo a tu nube en tiempo real"],
+              ].map(([ic, tit, sub], i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <span className="text-xl shrink-0">{ic}</span>
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: BRAND.white }}>{tit}</p>
+                    <p className="text-[11px]" style={{ color: BRAND.textMute }}>{sub}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Aviso legal */}
+            <div className="rounded-xl p-3 mb-5"
+              style={{ background: "rgba(220,38,38,0.05)", border: `1px solid ${BRAND.red}30` }}>
+              <p className="text-[11px] leading-relaxed" style={{ color: BRAND.textMute }}>
+                ⚖️ <strong style={{ color: BRAND.white }}>Uso responsable:</strong> grabás tu propio entorno. No uses esto para grabar a personas sin su consentimiento.
+              </p>
+            </div>
+
+            {/* El navegador va a pedir permisos */}
+            <div className="rounded-xl p-3 mb-5"
+              style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BRAND.border}` }}>
+              <p className="text-[11px]" style={{ color: BRAND.textMute }}>
+                💡 El navegador te va a pedir permiso para <strong style={{ color: BRAND.white }}>micrófono y cámara</strong>. Tocá "Permitir" en ambos.
+              </p>
+            </div>
+
+            <button onClick={activar}
+              className="w-full rounded-2xl py-4 font-bold text-base"
+              style={{ background: `linear-gradient(135deg, ${BRAND.red}, #b91c1c)`, color: BRAND.white, boxShadow: "0 8px 30px rgba(220,38,38,0.35)" }}>
+              🔴 Activar Modo Testigo
+            </button>
+            <button onClick={onClose}
+              className="w-full py-3 text-xs mt-2"
+              style={{ color: BRAND.textDim }}>
+              Cancelar
+            </button>
+          </div>
+        )}
+
+        {/* ── ACTIVO ── */}
+        {fase === "activo" && (
+          <div className="px-5 pb-7 pt-3">
+            {/* Header rojo pulsando */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-sm font-bold" style={{ color: "#fca5a5" }}>MODO TESTIGO ACTIVO</span>
+              </div>
+              <span className="font-mono text-lg font-bold" style={{ color: BRAND.white }}>{fmt(tiempo)}</span>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {[
+                { icon: "🎙️", label: "Audio",  val: audioOk ? "Grabando" : "No disp.", ok: audioOk },
+                { icon: "📸", label: "Fotos",  val: `${fotosCount} guardadas`, ok: fotosCount > 0 },
+                { icon: "☁️", label: "Nube",   val: "Activa", ok: true },
+              ].map((s, i) => (
+                <div key={i} className="rounded-xl p-3 text-center"
+                  style={{ background: s.ok ? "rgba(34,197,94,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${s.ok ? "rgba(34,197,94,0.25)" : BRAND.border}` }}>
+                  <div className="text-xl mb-1">{s.icon}</div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: s.ok ? "#22c55e" : BRAND.textMute }}>{s.label}</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: BRAND.textDim }}>{s.val}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Log de eventos */}
+            <div className="rounded-2xl overflow-hidden mb-4"
+              style={{ border: `1px solid ${BRAND.border}`, maxHeight: 220, overflowY: "auto" }}>
+              <div className="px-3 py-2 sticky top-0"
+                style={{ background: "rgba(0,0,0,0.9)", borderBottom: `1px solid ${BRAND.border}` }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: BRAND.gold }}>
+                  Registro en tiempo real
+                </p>
+              </div>
+              {eventos.length === 0 ? (
+                <div className="px-4 py-4 text-center">
+                  <p className="text-xs" style={{ color: BRAND.textMute }}>Iniciando...</p>
+                </div>
+              ) : eventos.map(ev => (
+                <div key={ev.id} className="flex items-start gap-2 px-3 py-2"
+                  style={{ borderBottom: `1px solid ${BRAND.border}` }}>
+                  <span className="text-sm shrink-0">{ev.icono}</span>
+                  <p className="flex-1 text-[11px] leading-relaxed" style={{ color: BRAND.textMute }}>{ev.texto}</p>
+                  <span className="text-[10px] shrink-0 font-mono" style={{ color: BRAND.textDim }}>{ev.hora}</span>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={detener}
+              className="w-full rounded-2xl py-4 font-bold text-sm"
+              style={{ background: "rgba(34,197,94,0.1)", border: "2px solid rgba(34,197,94,0.4)", color: "#22c55e" }}>
+              ✅ Detener y guardar todo
+            </button>
+          </div>
+        )}
+
+        {/* ── DETENIDO ── */}
+        {fase === "detenido" && (
+          <div className="px-5 pb-8 pt-4">
+            <div className="text-center mb-5">
+              <div className="text-5xl mb-3">✅</div>
+              <h2 className="text-xl font-bold mb-1" style={{ color: "#22c55e" }}>Evidencias guardadas</h2>
+              <p className="text-xs" style={{ color: BRAND.textMute }}>
+                {fotosCount} foto{fotosCount !== 1 ? "s" : ""} · {fmt(tiempo)} de audio · todo en tu nube
+              </p>
+            </div>
+
+            {/* Resumen log */}
+            <div className="rounded-2xl overflow-hidden mb-5"
+              style={{ border: `1px solid ${BRAND.border}`, maxHeight: 180, overflowY: "auto" }}>
+              {eventos.map(ev => (
+                <div key={ev.id} className="flex items-start gap-2 px-3 py-2"
+                  style={{ borderBottom: `1px solid ${BRAND.border}` }}>
+                  <span className="text-sm shrink-0">{ev.icono}</span>
+                  <p className="flex-1 text-[11px]" style={{ color: BRAND.textMute }}>{ev.texto}</p>
+                  <span className="text-[10px] shrink-0 font-mono" style={{ color: BRAND.textDim }}>{ev.hora}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <button onClick={() => { onClose(); /* navegar a evidencias */ }}
+                className="w-full rounded-2xl py-3.5 font-bold text-sm"
+                style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+                Ver mis evidencias
+              </button>
+              <button onClick={onClose}
+                className="w-full rounded-2xl py-3 text-xs"
+                style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
+                Volver al panel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ─── MODAL GRABACION ────────────────────────
@@ -1606,6 +2062,7 @@ const MODULES = [
   { key: "mi_escudo", iconName: "shield", emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género", desc: "Alerta silenciosa, ubicación y red de apoyo.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
+      { key: "testigo",  iconName: "mic", icon: "🔴", name: "Modo Testigo", desc: "Audio + fotos + nube simultáneos al activar.", type: "modo_testigo" },
       { key: "panico", iconName: "panic", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "ALERTA — Botón de pánico activado. Necesito ayuda urgente." },
       { key: "grabar", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación audio silenciosa → nube.", type: "record_audio" },
       { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver todas las grabaciones guardadas.", type: "evidencias" },
@@ -1618,6 +2075,7 @@ const MODULES = [
   { key: "los_cuido", iconName: "teen", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro", desc: "Salidas, regresos y anti-bullying.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
+      { key: "geocercas", iconName: "pin", icon: "📍", name: "Geocercas Emocionales", desc: "Zonas seguras con alertas automáticas. 'Salió del colegio a las 17:23.'", type: "geocercas" },
       { key: "ayuda", iconName: "panic", icon: "\u{1F6A8}", name: "AYUDA", desc: "Alerta máxima urgencia al padre.", type: "alert_contacts", message: "AYUDA — Necesito ayuda urgente." },
       { key: "bullying", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Bullying - Grabar evidencia", desc: "Grabación silenciosa real.", type: "record_audio" },
       { key: "cole", iconName: "school", icon: "\u{1F3EB}", name: "Buscame por el cole", desc: "Pide al padre que lo busque.", type: "alert_contacts", message: "URGENTE — Necesito que me busquen por el colegio." },
@@ -1675,6 +2133,8 @@ const MODULES = [
   { key: "turno_seguro", iconName: "night", emoji: "\u{1F303}", title: "Noche Segura", desc: "Para jóvenes que salen de noche, acompañantes, repartidores o cualquier situación de riesgo donde necesites apoyo de amigos o conocidos.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
+      { key: "testigo",     iconName: "mic",   icon: "🔴", name: "Modo Testigo", desc: "Audio + fotos + nube simultáneos al activar.", type: "modo_testigo" },
+      { key: "ruta_segura", iconName: "eye",   icon: "\u{1F4CD}", name: "Ruta Segura en Vivo", desc: "Link de seguimiento en tiempo real. Si no cancelás, alerta automática.", type: "ruta_segura" },
       { key: "panico", iconName: "panic", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "SOS — Necesito ayuda urgente." },
       { key: "sospechoso_lugar", iconName: "alert", icon: "\u26A0\u{FE0F}", name: "Entro a lugar sospechoso", desc: "Guarda dirección + timer. Si no confirmás, alerta automática.", type: "checkin", titulo: "Lugar sospechoso — Noche Segura" },
       { key: "desconocido", iconName: "person", icon: "\u{1F6B6}", name: "Salgo con desconocido/a", desc: "Avisa contactos + nombre + ubicación.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
@@ -1694,11 +2154,17 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [currentMessage, setCurrentMessage] = useState("");
   const [showGrabacion, setShowGrabacion] = useState(false);
-  const [showCheckIn, setShowCheckIn] = useState(false);
-  const [checkInTitulo, setCheckInTitulo] = useState("");
+  const [showCheckIn,    setShowCheckIn]    = useState(false);
+  const [checkInTitulo,  setCheckInTitulo]  = useState("");
+  const [showRutaSegura,  setShowRutaSegura]  = useState(false);
+  const [showGeocercas,   setShowGeocercas]   = useState(false);
+  const [showModoTestigo, setShowModoTestigo] = useState(false);
 
   function handleAction(action) {
     switch (action.type) {
+      case "ruta_segura":  setShowRutaSegura(true);  break;
+      case "geocercas":    setShowGeocercas(true);   break;
+      case "modo_testigo": setShowModoTestigo(true); break;
       case "alert_contacts":
         if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza primero."); return; }
         setCurrentMessage(action.message); setSelectorOpen(true); return;
@@ -1772,8 +2238,15 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
         )}
       </div>
       {selectorOpen && <SelectorContactoModal contactos={contactos} mensaje={currentMessage} onClose={() => setSelectorOpen(false)} />}
-      {showGrabacion && <GrabacionModal onClose={() => setShowGrabacion(false)} />}
-      {showCheckIn && <CheckInModal contactos={contactos} titulo={checkInTitulo} onClose={() => setShowCheckIn(false)} />}
+      {showGrabacion   && <GrabacionModal onClose={() => setShowGrabacion(false)} />}
+      {showCheckIn     && <CheckInModal contactos={contactos} titulo={checkInTitulo} onClose={() => setShowCheckIn(false)} />}
+      {showRutaSegura  && <RutaSeguraModal onClose={() => setShowRutaSegura(false)} contactos={contactos} authUser={window.__traza360_auth} userProfile={window.__traza360_profile} />}
+      {showModoTestigo && <ModoTestigoModal onClose={() => setShowModoTestigo(false)} contactos={contactos} />}
+      {showGeocercas   && (
+        <div className="fixed inset-0 z-[300] overflow-y-auto" style={{ background: BRAND.blackBg }}>
+          <GeocercasScreen onBack={() => setShowGeocercas(false)} contactos={contactos} authUser={window.__traza360_auth} />
+        </div>
+      )}
     </>
   );
 }
@@ -3568,29 +4041,893 @@ function PinAuthScreen({ onSuccess, onFallback, onLogout }) {
   );
 }
 
+// ═══════════════════════════════════════════════
+// RUTA SEGURA EN VIVO (v19.9) — Timer + GPS + Link público
+// Inspirado en Glympse pero con alerta automática integrada
+// ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// GEOCERCAS EMOCIONALES (v19.10)
+// Inspirado en Life360/Familo pero con contexto horario
+// ═══════════════════════════════════════════════════════════════
+
+// Calcula distancia en metros entre dos coordenadas (Haversine)
+function distanciaMetros(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// Determina si es horario nocturno (23:00 - 07:00)
+function esHorarioNocturno() {
+  const h = new Date().getHours();
+  return h >= 23 || h < 7;
+}
+
+// Genera mensaje emocional según contexto
+function generarMensajeGeocerca({ zona, evento, nombre }) {
+  const hora = new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+  const nocturno = esHorarioNocturno();
+
+  if (evento === "salida") {
+    if (nocturno) return `🔴 ALERTA — ${nombre} salió de "${zona}" a las ${hora} (horario nocturno). Verificá que esté bien.`;
+    return `🟡 ${nombre} salió de "${zona}" a las ${hora}.`;
+  }
+  if (evento === "entrada") {
+    return `🟢 ${nombre} llegó a "${zona}" a las ${hora}.`;
+  }
+  if (evento === "fuera_mucho") {
+    return `⚠️ ${nombre} lleva más de 30 min fuera de "${zona}". Última ubicación conocida.`;
+  }
+  return `📍 Actualización de ${nombre} en zona "${zona}" a las ${hora}.`;
+}
+
+const ZONAS_PRESET = [
+  { key: "casa",     emoji: "🏠", label: "Casa",          radio: 200 },
+  { key: "colegio",  emoji: "🏫", label: "Colegio",       radio: 300 },
+  { key: "club",     emoji: "🏟️", label: "Club / Deporte", radio: 500 },
+  { key: "trabajo",  emoji: "💼", label: "Trabajo",       radio: 300 },
+  { key: "abuelos",  emoji: "👴", label: "Casa abuelos",  radio: 200 },
+  { key: "custom",   emoji: "📍", label: "Personalizada", radio: 250 },
+];
+
+// ── Pantalla principal de Geocercas ─────────────────────────
+function GeocercasScreen({ onBack, contactos, authUser }) {
+  const [geocercas,    setGeocercas]    = useState([]);
+  const [showCrear,    setShowCrear]    = useState(false);
+  const [monitorando,  setMonitorando]  = useState(null); // geocerca activa en monitor
+  const [loading,      setLoading]      = useState(true);
+
+  useEffect(() => { cargarGeocercas(); }, []);
+
+  async function cargarGeocercas() {
+    setLoading(true);
+    try {
+      const { data } = await supabase.from("geocercas")
+        .select("*").eq("user_id", authUser?.id).order("created_at", { ascending: false });
+      setGeocercas(data || []);
+    } catch(e) { console.warn(e); }
+    setLoading(false);
+  }
+
+  async function eliminarGeocerca(id) {
+    if (!window.confirm("¿Eliminar esta geocerca?")) return;
+    await supabase.from("geocercas").delete().eq("id", id);
+    setGeocercas(prev => prev.filter(g => g.id !== id));
+  }
+
+  if (showCrear) return (
+    <CrearGeocercaScreen
+      onBack={() => setShowCrear(false)}
+      onCreada={() => { setShowCrear(false); cargarGeocercas(); }}
+      authUser={authUser}
+      contactos={contactos}
+    />
+  );
+
+  if (monitorando) return (
+    <GeocercaMonitorScreen
+      geocerca={monitorando}
+      onBack={() => setMonitorando(null)}
+      contactos={contactos}
+      authUser={authUser}
+    />
+  );
+
+  return (
+    <div className="min-h-screen px-4 py-6" style={{ background: BRAND.blackBg, color: BRAND.white }}>
+      <div className="max-w-md mx-auto">
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={onBack} className="text-2xl" style={{ color: BRAND.gold }}>←</button>
+          <div>
+            <h1 className="text-xl font-bold" style={{ color: BRAND.white }}>Geocercas Emocionales</h1>
+            <p className="text-xs mt-0.5" style={{ color: BRAND.textMute }}>Zonas de seguridad con alertas con contexto</p>
+          </div>
+        </div>
+
+        {/* Explicación */}
+        <div className="rounded-2xl p-4 mb-5" style={{ background: "rgba(212,175,55,0.06)", border: `1px solid ${BRAND.borderStrong}` }}>
+          <p className="text-xs leading-relaxed" style={{ color: BRAND.textMute }}>
+            Definís zonas seguras (casa, colegio, club). Cuando tu hijo sale o llega, sus contactos reciben un WhatsApp con <strong style={{ color: BRAND.white }}>hora y contexto</strong>. De noche, la alerta es roja automáticamente.
+          </p>
+        </div>
+
+        {/* Lista de geocercas */}
+        {loading ? (
+          <div className="text-center py-10" style={{ color: BRAND.textMute }}>Cargando zonas...</div>
+        ) : geocercas.length === 0 ? (
+          <div className="text-center py-10">
+            <div className="text-5xl mb-3">📍</div>
+            <p className="text-sm font-semibold mb-1" style={{ color: BRAND.white }}>No tenés zonas definidas</p>
+            <p className="text-xs" style={{ color: BRAND.textMute }}>Creá tu primera zona segura abajo.</p>
+          </div>
+        ) : (
+          <div className="space-y-3 mb-5">
+            {geocercas.map(g => {
+              const preset = ZONAS_PRESET.find(z => z.key === g.tipo) || ZONAS_PRESET[5];
+              return (
+                <div key={g.id} className="rounded-2xl p-4" style={{ background: "linear-gradient(145deg,#111,#000)", border: `1px solid ${BRAND.border}` }}>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="text-3xl">{preset.emoji}</div>
+                      <div>
+                        <p className="font-bold text-sm" style={{ color: BRAND.white }}>{g.nombre}</p>
+                        <p className="text-[11px] mt-0.5" style={{ color: BRAND.textMute }}>
+                          Radio: {g.radio}m · {g.lat ? `${g.lat.toFixed(4)}, ${g.lng.toFixed(4)}` : "Sin ubicación"}
+                        </p>
+                        {g.activa && (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+                            <span className="text-[10px] font-bold" style={{ color: "#22c55e" }}>Monitoreando</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button onClick={() => setMonitorando(g)}
+                        className="rounded-xl px-3 py-2 text-xs font-bold"
+                        style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+                        Activar
+                      </button>
+                      <button onClick={() => eliminarGeocerca(g.id)}
+                        className="rounded-xl px-2.5 py-2 text-xs"
+                        style={{ background: "rgba(220,38,38,0.08)", border: `1px solid ${BRAND.red}30`, color: "#fca5a5" }}>
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Último evento */}
+                  {g.ultimo_evento && (
+                    <div className="mt-3 rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BRAND.border}` }}>
+                      <p className="text-[11px]" style={{ color: BRAND.textMute }}>
+                        Último evento: <span style={{ color: BRAND.white }}>{g.ultimo_evento}</span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <button onClick={() => setShowCrear(true)}
+          className="w-full rounded-2xl py-4 font-bold text-base"
+          style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.25)" }}>
+          + Crear nueva zona segura
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Crear nueva Geocerca ─────────────────────────────────────
+function CrearGeocercaScreen({ onBack, onCreada, authUser, contactos }) {
+  const [tipo,        setTipo]        = useState("casa");
+  const [nombre,      setNombre]      = useState("Casa");
+  const [radio,       setRadio]       = useState(200);
+  const [lat,         setLat]         = useState(null);
+  const [lng,         setLng]         = useState(null);
+  const [usandoGPS,   setUsandoGPS]   = useState(false);
+  const [selContacts, setSelContacts] = useState([]);
+  const [loading,     setLoading]     = useState(false);
+  const [error,       setError]       = useState("");
+
+  function elegirPreset(preset) {
+    setTipo(preset.key);
+    setRadio(preset.radio);
+    if (preset.key !== "custom") setNombre(preset.label);
+  }
+
+  function obtenerUbicacionActual() {
+    setUsandoGPS(true);
+    navigator.geolocation.getCurrentPosition(pos => {
+      setLat(pos.coords.latitude);
+      setLng(pos.coords.longitude);
+      setUsandoGPS(false);
+    }, () => {
+      alert("No se pudo obtener la ubicación. Asegurate de tener GPS activado.");
+      setUsandoGPS(false);
+    }, { enableHighAccuracy: true, timeout: 10000 });
+  }
+
+  async function guardar() {
+    setError("");
+    if (!nombre.trim())         { setError("Escribí un nombre para la zona."); return; }
+    if (!lat || !lng)           { setError("Necesitás capturar la ubicación primero."); return; }
+    if (selContacts.length < 1) { setError("Seleccioná al menos 1 contacto."); return; }
+
+    setLoading(true);
+    try {
+      const { error: dbErr } = await supabase.from("geocercas").insert({
+        user_id:      authUser?.id,
+        nombre:       nombre.trim(),
+        tipo,
+        lat,
+        lng,
+        radio,
+        activa:       false,
+        contactos_ids: JSON.stringify(selContacts),
+        created_at:   new Date().toISOString(),
+      });
+      if (dbErr) throw new Error(dbErr.message);
+      onCreada();
+    } catch(e) {
+      setError("Error al guardar: " + e.message);
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div className="min-h-screen px-4 py-6" style={{ background: BRAND.blackBg, color: BRAND.white }}>
+      <div className="max-w-md mx-auto">
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={onBack} className="text-2xl" style={{ color: BRAND.gold }}>←</button>
+          <h1 className="text-xl font-bold" style={{ color: BRAND.white }}>Nueva zona segura</h1>
+        </div>
+
+        {/* Tipo de zona */}
+        <p className="text-[11px] uppercase tracking-widest font-bold mb-3" style={{ color: BRAND.gold }}>Tipo de zona</p>
+        <div className="grid grid-cols-3 gap-2 mb-5">
+          {ZONAS_PRESET.map(p => (
+            <button key={p.key} onClick={() => elegirPreset(p)}
+              className="rounded-xl py-3 text-center"
+              style={{ background: tipo === p.key ? "rgba(212,175,55,0.12)" : "rgba(255,255,255,0.03)", border: `1px solid ${tipo === p.key ? BRAND.borderStrong : BRAND.border}` }}>
+              <div className="text-2xl">{p.emoji}</div>
+              <div className="text-[10px] mt-1 font-semibold" style={{ color: tipo === p.key ? BRAND.gold : BRAND.textMute }}>{p.label}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* Nombre */}
+        <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>Nombre de la zona</p>
+        <input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Casa de mamá"
+          className="w-full rounded-xl px-4 py-3 text-sm outline-none mb-5"
+          style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.white }} />
+
+        {/* Radio */}
+        <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>
+          Radio de la zona: <span style={{ color: BRAND.white }}>{radio} metros</span>
+        </p>
+        <input type="range" min="50" max="1000" step="50" value={radio} onChange={e => setRadio(Number(e.target.value))}
+          className="w-full mb-1 accent-yellow-500" />
+        <div className="flex justify-between text-[10px] mb-5" style={{ color: BRAND.textDim }}>
+          <span>50m (cuarto)</span><span>300m (manzana)</span><span>1km</span>
+        </div>
+
+        {/* Ubicación */}
+        <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>Ubicación del centro</p>
+        {lat && lng ? (
+          <div className="rounded-xl p-3 mb-3 flex items-center gap-3" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.3)" }}>
+            <span className="text-xl">✅</span>
+            <div>
+              <p className="text-xs font-bold" style={{ color: "#22c55e" }}>Ubicación capturada</p>
+              <p className="text-[11px]" style={{ color: BRAND.textMute }}>{lat.toFixed(5)}, {lng.toFixed(5)}</p>
+            </div>
+            <button onClick={() => { setLat(null); setLng(null); }} className="ml-auto text-xs" style={{ color: BRAND.textDim }}>Cambiar</button>
+          </div>
+        ) : (
+          <button onClick={obtenerUbicacionActual} disabled={usandoGPS}
+            className="w-full rounded-xl py-3 text-sm font-bold mb-3 disabled:opacity-50"
+            style={{ background: "rgba(212,175,55,0.08)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold }}>
+            {usandoGPS ? "📡 Obteniendo GPS..." : "📍 Usar mi ubicación actual"}
+          </button>
+        )}
+        <p className="text-[11px] mb-5" style={{ color: BRAND.textDim }}>
+          💡 Andá al lugar (casa, colegio) y tocá el botón para capturar la ubicación exacta.
+        </p>
+
+        {/* Contactos */}
+        <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>¿A quién avisar?</p>
+        <div className="space-y-2 mb-5">
+          {contactos.length === 0 ? (
+            <p className="text-xs" style={{ color: "#fca5a5" }}>No tenés contactos. Agregá uno desde "Mis Contactos".</p>
+          ) : contactos.map(c => (
+            <button key={c.id} onClick={() => setSelContacts(prev => prev.includes(c.id) ? prev.filter(x => x !== c.id) : [...prev, c.id])}
+              className="w-full flex items-center gap-3 rounded-xl p-3"
+              style={{ background: selContacts.includes(c.id) ? "rgba(212,175,55,0.08)" : "rgba(255,255,255,0.02)", border: `1px solid ${selContacts.includes(c.id) ? BRAND.borderStrong : BRAND.border}` }}>
+              <div className="flex h-5 w-5 items-center justify-center rounded shrink-0"
+                style={{ background: selContacts.includes(c.id) ? BRAND.gold : "transparent", border: `2px solid ${selContacts.includes(c.id) ? BRAND.gold : "rgba(255,255,255,0.3)"}` }}>
+                {selContacts.includes(c.id) && <span className="text-black text-[10px] font-bold">✓</span>}
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-sm font-semibold" style={{ color: BRAND.white }}>{c.nombre}</p>
+                <p className="text-[11px]" style={{ color: BRAND.textMute }}>{c.relacion || "Contacto"}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {error && <p className="text-xs mb-3" style={{ color: "#fca5a5" }}>{error}</p>}
+
+        <button onClick={guardar} disabled={loading}
+          className="w-full rounded-2xl py-4 font-bold text-base disabled:opacity-40"
+          style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+          {loading ? "Guardando..." : "Guardar zona segura"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Monitor activo de Geocerca ───────────────────────────────
+function GeocercaMonitorScreen({ geocerca, onBack, contactos, authUser }) {
+  const [dentro,       setDentro]       = useState(null); // null=checking, true, false
+  const [distancia,    setDistancia]    = useState(null);
+  const [eventos,      setEventos]      = useState([]);
+  const [ultimoEstado, setUltimoEstado] = useState(null); // "dentro" | "fuera"
+  const [activo,       setActivo]       = useState(true);
+  const intervalRef = useRef(null);
+  const fueraDesdRef = useRef(null); // timestamp cuando salió
+
+  const nombre = geocerca.nombre;
+  const contactosZona = contactos.filter(c => {
+    try { return JSON.parse(geocerca.contactos_ids || "[]").includes(c.id); } catch(e) { return false; }
+  });
+
+  useEffect(() => {
+    if (!activo) return;
+    verificarPosicion(); // primera vez
+    intervalRef.current = setInterval(verificarPosicion, 15000); // cada 15 seg
+    return () => clearInterval(intervalRef.current);
+  }, [activo]);
+
+  async function verificarPosicion() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const dist = distanciaMetros(pos.coords.latitude, pos.coords.longitude, geocerca.lat, geocerca.lng);
+      setDistancia(Math.round(dist));
+      const estaDentro = dist <= geocerca.radio;
+      setDentro(estaDentro);
+
+      // Detectar cambio de estado
+      if (ultimoEstado === "dentro" && !estaDentro) {
+        // SALIDA
+        fueraDesdRef.current = Date.now();
+        const msg = generarMensajeGeocerca({ zona: nombre, evento: "salida", nombre: geocerca.nombre_protegido || "Tu contacto" });
+        agregarEvento({ tipo: "salida", msg, nocturno: esHorarioNocturno() });
+        await notificarContactos(msg);
+        setUltimoEstado("fuera");
+        // Actualizar último evento en DB
+        await supabase.from("geocercas").update({ ultimo_evento: msg }).eq("id", geocerca.id);
+      }
+
+      if (ultimoEstado === "fuera" && estaDentro) {
+        // ENTRADA
+        fueraDesdRef.current = null;
+        const msg = generarMensajeGeocerca({ zona: nombre, evento: "entrada", nombre: geocerca.nombre_protegido || "Tu contacto" });
+        agregarEvento({ tipo: "entrada", msg, nocturno: false });
+        await notificarContactos(msg);
+        setUltimoEstado("dentro");
+        await supabase.from("geocercas").update({ ultimo_evento: msg }).eq("id", geocerca.id);
+      }
+
+      // Llevan más de 30 min fuera → alerta extra
+      if (ultimoEstado === "fuera" && fueraDesdRef.current && Date.now() - fueraDesdRef.current > 30 * 60 * 1000) {
+        const msg = generarMensajeGeocerca({ zona: nombre, evento: "fuera_mucho", nombre: geocerca.nombre_protegido || "Tu contacto" });
+        agregarEvento({ tipo: "warning", msg, nocturno: esHorarioNocturno() });
+        await notificarContactos(msg);
+        fueraDesdRef.current = null; // resetear para no spamear
+      }
+
+      if (ultimoEstado === null) setUltimoEstado(estaDentro ? "dentro" : "fuera");
+    }, () => {}, { enableHighAccuracy: true, timeout: 8000 });
+  }
+
+  function agregarEvento({ tipo, msg, nocturno }) {
+    const hora = new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+    setEventos(prev => [{ id: Date.now(), tipo, msg, hora, nocturno }, ...prev.slice(0, 19)]);
+  }
+
+  async function notificarContactos(msg) {
+    for (const c of contactosZona) {
+      if (!c.telefono) continue;
+      await sendWhatsAppAPI(c.telefono, msg).catch(console.warn);
+    }
+  }
+
+  const colorDentro = dentro === null ? BRAND.gold : dentro ? "#22c55e" : BRAND.red;
+
+  return (
+    <div className="min-h-screen px-4 py-6" style={{ background: BRAND.blackBg, color: BRAND.white }}>
+      <div className="max-w-md mx-auto">
+        <div className="flex items-center gap-3 mb-5">
+          <button onClick={() => { clearInterval(intervalRef.current); onBack(); }} className="text-2xl" style={{ color: BRAND.gold }}>←</button>
+          <div>
+            <h1 className="text-lg font-bold" style={{ color: BRAND.white }}>{geocerca.nombre}</h1>
+            <p className="text-xs" style={{ color: BRAND.textMute }}>Radio: {geocerca.radio}m · Cada 15 seg</p>
+          </div>
+          <div className="ml-auto flex items-center gap-1.5 rounded-full px-3 py-1.5"
+            style={{ background: activo ? "rgba(34,197,94,0.1)" : "rgba(255,255,255,0.04)", border: `1px solid ${activo ? "rgba(34,197,94,0.3)" : BRAND.border}` }}>
+            <div className={`h-1.5 w-1.5 rounded-full ${activo ? "bg-green-400 animate-pulse" : "bg-gray-500"}`} />
+            <span className="text-[10px] font-bold" style={{ color: activo ? "#22c55e" : BRAND.textMute }}>
+              {activo ? "Activo" : "Pausado"}
+            </span>
+          </div>
+        </div>
+
+        {/* Estado principal */}
+        <div className="rounded-2xl p-6 mb-4 text-center"
+          style={{ background: "linear-gradient(145deg,#0d0d0d,#000)", border: `2px solid ${colorDentro}40` }}>
+          <div className="text-5xl mb-3">
+            {dentro === null ? "📡" : dentro ? "✅" : "⚠️"}
+          </div>
+          <p className="text-xl font-bold mb-1" style={{ color: colorDentro }}>
+            {dentro === null ? "Detectando..." : dentro ? "Dentro de la zona" : "Fuera de la zona"}
+          </p>
+          {distancia !== null && (
+            <p className="text-sm" style={{ color: BRAND.textMute }}>
+              {dentro
+                ? `A ${distancia}m del centro · Radio: ${geocerca.radio}m`
+                : `A ${distancia}m del centro · ${distancia - geocerca.radio}m fuera del límite`}
+            </p>
+          )}
+          {esHorarioNocturno() && !dentro && (
+            <div className="mt-3 rounded-xl p-2.5" style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}40` }}>
+              <p className="text-xs font-bold" style={{ color: "#fca5a5" }}>🌙 Horario nocturno — alertas en rojo</p>
+            </div>
+          )}
+        </div>
+
+        {/* Aviso pantalla */}
+        <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
+          <p className="text-xs" style={{ color: BRAND.textMute }}>
+            💡 <strong style={{ color: BRAND.gold }}>Mantené la pantalla encendida</strong> para que el monitoreo funcione en tiempo real. Verificación cada 15 segundos.
+          </p>
+        </div>
+
+        {/* Historial de eventos */}
+        <div className="rounded-2xl overflow-hidden mb-4" style={{ border: `1px solid ${BRAND.border}` }}>
+          <div className="px-4 py-3" style={{ background: "rgba(255,255,255,0.03)", borderBottom: `1px solid ${BRAND.border}` }}>
+            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: BRAND.gold }}>Historial de eventos</p>
+          </div>
+          {eventos.length === 0 ? (
+            <div className="px-4 py-6 text-center">
+              <p className="text-xs" style={{ color: BRAND.textMute }}>Sin eventos todavía. El monitoreo está activo.</p>
+            </div>
+          ) : (
+            <div className="divide-y" style={{ borderColor: BRAND.border }}>
+              {eventos.map(ev => (
+                <div key={ev.id} className="px-4 py-3 flex items-start gap-3">
+                  <span className="text-base shrink-0 mt-0.5">
+                    {ev.tipo === "entrada" ? "🟢" : ev.tipo === "salida" && ev.nocturno ? "🔴" : ev.tipo === "salida" ? "🟡" : "⚠️"}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs leading-relaxed" style={{ color: BRAND.textMute }}>{ev.msg}</p>
+                  </div>
+                  <span className="text-[10px] shrink-0" style={{ color: BRAND.textDim }}>{ev.hora}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Botón detener */}
+        <button onClick={() => { clearInterval(intervalRef.current); setActivo(false); onBack(); }}
+          className="w-full rounded-2xl py-4 font-bold"
+          style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
+          Detener monitoreo
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function RutaSeguraModal({ onClose, contactos, authUser, userProfile }) {
+  const [paso, setPaso]           = useState(1); // 1: config | 2: activo | 3: cancelado
+  const [duracion, setDuracion]   = useState(60);
+  const [custom, setCustom]       = useState("");
+  const [selContacts, setSelContacts] = useState([]);
+  const [mensaje, setMensaje]     = useState("");
+  const [loading, setLoading]     = useState(false);
+  const [token, setToken]         = useState(null);
+  const [expiresAt, setExpiresAt] = useState(null);
+  const [countdown, setCountdown] = useState(null);
+  const [error, setError]         = useState("");
+  const gpsIntervalRef            = useRef(null);
+  const timerRef                  = useRef(null);
+
+  const duraciones = [
+    { label: "30 min", min: 30 },
+    { label: "1 hora", min: 60 },
+    { label: "2 horas", min: 120 },
+    { label: "3 horas", min: 180 },
+  ];
+
+  const nombreUsuario = userProfile?.nombre || authUser?.email?.split("@")[0] || "Usuario";
+  const liveUrl = token ? `${window.location.origin}/live/${token}` : "";
+
+  // Limpiar intervals al desmontar
+  useEffect(() => () => {
+    clearInterval(gpsIntervalRef.current);
+    clearInterval(timerRef.current);
+  }, []);
+
+  function toggleContacto(id) {
+    setSelContacts(prev =>
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
+  }
+
+  async function activar() {
+    setError("");
+    if (selContacts.length === 0) { setError("Seleccioná al menos 1 contacto."); return; }
+    setLoading(true);
+
+    try {
+      // Generar token único
+      const nuevoToken = Math.random().toString(36).substring(2, 9);
+      const durMin = duracion === "custom" ? parseInt(custom) || 60 : duracion;
+      const expira = new Date(Date.now() + durMin * 60 * 1000);
+
+      // Guardar sesión en Supabase
+      const { error: dbError } = await supabase.from("live_sessions").insert({
+        token:          nuevoToken,
+        user_id:        authUser?.id,
+        nombre_usuario: nombreUsuario,
+        modulo:         "turno_seguro",
+        mensaje:        mensaje || `${nombreUsuario} activó Ruta Segura. Si no cancela antes de ${expira.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}, algo pasó.`,
+        started_at:     new Date().toISOString(),
+        expires_at:     expira.toISOString(),
+        cancelado_at:   null,
+        contactos_ids:  JSON.stringify(selContacts),
+      });
+
+      if (dbError) throw new Error(dbError.message);
+
+      setToken(nuevoToken);
+      setExpiresAt(expira);
+
+      // Obtener posición inicial y luego cada 15 seg
+      function guardarGPS() {
+        navigator.geolocation.getCurrentPosition(async pos => {
+          // Obtener batería si el navegador lo soporta
+          let battery = null;
+          try {
+            const batt = await navigator.getBattery?.();
+            if (batt) battery = Math.round(batt.level * 100);
+          } catch(e) {}
+
+          supabase.from("live_locations").upsert({
+            session_token: nuevoToken,
+            lat:      pos.coords.latitude,
+            lng:      pos.coords.longitude,
+            battery,
+            speed:    pos.coords.speed ?? null,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "session_token" }).catch(console.warn);
+        }, () => {}, { enableHighAccuracy: true, timeout: 8000 });
+      }
+      guardarGPS();
+      gpsIntervalRef.current = setInterval(guardarGPS, 15000);
+
+      // Countdown ticker
+      timerRef.current = setInterval(() => {
+        const ms = expira - new Date();
+        if (ms <= 0) {
+          clearInterval(timerRef.current);
+          clearInterval(gpsIntervalRef.current);
+          // La Edge Function de Supabase maneja la alerta automática
+          // Aquí solo actualizamos UI
+        }
+        setCountdown(Math.max(0, ms));
+      }, 1000);
+
+      // Mandar WhatsApp a contactos seleccionados
+      const contactosSeleccionados = contactos.filter(c => selContacts.includes(c.id));
+      const urlPublica = `${window.location.origin}/live/${nuevoToken}`;
+      const hora = expira.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+
+      for (const c of contactosSeleccionados) {
+        if (!c.telefono) continue;
+        const msgWA = `🛡️ *Traza 360 — Ruta Segura Activada*\n\n${nombreUsuario} activó seguimiento en vivo.\n\n📍 Seguí su ubicación en tiempo real:\n${urlPublica}\n\n⏱️ *Si no cancela antes de las ${hora}, necesita ayuda.*\n\n_Este link expira automáticamente a las ${hora}_`;
+        await sendWhatsAppAPI(c.telefono, msgWA).catch(console.warn);
+      }
+
+      setPaso(2);
+    } catch(e) {
+      setError("Error al activar: " + e.message);
+    }
+    setLoading(false);
+  }
+
+  async function cancelar() {
+    clearInterval(gpsIntervalRef.current);
+    clearInterval(timerRef.current);
+    if (token) {
+      await supabase.from("live_sessions").update({ cancelado_at: new Date().toISOString() }).eq("token", token);
+      // Avisar a contactos que canceló
+      const contactosSeleccionados = contactos.filter(c => selContacts.includes(c.id));
+      for (const c of contactosSeleccionados) {
+        if (!c.telefono) continue;
+        await sendWhatsAppAPI(c.telefono, `✅ *Traza 360* — ${nombreUsuario} canceló el seguimiento. Todo bien.`).catch(console.warn);
+      }
+    }
+    setPaso(3);
+  }
+
+  function copiarLink() {
+    navigator.clipboard?.writeText(liveUrl)
+      .then(() => alert("✅ Link copiado:\n" + liveUrl))
+      .catch(() => prompt("Copiá este link:", liveUrl));
+  }
+
+  function formatMs(ms) {
+    if (!ms || ms <= 0) return "00:00:00";
+    const s = Math.floor(ms / 1000);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  }
+
+  return (
+    <div className="fixed inset-0 z-[300] flex items-end justify-center bg-black/95 backdrop-blur-sm" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div className="w-full max-w-md rounded-t-3xl overflow-hidden" style={{ background: "#000", border: `2px solid ${BRAND.borderStrong}`, maxHeight: "92vh", overflowY: "auto" }}>
+
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-1"><div className="h-1 w-12 rounded-full" style={{ background: BRAND.borderStrong }} /></div>
+
+        {/* ── PASO 1: Configuración ── */}
+        {paso === 1 && (
+          <div className="px-5 pb-6 pt-2">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-lg font-bold" style={{ color: BRAND.white }}>Ruta Segura en Vivo</h2>
+                <p className="text-xs mt-0.5" style={{ color: BRAND.textMute }}>Si no cancelás, alerta automática.</p>
+              </div>
+              <button onClick={onClose} className="text-2xl" style={{ color: BRAND.textDim }}>✕</button>
+            </div>
+
+            {/* Duración */}
+            <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>¿Cuánto tiempo?</p>
+            <div className="grid grid-cols-4 gap-2 mb-2">
+              {duraciones.map(d => (
+                <button key={d.min} onClick={() => { setDuracion(d.min); setCustom(""); }}
+                  className="rounded-xl py-2.5 text-xs font-bold"
+                  style={{
+                    background: duracion === d.min ? BRAND.goldGradient : "rgba(255,255,255,0.04)",
+                    color: duracion === d.min ? BRAND.black : BRAND.textMute,
+                    border: `1px solid ${duracion === d.min ? BRAND.gold : BRAND.border}`,
+                  }}>
+                  {d.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2 mb-5">
+              <input
+                type="number" min="5" max="720"
+                value={custom}
+                onChange={e => { setCustom(e.target.value); setDuracion("custom"); }}
+                placeholder="Personalizado (minutos)"
+                className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none"
+                style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${duracion === "custom" ? BRAND.gold : BRAND.border}`, color: BRAND.white }}
+              />
+            </div>
+
+            {/* Contactos */}
+            <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>¿Quién te sigue?</p>
+            {contactos.length === 0 ? (
+              <div className="rounded-xl p-3 mb-5" style={{ background: "rgba(220,38,38,0.06)", border: `1px solid ${BRAND.red}30` }}>
+                <p className="text-xs" style={{ color: "#fca5a5" }}>No tenés contactos. Agregá uno desde "Mis Contactos".</p>
+              </div>
+            ) : (
+              <div className="space-y-2 mb-5">
+                {contactos.map(c => (
+                  <button key={c.id} onClick={() => toggleContacto(c.id)}
+                    className="w-full flex items-center gap-3 rounded-xl p-3"
+                    style={{ background: selContacts.includes(c.id) ? "rgba(212,175,55,0.08)" : "rgba(255,255,255,0.02)", border: `1px solid ${selContacts.includes(c.id) ? BRAND.borderStrong : BRAND.border}` }}>
+                    <div className="flex h-5 w-5 items-center justify-center rounded shrink-0"
+                      style={{ background: selContacts.includes(c.id) ? BRAND.gold : "transparent", border: `2px solid ${selContacts.includes(c.id) ? BRAND.gold : "rgba(255,255,255,0.3)"}` }}>
+                      {selContacts.includes(c.id) && <span className="text-black text-[10px] font-bold">✓</span>}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-semibold" style={{ color: BRAND.white }}>{c.nombre}</p>
+                      <p className="text-[11px]" style={{ color: BRAND.textMute }}>{c.relacion || "Contacto"} · {c.telefono}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Mensaje personalizado */}
+            <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>Mensaje (opcional)</p>
+            <textarea
+              value={mensaje}
+              onChange={e => setMensaje(e.target.value)}
+              placeholder={`Ej: "Salí con alguien. Si no cancelo antes de las [hora], algo pasó."`}
+              rows={2}
+              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none mb-5"
+              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.white }}
+            />
+
+            {/* Preview del WhatsApp que se va a mandar */}
+            <div className="rounded-xl p-3 mb-5" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
+              <p className="text-[11px] uppercase tracking-wider font-bold mb-2" style={{ color: BRAND.gold }}>📱 WhatsApp que recibirán:</p>
+              <p className="text-xs leading-relaxed" style={{ color: BRAND.textMute, fontFamily: "monospace" }}>
+                🛡️ Traza 360 — Ruta Segura Activada<br/><br/>
+                {nombreUsuario} activó seguimiento en vivo.<br/><br/>
+                📍 Seguí su ubicación en tiempo real:<br/>
+                <span style={{ color: BRAND.gold }}>traza360.app/live/abc1234</span><br/><br/>
+                ⏱️ <strong>Si no cancela antes de las [hora], necesita ayuda.</strong>
+              </p>
+            </div>
+
+            {error && <p className="text-xs mb-3" style={{ color: "#fca5a5" }}>{error}</p>}
+
+            <button onClick={activar} disabled={loading || selContacts.length === 0}
+              className="w-full rounded-2xl py-4 font-bold text-base disabled:opacity-40"
+              style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.3)" }}>
+              {loading ? "Activando..." : "🚀 Activar Ruta Segura"}
+            </button>
+          </div>
+        )}
+
+        {/* ── PASO 2: Timer activo ── */}
+        {paso === 2 && (
+          <div className="px-5 pb-8 pt-3">
+            <div className="text-center mb-6">
+              <div className="inline-block rounded-full px-3 py-1 mb-3 text-[10px] font-bold uppercase tracking-widest"
+                style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e" }}>
+                ● En vivo
+              </div>
+              <h2 className="text-2xl font-bold mb-1" style={{ color: BRAND.white }}>Ruta Segura activa</h2>
+              <p className="text-xs" style={{ color: BRAND.textMute }}>Tus contactos ya recibieron el link.</p>
+            </div>
+
+            {/* Countdown grande */}
+            <div className="rounded-2xl p-6 mb-4 text-center" style={{ background: "linear-gradient(145deg, #0d0d0d, #000)", border: `2px solid ${countdown === 0 ? BRAND.red : BRAND.borderStrong}` }}>
+              <p className="text-[11px] uppercase tracking-[3px] font-bold mb-2" style={{ color: BRAND.gold }}>Tiempo restante</p>
+              <p className="text-5xl font-black mb-1" style={{ color: countdown === 0 ? "#fca5a5" : BRAND.white, fontVariantNumeric: "tabular-nums", letterSpacing: "-2px" }}>
+                {formatMs(countdown)}
+              </p>
+              {expiresAt && (
+                <p className="text-xs" style={{ color: BRAND.textMute }}>
+                  Vence a las {expiresAt.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
+                </p>
+              )}
+            </div>
+
+            {/* Link para compartir */}
+            <div className="rounded-xl p-4 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
+              <p className="text-[11px] uppercase tracking-wider font-bold mb-2" style={{ color: BRAND.gold }}>Tu link de seguimiento</p>
+              <p className="text-xs font-mono break-all mb-3" style={{ color: BRAND.white }}>{liveUrl}</p>
+              <div className="flex gap-2">
+                <button onClick={copiarLink} className="flex-1 rounded-lg py-2 text-xs font-bold"
+                  style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+                  📋 Copiar link
+                </button>
+                <button onClick={() => window.open(`whatsapp://send?text=${encodeURIComponent(`Seguime en tiempo real: ${liveUrl}`)}`, "_blank")}
+                  className="flex-1 rounded-lg py-2 text-xs font-bold"
+                  style={{ background: "rgba(37,211,102,0.1)", border: "1px solid rgba(37,211,102,0.3)", color: "#25d366" }}>
+                  WhatsApp
+                </button>
+              </div>
+            </div>
+
+            {/* Aviso pantalla encendida */}
+            <div className="rounded-xl p-3 mb-5" style={{ background: "rgba(212,175,55,0.04)", border: `1px solid ${BRAND.border}` }}>
+              <p className="text-xs" style={{ color: BRAND.textMute }}>
+                💡 <strong style={{ color: BRAND.gold }}>Mantené la pantalla encendida</strong> para que tus contactos te vean en tiempo real. Si bloqueás el celular, el GPS se pausa.
+              </p>
+            </div>
+
+            {/* Botón cancelar */}
+            <button onClick={cancelar}
+              className="w-full rounded-2xl py-4 font-bold text-base"
+              style={{ background: "rgba(34,197,94,0.1)", border: "2px solid rgba(34,197,94,0.4)", color: "#22c55e" }}>
+              ✅ Estoy bien — Cancelar seguimiento
+            </button>
+          </div>
+        )}
+
+        {/* ── PASO 3: Cancelado ── */}
+        {paso === 3 && (
+          <div className="px-5 pb-8 pt-4 text-center">
+            <div className="text-5xl mb-4">✅</div>
+            <h2 className="text-xl font-bold mb-2" style={{ color: "#22c55e" }}>¡Llegaste bien!</h2>
+            <p className="text-sm mb-6" style={{ color: BRAND.textMute }}>
+              Tus contactos recibieron un WhatsApp confirmando que cancelaste. Todo bien.
+            </p>
+            <button onClick={onClose}
+              className="w-full rounded-2xl py-4 font-bold"
+              style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+              Volver al panel
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── LANDING SCREEN (v19 — rebrand dorado) ───
 function LandingScreen({ onScreen }) {
   return (
     <div className="min-h-screen" style={{ background: BRAND.blackBg, color: BRAND.white }}>
-      <section className="px-5 pt-16 pb-12 text-center">
-        <div className="mb-4 flex justify-center"><PinEyeLogo size={110} showText={false} /></div>
-        <p className="text-[12px] font-semibold uppercase tracking-[5px]" style={{ color: BRAND.gold }}>{TAGLINE}</p>
-        <h2 className="mt-4 max-w-3xl text-2xl font-bold leading-tight md:text-4xl mx-auto" style={{ color: BRAND.white }}>
-          Cuando cada segundo importa,<br/>
-          <span style={{ background: BRAND.goldGradient, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Traza 360 responde.</span>
-        </h2>
-        <div className="mt-6 flex flex-col gap-2 items-center max-w-xs mx-auto">
-          {["Un botón → alerta a tu gente de confianza", "Ubicación automática en segundos", "Funciona con WhatsApp. Sin apps extra"].map((feat, i) => (
-            <div key={i} className="flex items-center gap-2 text-sm" style={{ color: BRAND.textMute }}>
+      <section className="px-5 pt-16 pb-10 text-center">
+
+        {/* Logo */}
+        <div className="mb-6 flex justify-center">
+          <PinEyeLogo size={110} showText={false} />
+        </div>
+
+        {/* Nombre app */}
+        <p className="text-[11px] font-semibold uppercase tracking-[5px] mb-4" style={{ color: BRAND.gold }}>
+          Traza 360
+        </p>
+
+        {/* Título principal — nuevo copy de Tristan */}
+        <h1 className="text-3xl font-bold leading-tight md:text-5xl mx-auto max-w-sm" style={{ color: BRAND.white }}>
+          Si algo pasa,<br/>
+          <span style={{ background: BRAND.goldGradient, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            alguien ya sabe.
+          </span>
+        </h1>
+
+        {/* Subtítulo */}
+        <p className="mt-4 text-sm leading-relaxed mx-auto max-w-xs" style={{ color: BRAND.textMute }}>
+          Ubicación, audio y alerta en tiempo real<br/>para quienes más te importan.
+        </p>
+
+        {/* Features rápidos */}
+        <div className="mt-6 flex flex-col gap-2 items-center">
+          {[
+            "Un botón → alerta a tu gente de confianza",
+            "Funciona con WhatsApp. Sin apps extra",
+            "Gratis durante la beta",
+          ].map((feat, i) => (
+            <div key={i} className="flex items-center gap-2 text-xs" style={{ color: BRAND.textDim }}>
               <span style={{ color: BRAND.gold }}>{"\u2713"}</span> {feat}
             </div>
           ))}
         </div>
       </section>
+
+      {/* CTAs */}
       <div className="px-5 pb-12">
         <div className="mx-auto flex w-full max-w-sm flex-col gap-3">
-          <button onClick={() => onScreen("register")} className="w-full rounded-2xl px-4 py-4 font-bold shadow-lg" style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.3)" }}>Empezar gratis →</button>
-          <button onClick={() => onScreen("login")} className="w-full rounded-2xl px-4 py-4 font-semibold" style={{ background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold }}>Ya tengo cuenta</button>
+          {/* Botón principal */}
+          <button onClick={() => onScreen("register")}
+            className="w-full rounded-2xl px-4 py-4 font-bold shadow-lg text-base"
+            style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.35)" }}>
+            Probala gratis →
+          </button>
+
+          {/* Botón secundario — Ver cómo funciona */}
+          <button onClick={() => onScreen("instrucciones_publico")}
+            className="w-full rounded-2xl px-4 py-4 font-semibold text-sm"
+            style={{ background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold }}>
+            Ver cómo funciona
+          </button>
+
+          {/* Ya tengo cuenta — más discreto */}
+          <button onClick={() => onScreen("login")}
+            className="w-full py-2 text-xs font-medium"
+            style={{ color: BRAND.textDim }}>
+            Ya tengo cuenta → Ingresar
+          </button>
         </div>
       </div>
 
@@ -3617,20 +4954,25 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
   const [activeModule, setActiveModule] = useState(null);
   const [loggingOut, setLoggingOut] = useState(false);
   const [contactos, setContactos] = useState([]);
-  const [systemStatus, setSystemStatus] = useState("warning");
-  const [panicoEnviado, setPanicoEnviado] = useState(false);
+  const [panicoEnviado, setPanicoEnviado]   = useState(false);
+  const [showRutaSegura, setShowRutaSegura] = useState(false); // v19.9
   // v19.7: state para modal GPS y banner config
   const [showGpsModal, setShowGpsModal] = useState(false);
-  const [pendingGpsAction, setPendingGpsAction] = useState(null); // función a ejecutar después del aceptar
+  const [pendingGpsAction, setPendingGpsAction] = useState(null);
   const [showPinPrompt, setShowPinPrompt] = useState(false);
   const [hasPin, setHasPin] = useState(false);
 
   const nombreUsuario = userProfile?.nombre || pendingName || sessionStorage.getItem("traza360_pending_name") || authUser?.email?.split("@")[0] || "Usuario";
   const userPlan = userProfile?.plan || "gratis";
 
+  // v19.9: exponer globalmente para RutaSeguraModal dentro de ModuleCard
+  useEffect(() => {
+    window.__traza360_auth = authUser;
+    window.__traza360_profile = userProfile;
+  }, [authUser, userProfile]);
+
   useEffect(() => {
     cargarContactos();
-    checkSystemStatus();
     // Detectar si ya tiene PIN configurado
     try { setHasPin(!!localStorage.getItem("traza360_quick_pin")); } catch(e){}
     // Detectar si debe ver el prompt de configurar PIN (primera vez con contactos OK)
@@ -3643,14 +4985,6 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
   }, []);
 
   async function cargarContactos() { setContactos(await getContactos()); }
-
-  async function checkSystemStatus() {
-    try {
-      const res = await fetch("/api/send-whatsapp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: "test", message: "ping", test: true }) });
-      const data = await res.json();
-      setSystemStatus(data.active ? "ok" : "error");
-    } catch(e) { setSystemStatus("error"); }
-  }
 
   async function handleLogout() {
     setLoggingOut(true); try { sessionStorage.removeItem("traza360_pending_name"); } catch(e){} await signOut(); setLoggingOut(false); onLogout();
@@ -3755,7 +5089,11 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
               <p className="text-xs mt-0.5" style={{ color: BRAND.textMute }}>Plan: <span style={{ color: BRAND.gold }} className="font-semibold">{PLAN_PRICES[userPlan]?.name}</span></p>
             </div>
             <div className="flex flex-col gap-2 items-end">
-              <SystemStatusBadge status={systemStatus} />
+              {/* v19.8: Panel de estado del sistema detallado */}
+              <SystemStatusPanel
+                contactos={contactos}
+                onGoToContactos={() => setActiveScreen("contactos")}
+              />
               <div className="flex items-center gap-2">
                 <div className={`h-2 w-2 rounded-full ${contactos.length > 0 ? "bg-green-400" : "bg-red-400 animate-pulse"}`} />
                 <span className="text-xs font-semibold" style={{ color: contactos.length > 0 ? "#22c55e" : BRAND.red }}>
@@ -3775,9 +5113,6 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
           <div className="mt-3 flex gap-2 flex-wrap">
             <button onClick={handleLogout} disabled={loggingOut} className="rounded-xl px-3 py-1.5 text-xs disabled:opacity-50" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
               {loggingOut ? "Saliendo..." : "Cerrar sesión"}
-            </button>
-            <button onClick={checkSystemStatus} className="rounded-xl px-3 py-1.5 text-xs" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>
-              {"\u{1F504}"} Verificar sistema
             </button>
             {/* v19.6: Borrar cuenta */}
             <button onClick={() => setActiveScreen("borrar_cuenta")} className="rounded-xl px-3 py-1.5 text-xs" style={{ background: "rgba(220,38,38,0.08)", border: `1px solid ${BRAND.red}40`, color: "#fca5a5" }}>
@@ -4031,7 +5366,7 @@ export default function App() {
   // v19.7: Tour demo, GPS explainer, PIN acceso rápido
   const [showTour, setShowTour] = useState(false);
   const [showGpsModal, setShowGpsModal] = useState(false);
-  const [pinUnlocked, setPinUnlocked] = useState(false);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("modo") === "calc") { setModoCalc(true); setScreen("calculadora"); return; }
@@ -4172,6 +5507,7 @@ export default function App() {
   if (screen === "terminos") return <TerminosScreen onBack={() => setScreen(authUser ? "home" : "landing")} />;
   if (screen === "privacidad") return <PoliticaPrivacidadScreen onBack={() => setScreen(authUser ? "home" : "landing")} />;
   if (screen === "sobre_nosotros") return <SobreNosotrosScreen onBack={() => setScreen(authUser ? "home" : "landing")} />;
+  if (screen === "instrucciones_publico") return <InstruccionesScreen onBack={() => setScreen("landing")} />;
   if (screen === "planes") return <PlanesScreen onBack={() => setScreen("home")} currentPlan={userProfile?.plan || "gratis"} />;
   if (screen === "home") return (
     <>
