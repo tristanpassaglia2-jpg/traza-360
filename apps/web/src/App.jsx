@@ -4031,7 +4031,7 @@ export default function App() {
   // v19.7: Tour demo, GPS explainer, PIN acceso rápido
   const [showTour, setShowTour] = useState(false);
   const [showGpsModal, setShowGpsModal] = useState(false);
-
+  const [pinUnlocked, setPinUnlocked] = useState(false);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("modo") === "calc") { setModoCalc(true); setScreen("calculadora"); return; }
