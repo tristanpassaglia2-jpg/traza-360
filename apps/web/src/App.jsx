@@ -31,6 +31,12 @@ const WHATSAPP_NUMBER_DEFAULT = "5493513956879";
 const PIN_DEFAULT = "1234";
 const HOME_ADDRESS_DEFAULT = "Mi casa";
 
+// v19.7: Email de soporte centralizado (cambialo acá para que se actualice en TODA la app)
+const SUPPORT_EMAIL = "traza360.app@gmail.com"; // ⚠️ Tristan: cambiá este string por tu Gmail nuevo cuando lo crees
+const RESPONSABLE_NAME = "Tristan Passaglia";
+const RESPONSABLE_LOCATION = "Córdoba, Argentina";
+const APP_VERSION = "19.7";
+
 // ─── PALETA DE MARCA TRAZA 360 (v19) ────────
 // Según logo oficial: pin dorado + ojo central rojo sobre negro
 const BRAND = {
@@ -59,8 +65,8 @@ const PLAN_LIMITS = {
 
 const PLAN_PRICES = {
   gratis: { name: "Gratis", price: "US$0", priceARS: "$0", monthly: 0, features: ["1 módulo activo", "2 contactos", "Alertas básicas WhatsApp", "Sin grabación"] },
-  plus: { name: "Plus", price: "US$2.99/mes", priceARS: "$2.500/mes", monthly: 2.99, features: ["3 módulos activos", "5 contactos", "Grabación de audio", "Check-in temporizado", "Historial 30 días"] },
-  premium: { name: "Premium", price: "US$5.99/mes", priceARS: "$5.000/mes", monthly: 5.99, features: ["TODOS los módulos", "10 contactos", "Audio + Video", "Te Cuido (remoto)", "Pastillero Virtual", "Almacenamiento ilimitado", "Soporte prioritario"] },
+  plus: { name: "Plus", price: "US$2.99/mes", priceARS: "$2.500/mes", monthly: 2.99, features: ["3 módulos activos", "5 contactos", "Grabación de audio", "Botón de ingreso temporizado", "Historial 30 días"] },
+  premium: { name: "Premium", price: "US$5.99/mes", priceARS: "$5.000/mes", monthly: 5.99, features: ["TODOS los módulos", "10 contactos", "Audio + Video", "Te Cuido (remoto)", "Almacenamiento ilimitado", "Soporte prioritario"] },
   anual: { name: "Premium Anual", price: "US$49.99/año", priceARS: "$42.000/año", monthly: 4.17, features: ["Todo lo del Premium", "Ahorrás 30%", "2 meses gratis"] },
 };
 
@@ -296,34 +302,36 @@ function SystemStatusBadge({ status }) {
   );
 }
 
-// ─── ONBOARDING GUIADO (3 pasos) ────────────
+// ─── ONBOARDING GUIADO v19 — paleta dorada ────
 function OnboardingScreen({ onComplete }) {
   const [step, setStep] = useState(0);
   const [selectedModule, setSelectedModule] = useState(null);
 
   const steps = [
     {
-      emoji: "\u{1F6E1}\u{FE0F}",
+      iconType: "logo", // Logo dorado en lugar de escudo azul
       title: "Bienvenido/a a Traza 360",
-      subtitle: "Tu escudo de protección personal",
-      desc: "Esta app te protege a vos y a quienes querés. Con un solo botón podés alertar a tus contactos de confianza, compartir tu ubicación y grabar evidencia.",
+      subtitle: "Alguien cuida de vos.",
+      desc: "Esta app te protege a vos y a quienes querés. Con un solo botón podés alertar a tu gente de confianza, compartir tu ubicación y grabar evidencia.",
       cta: "Entender cómo funciona →",
     },
     {
-      emoji: "\u{1F465}",
+      iconType: "icon",
+      iconName: "contacts",
       title: "¿Para quién es esta app?",
       subtitle: "Elegí tu perfil principal",
       desc: "",
       cta: "Continuar →",
       modules: [
-        { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", label: "Para mí — Violencia o riesgo" },
-        { key: "los_cuido",    emoji: "\u{1F9D1}\u200D\u{1F393}", label: "Mi hijo/a adolescente" },
-        { key: "turno_seguro", emoji: "\u{1F303}", label: "Salidas nocturnas" },
-        { key: "te_cuido",     emoji: "\u{1F985}", label: "Cuidar a alguien a distancia" },
+        { key: "mi_escudo",    iconName: "shield",   label: "Para mí — Violencia o riesgo" },
+        { key: "los_cuido",    iconName: "teen",     label: "Mi hijo/a adolescente" },
+        { key: "turno_seguro", iconName: "night",    label: "Salidas nocturnas / trabajo de riesgo" },
+        { key: "te_cuido",     iconName: "eye",      label: "Cuidar a alguien a distancia" },
       ],
     },
     {
-      emoji: "\u{1F4F1}",
+      iconType: "icon",
+      iconName: "contacts",
       title: "Último paso: agregá un contacto",
       subtitle: "Sin contactos no podemos alertar a nadie",
       desc: "Necesitás al menos 1 contacto de confianza con WhatsApp. Podés hacerlo ahora o más tarde desde el panel.",
@@ -334,58 +342,70 @@ function OnboardingScreen({ onComplete }) {
   const current = steps[step];
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-5 py-8 text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 100%)" }}>
-      {/* Progress dots */}
+    <div className="min-h-screen flex flex-col items-center justify-center px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
+      {/* Progress dots dorados */}
       <div className="flex gap-2 mb-8">
         {steps.map((_, i) => (
-          <div key={i} className="h-1.5 rounded-full transition-all" style={{ width: i === step ? "32px" : "8px", background: i === step ? "#E0E0E0" : "rgba(224,224,224,0.2)" }} />
+          <div key={i} className="h-1.5 rounded-full transition-all" style={{
+            width: i === step ? "32px" : "8px",
+            background: i === step ? BRAND.gold : "rgba(212,175,55,0.2)",
+          }} />
         ))}
       </div>
 
       <div className="w-full max-w-sm">
-        {/* Card */}
-        <div className="rounded-3xl p-8 text-center mb-6" style={{ background: "linear-gradient(145deg, #13131d, #0a0a12)", border: "1px solid rgba(224,224,224,0.15)", boxShadow: "8px 8px 24px rgba(0,0,0,0.6)" }}>
-          <div className="text-6xl mb-4">{current.emoji}</div>
-          <h2 className="text-xl font-bold text-white mb-1">{current.title}</h2>
-          <p className="text-xs font-semibold mb-3" style={{ color: "#E0E0E0" }}>{current.subtitle}</p>
-          {current.desc && <p className="text-sm text-slate-300 leading-relaxed">{current.desc}</p>}
+        {/* Card paleta dorada */}
+        <div className="rounded-3xl p-8 text-center mb-6" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.borderStrong}`, boxShadow: "8px 8px 24px rgba(0,0,0,0.6), 0 0 30px rgba(212,175,55,0.05)" }}>
+          {/* Ícono: paso 1 = logo dorado completo, otros = GoldIcon */}
+          <div className="mb-4 flex justify-center">
+            {current.iconType === "logo" ? (
+              <PinEyeLogo size={90} showText={false} />
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.2), rgba(154,123,15,0.08))", border: `1px solid ${BRAND.borderStrong}` }}>
+                <GoldIcon name={current.iconName} size={36} />
+              </div>
+            )}
+          </div>
+          <h2 className="text-xl font-bold mb-1" style={{ color: BRAND.white }}>{current.title}</h2>
+          <p className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: BRAND.gold }}>{current.subtitle}</p>
+          {current.desc && <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>{current.desc}</p>}
 
-          {/* Step 2: selector de módulo */}
+          {/* Step 2: selector de módulo (dorado) */}
           {step === 1 && current.modules && (
             <div className="mt-4 space-y-2 text-left">
               {current.modules.map(m => (
                 <button key={m.key} onClick={() => setSelectedModule(m.key)}
                   className="w-full rounded-xl px-4 py-3 flex items-center gap-3 transition-all"
                   style={{
-                    background: selectedModule === m.key ? "rgba(224,224,224,0.12)" : "rgba(255,255,255,0.04)",
-                    border: selectedModule === m.key ? "1px solid rgba(224,224,224,0.7)" : "1px solid rgba(255,255,255,0.08)",
+                    background: selectedModule === m.key ? "rgba(212,175,55,0.15)" : "rgba(255,255,255,0.04)",
+                    border: selectedModule === m.key ? `1px solid ${BRAND.borderStrong}` : `1px solid ${BRAND.border}`,
                   }}>
-                  <span className="text-xl">{m.emoji}</span>
-                  <span className="text-sm font-semibold" style={{ color: selectedModule === m.key ? "#E0E0E0" : "rgba(255,255,255,0.7)" }}>{m.label}</span>
-                  {selectedModule === m.key && <span className="ml-auto text-sm" style={{ color: "#E0E0E0" }}>{"\u2713"}</span>}
+                  <div className="shrink-0"><GoldIcon name={m.iconName} size={22} /></div>
+                  <span className="text-sm font-semibold flex-1" style={{ color: selectedModule === m.key ? BRAND.gold : BRAND.textMute }}>{m.label}</span>
+                  {selectedModule === m.key && <span className="text-sm font-bold" style={{ color: BRAND.gold }}>{"\u2713"}</span>}
                 </button>
               ))}
             </div>
           )}
 
-          {/* Step 3: tips de contacto */}
+          {/* Step 3: tips de contacto (íconos dorados premium) */}
           {step === 2 && (
             <div className="mt-4 space-y-3 text-left">
               {[
-                { icon: "\u{1F4F2}", text: "El número debe tener WhatsApp activo" },
-                { icon: "\u2705", text: "El contacto recibe una verificación automática" },
-                { icon: "\u{1F512}", text: "Solo vos podés ver tus contactos" },
+                { iconName: "contacts", text: "El número debe tener WhatsApp activo" },
+                { iconName: "shield", text: "El contacto recibe una verificación automática" },
+                { iconName: "eye", text: "Solo vos podés ver tus contactos" },
               ].map((tip, i) => (
-                <div key={i} className="flex items-start gap-3 rounded-xl px-3 py-2" style={{ background: "rgba(224,224,224,0.05)", border: "1px solid rgba(224,224,224,0.08)" }}>
-                  <span className="text-lg shrink-0">{tip.icon}</span>
-                  <span className="text-xs text-slate-300">{tip.text}</span>
+                <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
+                  <div className="shrink-0"><GoldIcon name={tip.iconName} size={20} /></div>
+                  <span className="text-xs" style={{ color: BRAND.textMute }}>{tip.text}</span>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* CTA Button */}
+        {/* CTA Button dorado */}
         <button
           onClick={() => {
             if (step === 1 && !selectedModule) { return; }
@@ -396,13 +416,13 @@ function OnboardingScreen({ onComplete }) {
             }
           }}
           disabled={step === 1 && !selectedModule}
-          className="w-full rounded-2xl py-4 font-bold text-black shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ background: "linear-gradient(135deg, #E0E0E0, #f5e6a3, #E0E0E0)", boxShadow: "0 8px 30px rgba(224,224,224,0.25)" }}>
+          className="w-full rounded-2xl py-4 font-bold shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.3)" }}>
           {current.cta}
         </button>
 
         {step > 0 && (
-          <button onClick={() => setStep(step - 1)} className="w-full mt-3 py-2 text-sm" style={{ color: "rgba(224,224,224,0.7)" }}>
+          <button onClick={() => setStep(step - 1)} className="w-full mt-3 py-2 text-sm" style={{ color: BRAND.gold }}>
             ← Volver
           </button>
         )}
@@ -554,7 +574,7 @@ function GrabacionModal({ onClose }) {
 }
 
 // ─── CHECK-IN TEMPORIZADO ────────────────────
-function CheckInModal({ onClose, contactos, titulo = "Check-in de seguridad" }) {
+function CheckInModal({ onClose, contactos, titulo = "Botón de ingreso" }) {
   const [minutos, setMinutos] = useState(30);
   const [minutosCustom, setMinutosCustom] = useState("");
   const [activo, setActivo] = useState(false);
@@ -586,7 +606,7 @@ function CheckInModal({ onClose, contactos, titulo = "Check-in de seguridad" }) 
     setActivo(true);
     // Aviso inicial a TODOS los contactos seleccionados
     getCurrentLocationWithFallback().then(({ location }) => {
-      const msg = buildMessageWithReply(`Check-in activado. Si no confirmo en ${minutos} minutos que estoy bien, necesito ayuda.`, location);
+      const msg = buildMessageWithReply(`Activé un botón de ingreso a un lugar. Si no confirmo en ${minutos} minutos que estoy bien, necesito ayuda.`, location);
       const elegidos = contactos.filter(c => seleccionados.includes(c.id));
       elegidos.forEach(c => enviarWhatsApp(c.telefono, msg));
     });
@@ -746,7 +766,7 @@ function CheckInModal({ onClose, contactos, titulo = "Check-in de seguridad" }) 
               <button onClick={iniciar} disabled={contactos.length === 0 || seleccionados.length === 0}
                 className="w-full rounded-2xl py-3 text-sm font-bold shadow-lg mb-2 disabled:opacity-40"
                 style={{ background: BRAND.goldGradient, color: BRAND.black }}>
-                Activar check-in ({minutos} min)
+                Activar ({minutos} min)
               </button>
               <button onClick={onClose} className="w-full rounded-2xl py-2.5 text-xs" style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>Cancelar</button>
             </>
@@ -1123,67 +1143,92 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
   );
 }
 
-// ─── PLANES SCREEN (MercadoPago) ────────────
-const MP_PUBLIC_KEY = "TEST-f2d4a30b-ff92-496d-a1d6-bee7900bdddf";
-
+// ─── PLANES SCREEN (v19.5 — Lista de espera honesta) ────────────
+// MercadoPago todavía NO está integrado. En lugar de mentir o cobrar fake,
+// le pedimos al usuario su email para avisarle cuando esté listo.
+// Esto nos da una lista de espera real = validación de mercado.
 function PlanesScreen({ onBack, currentPlan = "gratis" }) {
   const [selectedPlan, setSelectedPlan] = useState(null);
-  const [processing, setProcessing] = useState(false);
+  const [emailWaitlist, setEmailWaitlist] = useState("");
+  const [showEmailForm, setShowEmailForm] = useState(null); // null o "plan key"
+  const [enviado, setEnviado] = useState(false);
+  const [enviando, setEnviando] = useState(false);
 
   const planes = [
     { key: "plus", name: "Plus", price: "US$2.99", priceARS: "$2.500", period: "/mes", popular: false,
-      features: ["3 módulos activos", "5 contactos", "Grabación de audio", "Check-in temporizado", "Historial 30 días"],
-      color: "rgba(224,224,224,0.1)", border: "rgba(224,224,224,0.2)" },
+      features: ["3 módulos activos", "5 contactos", "Grabación de audio", "Botón de ingreso temporizado", "Historial 30 días"] },
     { key: "premium", name: "Premium", price: "US$5.99", priceARS: "$5.000", period: "/mes", popular: true,
-      features: ["TODOS los módulos", "10 contactos", "Audio + Video", "Te Cuido (remoto)", "Pastillero Virtual", "Almacenamiento ilimitado", "Soporte prioritario"],
-      color: "rgba(224,224,224,0.15)", border: "rgba(255,255,255,0.3)" },
-    { key: "anual", name: "Premium Anual", price: "US$49.99", priceARS: "$42.000", period: "/año", popular: false,
-      features: ["Todo lo del Premium", "Ahorrás 30%", "2 meses gratis"],
-      color: "rgba(224,224,224,0.08)", border: "rgba(224,224,224,0.15)", badge: "30% OFF" },
+      features: ["TODOS los módulos", "10 contactos", "Audio + Video", "Te Cuido (remoto)", "Almacenamiento ilimitado", "Soporte prioritario"] },
+    { key: "anual", name: "Premium Anual", price: "US$49.99", priceARS: "$42.000", period: "/año", popular: false, badge: "30% OFF",
+      features: ["Todo lo del Premium", "Ahorrás 30%", "2 meses gratis"] },
   ];
 
-  async function handleSubscribe(plan) {
-    setSelectedPlan(plan.key);
-    setProcessing(true);
-    try {
-      // En producción esto llama a Supabase Edge Function que crea la preferencia de pago
-      // Por ahora abre MercadoPago checkout directamente
-      const priceMap = { plus: 2500, premium: 5000, anual: 42000 };
-      const titleMap = { plus: "Traza 360 Plus - Mensual", premium: "Traza 360 Premium - Mensual", anual: "Traza 360 Premium - Anual" };
-      
-      // Crear preferencia de pago via MercadoPago API (esto se moverá a Edge Function)
-      const preference = {
-        items: [{ title: titleMap[plan.key], unit_price: priceMap[plan.key], quantity: 1, currency_id: "ARS" }],
-        back_urls: { success: window.location.origin + "?plan=" + plan.key, failure: window.location.origin, pending: window.location.origin },
-        auto_return: "approved",
-      };
+  function abrirFormulario(planKey) {
+    setShowEmailForm(planKey);
+    setEnviado(false);
+    setEmailWaitlist("");
+  }
 
-      alert(`Suscripción ${plan.name} seleccionada.\n\nPrecio: ${plan.priceARS}${plan.period}\n\nLa integración con MercadoPago se activará cuando se configuren las Edge Functions de Supabase.\n\nPor ahora tu plan se actualizará a ${plan.name} en modo prueba.`);
-      setProcessing(false);
-      setSelectedPlan(null);
-    } catch (err) {
-      alert("Error al procesar el pago. Intentá de nuevo.");
-      setProcessing(false);
-      setSelectedPlan(null);
+  async function unirseListaEspera(plan) {
+    if (!emailWaitlist.trim() || !emailWaitlist.includes("@")) {
+      alert("Ingresá un email válido.");
+      return;
+    }
+    setEnviando(true);
+    try {
+      // Guardar en sessionStorage (en producción se guarda en Supabase tabla "lista_espera")
+      const lista = JSON.parse(sessionStorage.getItem("traza360_lista_espera") || "[]");
+      lista.push({
+        email: emailWaitlist.trim(),
+        plan: plan.key,
+        precio: plan.priceARS,
+        fecha: new Date().toISOString(),
+      });
+      sessionStorage.setItem("traza360_lista_espera", JSON.stringify(lista));
+
+      // Avisar a Tristan por WhatsApp para que tenga el lead
+      const mensaje = `Nueva inscripción a lista de espera Traza 360:\nPlan: ${plan.name} (${plan.priceARS}${plan.period})\nEmail: ${emailWaitlist.trim()}\nFecha: ${new Date().toLocaleString('es-AR')}`;
+      try {
+        await sendWhatsAppAPI(WHATSAPP_NUMBER_DEFAULT, mensaje);
+      } catch(e) { console.warn("No se pudo notificar a admin:", e); }
+
+      setEnviado(true);
+      setEnviando(false);
+    } catch(e) {
+      alert("Error al guardar tu interés. Probá de nuevo.");
+      setEnviando(false);
     }
   }
 
   return (
-    <div className="min-h-screen px-4 py-8" style={{ background: "linear-gradient(180deg, #060608 0%, #0a0a12 100%)" }}>
+    <div className="min-h-screen px-4 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
       <div className="w-full max-w-md mx-auto">
         {/* Header */}
         <div className="flex items-center mb-6">
-          <button onClick={onBack} className="text-white text-2xl mr-3">{"\u2190"}</button>
-          <h1 className="text-xl font-bold text-white">Elegí tu plan</h1>
+          <button onClick={onBack} className="text-2xl mr-3" style={{ color: BRAND.gold }}>{"\u2190"}</button>
+          <h1 className="text-xl font-bold" style={{ color: BRAND.white }}>Próximos planes</h1>
+        </div>
+
+        {/* AVISO HONESTO ARRIBA */}
+        <div className="rounded-2xl p-4 mb-6" style={{ background: "rgba(212,175,55,0.08)", border: `1px solid ${BRAND.borderStrong}` }}>
+          <div className="flex items-start gap-3">
+            <span className="text-2xl shrink-0">{"\u{1F6E0}\u{FE0F}"}</span>
+            <div>
+              <p className="text-sm font-bold mb-1" style={{ color: BRAND.gold }}>Estamos terminando la pasarela de pago</p>
+              <p className="text-xs" style={{ color: BRAND.textMute }}>
+                Por ahora <strong style={{ color: BRAND.white }}>toda la app es gratis</strong>. Si te interesa alguno de estos planes, dejanos tu email y te avisamos en cuanto esté lista la suscripción.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Plan actual */}
-        <div className="rounded-xl p-3 mb-6" style={{ background: "rgba(224,224,224,0.05)", border: "1px solid rgba(224,224,224,0.1)" }}>
+        <div className="rounded-xl p-3 mb-6" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}` }}>
           <div className="flex items-center gap-2">
-            <span className="text-lg">{currentPlan === "gratis" ? "\u{1F513}" : "\u{1F451}"}</span>
+            <span className="text-lg">{"\u{1F513}"}</span>
             <div>
-              <div className="text-xs text-slate-300">Plan actual</div>
-              <div className="text-sm font-bold text-white">{currentPlan === "gratis" ? "Gratis" : currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)}</div>
+              <div className="text-xs" style={{ color: BRAND.textMute }}>Tu plan actual</div>
+              <div className="text-sm font-bold" style={{ color: BRAND.gold }}>Gratis (acceso completo durante beta)</div>
             </div>
           </div>
         </div>
@@ -1191,59 +1236,103 @@ function PlanesScreen({ onBack, currentPlan = "gratis" }) {
         {/* Cards de planes */}
         <div className="space-y-4">
           {planes.map((plan) => (
-            <div key={plan.key} className={`rounded-2xl p-5 relative ${plan.key === currentPlan ? "opacity-50" : ""}`}
-              style={{ background: `linear-gradient(145deg, ${plan.color}, rgba(8,8,12,0.9))`, border: `1px solid ${plan.border}` }}>
-              
+            <div key={plan.key} className="rounded-2xl p-5 relative"
+              style={{
+                background: "linear-gradient(145deg, #111111, #000000)",
+                border: plan.popular ? `2px solid ${BRAND.gold}` : `1px solid ${BRAND.border}`,
+              }}>
+
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-[12px] font-bold text-black" style={{ background: "linear-gradient(135deg, #E0E0E0, #ffffff)" }}>
-                  MÁS POPULAR
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-[11px] font-bold uppercase tracking-wider"
+                  style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+                  Más elegido
                 </div>
               )}
               {plan.badge && (
-                <div className="absolute -top-3 right-4 rounded-full px-3 py-1 text-[12px] font-bold text-black bg-green-400">
+                <div className="absolute -top-3 right-4 rounded-full px-3 py-1 text-[11px] font-bold"
+                  style={{ background: BRAND.red, color: BRAND.white }}>
                   {plan.badge}
                 </div>
               )}
 
               <div className="flex items-baseline gap-2 mb-1 mt-1">
-                <span className="text-2xl font-bold text-white">{plan.price}</span>
-                <span className="text-sm text-slate-300">{plan.period}</span>
+                <span className="text-2xl font-bold" style={{ color: BRAND.gold }}>{plan.price}</span>
+                <span className="text-sm" style={{ color: BRAND.textMute }}>{plan.period}</span>
               </div>
-              <div className="text-xs text-slate-400 mb-3">{plan.priceARS}{plan.period}</div>
-              <div className="text-lg font-bold text-white mb-3">{plan.name}</div>
+              <div className="text-xs mb-3" style={{ color: BRAND.textDim }}>{plan.priceARS}{plan.period}</div>
+              <div className="text-lg font-bold mb-3" style={{ color: BRAND.white }}>{plan.name}</div>
 
               <div className="space-y-2 mb-4">
                 {plan.features.map((f, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <span className="text-green-400 text-xs">{"\u2713"}</span>
-                    <span className="text-xs text-slate-300">{f}</span>
+                    <span className="text-xs" style={{ color: BRAND.gold }}>{"\u2713"}</span>
+                    <span className="text-xs" style={{ color: BRAND.textMute }}>{f}</span>
                   </div>
                 ))}
               </div>
 
-              <button
-                onClick={() => handleSubscribe(plan)}
-                disabled={plan.key === currentPlan || processing}
-                className={`w-full rounded-xl py-3 text-sm font-bold active:scale-95 ${plan.key === currentPlan ? "bg-white/10 text-slate-400 cursor-not-allowed" : "text-black"}`}
-                style={plan.key !== currentPlan ? { background: plan.popular ? "linear-gradient(135deg, #ffffff, #E0E0E0)" : "linear-gradient(135deg, rgba(224,224,224,0.3), rgba(224,224,224,0.1))", color: plan.popular ? "#000" : "#fff" } : {}}>
-                {plan.key === currentPlan ? "Plan actual" : processing && selectedPlan === plan.key ? "Procesando..." : `Suscribirme a ${plan.name}`}
-              </button>
+              {/* FORMULARIO DE LISTA DE ESPERA */}
+              {showEmailForm === plan.key ? (
+                enviado ? (
+                  <div className="rounded-xl p-4 text-center" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.3)" }}>
+                    <div className="text-3xl mb-2">{"\u2705"}</div>
+                    <p className="text-sm font-bold mb-1" style={{ color: "#22c55e" }}>¡Listo!</p>
+                    <p className="text-xs" style={{ color: BRAND.textMute }}>Te vamos a avisar a <strong style={{ color: BRAND.white }}>{emailWaitlist}</strong> apenas habilitemos el plan {plan.name}.</p>
+                    <button onClick={() => setShowEmailForm(null)} className="mt-3 text-[11px] font-semibold" style={{ color: BRAND.gold }}>
+                      Cerrar
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <input
+                      type="email"
+                      value={emailWaitlist}
+                      onChange={e => setEmailWaitlist(e.target.value)}
+                      placeholder="tu@email.com"
+                      className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+                      style={{ background: "rgba(0,0,0,0.5)", border: `1px solid ${BRAND.border}`, color: BRAND.white }}
+                    />
+                    <button onClick={() => unirseListaEspera(plan)} disabled={enviando}
+                      className="w-full rounded-xl py-2.5 text-sm font-bold disabled:opacity-40"
+                      style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+                      {enviando ? "Guardando..." : "Avisame cuando esté listo"}
+                    </button>
+                    <button onClick={() => setShowEmailForm(null)} className="w-full text-[11px] py-1" style={{ color: BRAND.textDim }}>
+                      Cancelar
+                    </button>
+                  </div>
+                )
+              ) : (
+                <button onClick={() => abrirFormulario(plan.key)}
+                  className="w-full rounded-xl py-3 text-sm font-bold active:scale-95"
+                  style={{
+                    background: plan.popular ? BRAND.goldGradient : "rgba(212,175,55,0.1)",
+                    color: plan.popular ? BRAND.black : BRAND.gold,
+                    border: plan.popular ? "none" : `1px solid ${BRAND.borderStrong}`,
+                  }}>
+                  {"\u{1F4E7}"} Avisame cuando esté listo
+                </button>
+              )}
             </div>
           ))}
         </div>
 
-        {/* Garantía */}
-        <div className="mt-6 text-center">
-          <div className="text-xs text-slate-400">{"\u{1F512}"} Pago seguro con MercadoPago</div>
-          <div className="text-[12px] text-slate-400 mt-1">Cancelá cuando quieras. Sin permanencia.</div>
+        {/* Por qué pedimos email */}
+        <div className="mt-6 rounded-xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BRAND.border}` }}>
+          <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: BRAND.gold }}>¿Por qué pedimos tu email?</p>
+          <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+            <li>{"\u2713"} Te avisamos <strong style={{ color: BRAND.white }}>antes que a nadie</strong> cuando habilitemos los planes pagos</li>
+            <li>{"\u2713"} <strong style={{ color: BRAND.white }}>30% de descuento</strong> para los primeros 100 inscriptos</li>
+            <li>{"\u2713"} <strong style={{ color: BRAND.white }}>Cero spam.</strong> Solo te escribimos una vez, cuando esté listo</li>
+            <li>{"\u2713"} Mientras tanto seguís usando la app <strong style={{ color: BRAND.white }}>100% gratis</strong></li>
+          </ul>
         </div>
 
-        {/* MercadoPago badge */}
-        <div className="mt-4 flex justify-center">
-          <div className="rounded-lg px-4 py-2" style={{ background: "rgba(224,224,224,0.05)", border: "1px solid rgba(224,224,224,0.1)" }}>
-            <div className="text-[12px] text-slate-300 text-center">Procesado por</div>
-            <div className="text-sm font-bold text-white text-center">MercadoPago</div>
-          </div>
+        {/* Garantía honesta */}
+        <div className="mt-4 text-center">
+          <p className="text-[11px]" style={{ color: BRAND.textDim }}>
+            Cuando habilitemos los pagos usaremos <strong style={{ color: BRAND.gold }}>MercadoPago</strong> (Argentina y LATAM). Sin permanencia, cancelás cuando quieras.
+          </p>
         </div>
       </div>
     </div>
@@ -1521,7 +1610,7 @@ const MODULES = [
       { key: "grabar", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación audio silenciosa → nube.", type: "record_audio" },
       { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver todas las grabaciones guardadas.", type: "evidencias" },
       { key: "estoy_en", iconName: "pin", icon: "\u{1F4CD}", name: "Estoy en...", desc: "Avisa dónde estás + ubicación GPS.", type: "alert_contacts", message: "Estoy en [completar]." },
-      { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Ingreso a lugar desconocido", desc: "Timer + PIN: si no cancelás, se alerta.", type: "checkin", titulo: "Lugar desconocido — Violencia de Género" },
+      { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Botón de ingreso a lugar", desc: "Timer: si no confirmás que estás bien, se alerta automático.", type: "checkin", titulo: "Botón de ingreso — Violencia de Género" },
       { key: "share", iconName: "pin", icon: "\u{1F4CD}", name: "Enviar ubicación en tiempo real", desc: "Comparte GPS en vivo con contacto.", type: "alert_contacts", message: "Compartiendo mi ubicación en vivo." },
       { key: "uber", iconName: "car", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber con destino.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
       { key: "taxi", iconName: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono de taxi.", type: "taxi" },
@@ -1583,14 +1672,14 @@ const MODULES = [
   // v19.1: Renombrado "Noche Segura" → "Noche Segura"
   // Motivo: Nicho mucho más grande (jóvenes que salen de noche + trabajadores nocturnos).
   // "Salí tranqui. Volvé tranqui."
-  { key: "turno_seguro", iconName: "night", emoji: "\u{1F303}", title: "Noche Segura", desc: "Salí tranqui. Volvé tranqui. — Boliche, fiesta y noche.",
+  { key: "turno_seguro", iconName: "night", emoji: "\u{1F303}", title: "Noche Segura", desc: "Para jóvenes que salen de noche, acompañantes, repartidores o cualquier situación de riesgo donde necesites apoyo de amigos o conocidos.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
       { key: "panico", iconName: "panic", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "SOS — Necesito ayuda urgente." },
       { key: "sospechoso_lugar", iconName: "alert", icon: "\u26A0\u{FE0F}", name: "Entro a lugar sospechoso", desc: "Guarda dirección + timer. Si no confirmás, alerta automática.", type: "checkin", titulo: "Lugar sospechoso — Noche Segura" },
       { key: "desconocido", iconName: "person", icon: "\u{1F6B6}", name: "Salgo con desconocido/a", desc: "Avisa contactos + nombre + ubicación.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
       { key: "perdido", iconName: "pin", icon: "\u{1F4CD}", name: "Me perdí", desc: "Comparte GPS en vivo a tus contactos.", type: "alert_contacts", message: "Me perdí. Compartiendo mi ubicación en vivo. Por favor ayudame a volver." },
-      { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Check-in nocturno", desc: "Timer + PIN: si no confirmo, alerten.", type: "checkin", titulo: "Check-in nocturno — Noche Segura" },
+      { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Botón de ingreso nocturno", desc: "Timer: si no confirmo a tiempo, se alerta a mis contactos.", type: "checkin", titulo: "Botón de ingreso nocturno" },
       { key: "grabar", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación silenciosa → nube.", type: "record_audio" },
       { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
       { key: "maps", iconName: "home", icon: "\u{1F3E1}", name: "Llegar a casa", desc: "Activa GPS hasta llegar a casa.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
@@ -1620,7 +1709,7 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
       case "evidencias": if (onOpenEvidencias) onOpenEvidencias(); return;
       case "checkin":
         if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza primero."); return; }
-        setCheckInTitulo(action.titulo || "Check-in de seguridad");
+        setCheckInTitulo(action.titulo || "Botón de ingreso");
         setShowCheckIn(true); return;
       case "camaras":
         alert("Abrí la app de tus cámaras (Ring, Xiaomi Home, TP-Link Tapo, Alfred). Próximamente integración directa."); return;
@@ -1698,7 +1787,7 @@ function Field({ label, type = "text", placeholder, value, onChange }) {
 
 function AccessCard({ children }) { return <div className="w-full max-w-md rounded-3xl p-6 shadow-2xl md:p-8" style={{ background: "linear-gradient(145deg, #13131d, #0a0a12)", border: "1px solid rgba(224,224,224,0.1)", boxShadow: "8px 8px 24px rgba(0,0,0,0.6)" }}>{children}</div>; }
 
-function LoginScreen({ onBack, onSuccess }) {
+function LoginScreen({ onBack, onSuccess, onRecuperar }) {
   const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [loading, setLoading] = useState(false); const [error, setError] = useState("");
   async function handle() {
     setError(""); if (!email.trim() || !password.trim()) { setError("Completá todos los campos."); return; }
@@ -1710,50 +1799,96 @@ function LoginScreen({ onBack, onSuccess }) {
     const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
     if (error) { setError("Error al conectar con Google."); setLoading(false); }
   }
-  return (<div className="flex min-h-screen items-center justify-center px-5 py-8 text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 100%)" }}><AccessCard>
-    <button onClick={onBack} className="text-sm font-semibold" style={{ color: "#E0E0E0" }}>← Volver</button>
-    <h2 className="mt-5 text-center text-2xl font-bold text-white">Ingresar</h2>
+  return (<div className="flex min-h-screen items-center justify-center px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}><AccessCard>
+    <button onClick={onBack} className="text-sm font-semibold" style={{ color: BRAND.gold }}>← Volver</button>
+    <h2 className="mt-5 text-center text-2xl font-bold" style={{ color: BRAND.white }}>Ingresar</h2>
     <div className="mt-6 space-y-4">
-      <button onClick={handleGoogle} disabled={loading} className="w-full flex items-center justify-center gap-3 rounded-xl py-3.5 font-semibold text-white border border-white/20 active:scale-95 disabled:opacity-50" style={{ background: "rgba(255,255,255,0.05)" }}>
+      <button onClick={handleGoogle} disabled={loading} className="w-full flex items-center justify-center gap-3 rounded-xl py-3.5 font-semibold text-white active:scale-95 disabled:opacity-50" style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${BRAND.border}` }}>
         <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
         Continuar con Google
       </button>
-      <div className="flex items-center gap-3"><div className="flex-1 h-px bg-white/10"></div><span className="text-xs text-slate-400">o con email</span><div className="flex-1 h-px bg-white/10"></div></div>
+      <div className="flex items-center gap-3"><div className="flex-1 h-px" style={{ background: BRAND.border }}></div><span className="text-xs" style={{ color: BRAND.textDim }}>o con email</span><div className="flex-1 h-px" style={{ background: BRAND.border }}></div></div>
       <Field label="Email" type="email" placeholder="tu@email.com" value={email} onChange={e => setEmail(e.target.value)} />
       <Field label="Contraseña" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
-      {error && <p className="text-xs text-red-400 text-center">{error}</p>}
-      <button onClick={handle} disabled={loading} className="w-full rounded-xl py-3.5 font-bold text-black shadow-lg disabled:opacity-50" style={{ background: "linear-gradient(135deg, #E0E0E0, #f5e6a3, #E0E0E0)" }}>{loading ? "Ingresando..." : "Ingresar"}</button>
+      {/* v19.6: Link recuperar contraseña */}
+      <div className="text-right">
+        <button type="button" onClick={onRecuperar} className="text-xs font-semibold underline" style={{ color: BRAND.gold }}>
+          ¿Olvidaste tu contraseña?
+        </button>
+      </div>
+      {error && <p className="text-xs text-center" style={{ color: "#fca5a5" }}>{error}</p>}
+      <button onClick={handle} disabled={loading} className="w-full rounded-xl py-3.5 font-bold shadow-lg disabled:opacity-50" style={{ background: BRAND.goldGradient, color: BRAND.black }}>{loading ? "Ingresando..." : "Ingresar"}</button>
     </div></AccessCard></div>);
 }
 
-function RegisterScreen({ onBack, onSuccess, setPendingName }) {
+function RegisterScreen({ onBack, onSuccess, setPendingName, onScreen }) {
   const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [loading, setLoading] = useState(false); const [error, setError] = useState("");
+  const [aceptaTerminos, setAceptaTerminos] = useState(false); // v19.6: checkbox obligatorio
   async function handle() {
     setError(""); if (!name.trim() || !email.trim() || !password.trim()) { setError("Completá todos los campos."); return; }
     if (password.length < 6) { setError("Contraseña mínimo 6 caracteres."); return; }
-    setLoading(true); try { sessionStorage.setItem("traza360_pending_name", name.trim()); } catch(e){} setPendingName(name.trim());
+    if (!aceptaTerminos) { setError("Tenés que aceptar los Términos y la Política de Privacidad para registrarte."); return; }
+    setLoading(true); try { sessionStorage.setItem("traza360_pending_name", name.trim()); sessionStorage.setItem("traza360_terms_accepted", new Date().toISOString()); } catch(e){} setPendingName(name.trim());
     const r = await signUp(email.trim(), password, name.trim()); setLoading(false);
     if (r.success) onSuccess(); else setError(r.error.includes("already") ? "Email ya registrado." : r.error);
   }
   async function handleGoogle() {
-    setError(""); setLoading(true);
+    setError("");
+    if (!aceptaTerminos) { setError("Tenés que aceptar los Términos y la Política de Privacidad antes de continuar."); return; }
+    setLoading(true);
+    try { sessionStorage.setItem("traza360_terms_accepted", new Date().toISOString()); } catch(e){}
     const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
     if (error) { setError("Error al conectar con Google."); setLoading(false); }
   }
-  return (<div className="flex min-h-screen items-center justify-center px-5 py-8 text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 100%)" }}><AccessCard>
-    <button onClick={onBack} className="text-sm font-semibold" style={{ color: "#E0E0E0" }}>← Volver</button>
-    <h2 className="mt-5 text-center text-2xl font-bold text-white">Crear cuenta</h2>
+  return (<div className="flex min-h-screen items-center justify-center px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}><AccessCard>
+    <button onClick={onBack} className="text-sm font-semibold" style={{ color: BRAND.gold }}>← Volver</button>
+    <h2 className="mt-5 text-center text-2xl font-bold" style={{ color: BRAND.white }}>Crear cuenta</h2>
     <div className="mt-6 space-y-4">
-      <button onClick={handleGoogle} disabled={loading} className="w-full flex items-center justify-center gap-3 rounded-xl py-3.5 font-semibold text-white border border-white/20 active:scale-95 disabled:opacity-50" style={{ background: "rgba(255,255,255,0.05)" }}>
-        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-        Continuar con Google
-      </button>
-      <div className="flex items-center gap-3"><div className="flex-1 h-px bg-white/10"></div><span className="text-xs text-slate-400">o con email</span><div className="flex-1 h-px bg-white/10"></div></div>
       <Field label="Nombre completo" placeholder="Nombre y apellido" value={name} onChange={e => setName(e.target.value)} />
       <Field label="Email" type="email" placeholder="tu@email.com" value={email} onChange={e => setEmail(e.target.value)} />
       <Field label="Contraseña" type="password" placeholder="Mínimo 6 caracteres" value={password} onChange={e => setPassword(e.target.value)} />
-      {error && <p className="text-xs text-red-400 text-center">{error}</p>}
-      <button onClick={handle} disabled={loading} className="w-full rounded-xl py-3.5 font-bold text-black shadow-lg disabled:opacity-50" style={{ background: "linear-gradient(135deg, #E0E0E0, #f5e6a3, #E0E0E0)" }}>{loading ? "Creando..." : "Crear cuenta"}</button>
+
+      {/* v19.6: Checkbox obligatorio T&C */}
+      <div className="rounded-xl p-3" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${aceptaTerminos ? BRAND.borderStrong : BRAND.border}` }}>
+        <label className="flex items-start gap-3 cursor-pointer">
+          <button type="button" onClick={() => setAceptaTerminos(!aceptaTerminos)}
+            className="h-5 w-5 rounded shrink-0 mt-0.5 flex items-center justify-center"
+            style={{
+              background: aceptaTerminos ? BRAND.gold : "transparent",
+              border: `2px solid ${aceptaTerminos ? BRAND.gold : "rgba(255,255,255,0.3)"}`,
+            }}>
+            {aceptaTerminos && <span className="text-black text-xs font-bold">{"\u2713"}</span>}
+          </button>
+          <div className="flex-1 text-xs leading-relaxed" style={{ color: BRAND.textMute }} onClick={() => setAceptaTerminos(!aceptaTerminos)}>
+            Acepto los{" "}
+            <button type="button" onClick={(e) => { e.stopPropagation(); onScreen && onScreen("terminos"); }} className="underline font-semibold" style={{ color: BRAND.gold }}>
+              Términos y Condiciones
+            </button>
+            {" "}y la{" "}
+            <button type="button" onClick={(e) => { e.stopPropagation(); onScreen && onScreen("privacidad"); }} className="underline font-semibold" style={{ color: BRAND.gold }}>
+              Política de Privacidad
+            </button>.
+            <p className="mt-1.5 text-[11px]" style={{ color: BRAND.textDim }}>Importante: Traza 360 no reemplaza al 911 ni a servicios oficiales de emergencia.</p>
+          </div>
+        </label>
+      </div>
+
+      <button onClick={handle} disabled={loading || !aceptaTerminos}
+        className="w-full rounded-xl py-3.5 font-bold shadow-lg disabled:opacity-40"
+        style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+        {loading ? "Creando..." : "Crear cuenta"}
+      </button>
+
+      <div className="flex items-center gap-3"><div className="flex-1 h-px" style={{ background: BRAND.border }}></div><span className="text-xs" style={{ color: BRAND.textDim }}>o</span><div className="flex-1 h-px" style={{ background: BRAND.border }}></div></div>
+
+      <button onClick={handleGoogle} disabled={loading || !aceptaTerminos}
+        className="w-full flex items-center justify-center gap-3 rounded-xl py-3.5 font-semibold text-white active:scale-95 disabled:opacity-40"
+        style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${BRAND.border}` }}>
+        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Continuar con Google
+      </button>
+
+      {error && <p className="text-xs text-center" style={{ color: "#fca5a5" }}>{error}</p>}
     </div></AccessCard></div>);
 }
 
@@ -2085,6 +2220,50 @@ function TeCuidoScreen({ onBack }) {
 // ═══════════════════════════════════════════════
 function InstruccionesScreen({ onBack }) {
   const [seccion, setSeccion] = useState("modulos");
+  // v19.4: PIN configurable para modo calculadora
+  const [pin, setPin] = useState(() => {
+    try { return sessionStorage.getItem("traza360_pin") || "1234"; } catch(e) { return "1234"; }
+  });
+  const [nuevoPin, setNuevoPin] = useState("");
+  const [mostrarPin, setMostrarPin] = useState(false);
+  const [pinGuardado, setPinGuardado] = useState(false);
+
+  function guardarPin() {
+    if (nuevoPin.length < 4 || nuevoPin.length > 8) {
+      alert("El PIN debe tener entre 4 y 8 números.");
+      return;
+    }
+    if (!/^\d+$/.test(nuevoPin)) {
+      alert("El PIN solo puede tener números.");
+      return;
+    }
+    try {
+      sessionStorage.setItem("traza360_pin", nuevoPin);
+      setPin(nuevoPin);
+      setNuevoPin("");
+      setPinGuardado(true);
+      setTimeout(() => setPinGuardado(false), 2500);
+    } catch(e) {
+      alert("Error al guardar el PIN.");
+    }
+  }
+
+  function copiarLinkOculto() {
+    const link = window.location.origin + "/?modo=calc";
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(link).then(() => {
+        alert("✅ Link copiado:\n" + link + "\n\nPegalo donde quieras (WhatsApp, navegador, etc).");
+      }).catch(() => { prompt("Copiá este link manualmente:", link); });
+    } else {
+      prompt("Copiá este link manualmente:", link);
+    }
+  }
+
+  function probarModoCalculadora() {
+    if (window.confirm("¿Probar modo calculadora ahora?\n\nVas a ir al modo oculto. Para volver, ingresá tu PIN (" + pin + ") y tocá '=' en la calculadora.")) {
+      window.location.href = "/?modo=calc";
+    }
+  }
 
   return (
     <div className="min-h-screen px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
@@ -2122,9 +2301,9 @@ function InstruccionesScreen({ onBack }) {
             <>
               <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>Los 4 módulos de protección</h3>
               {[
-                { icon: "shield", titulo: "Violencia de Género", desc: "Pensado para personas en situación de riesgo. Botón pánico, grabación silenciosa, check-in cuando entrás a un lugar desconocido, ubicación en tiempo real." },
+                { icon: "shield", titulo: "Violencia de Género", desc: "Para personas en situación de riesgo. Botón de pánico, grabación silenciosa, botón de ingreso cuando entrás a un lugar desconocido, ubicación en tiempo real." },
                 { icon: "teen", titulo: "Adolescente Seguro", desc: "Para que un adolescente avise a sus padres: AYUDA, bullying con evidencia, buscarlo del cole, llegar a casa con GPS, llamar taxi/Uber." },
-                { icon: "night", titulo: "Noche Segura", desc: "Para acompañantes, repartidores nocturnos y jóvenes de fiesta. Si entrás a un lugar sospechoso, te perdés, salís con alguien que no conocés, o necesitás que te busquen. Pánico, check-in con dirección, grabación, GPS en vivo, Uber/taxi." },
+                { icon: "night", titulo: "Noche Segura", desc: "Para jóvenes que salen de noche, acompañantes, repartidores y cualquier situación de riesgo. Pánico, botón de ingreso a lugares, grabación, GPS en vivo, Uber/taxi." },
                 { icon: "eye", titulo: "Te Cuido a Distancia", desc: "Un familiar/amigo puede iniciar grabación remota CON tu aprobación. Funciona con código de vínculo de 6 dígitos." },
               ].map((m, i) => (
                 <div key={i} className="flex gap-3 rounded-xl p-3" style={{ background: "rgba(255,255,255,0.02)" }}>
@@ -2161,22 +2340,114 @@ function InstruccionesScreen({ onBack }) {
           {seccion === "acceso" && (
             <>
               <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>Acceso rápido y oculto</h3>
-              <p className="text-sm mb-3" style={{ color: BRAND.textMute }}>Para situaciones donde no querés que alguien vea que estás usando Traza 360:</p>
+              <p className="text-sm mb-4" style={{ color: BRAND.textMute }}>Tres formas de tener Traza 360 a mano sin que se note.</p>
 
-              <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
-                <p className="text-sm font-semibold mb-2" style={{ color: BRAND.gold }}>{"\u{1F522}"} Modo Calculadora (acceso oculto)</p>
-                <p className="text-xs" style={{ color: BRAND.textMute }}>Abrí <span style={{ color: BRAND.gold }}>traza360.app/?modo=calc</span> en tu navegador. Se ve como una calculadora normal. Ingresá tu PIN (1234 por defecto) y tocá <strong>=</strong> para entrar a la app.</p>
-                <p className="text-[11px] mt-2" style={{ color: BRAND.textDim }}>Tip: agregá ese link a tu pantalla de inicio con nombre "Calculadora".</p>
-              </div>
-
+              {/* OPCIÓN 1: Agregar al inicio del celular (sin la palabra PWA) */}
               <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BRAND.border}` }}>
-                <p className="text-sm font-semibold mb-2" style={{ color: BRAND.gold }}>{"\u{1F4F1}"} PWA en pantalla de inicio</p>
-                <p className="text-xs" style={{ color: BRAND.textMute }}>En Chrome/Safari, tocá "Agregar a pantalla de inicio". El ícono aparece como una app normal sin pasar por el navegador.</p>
+                <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F4F2}"} 1. Agregar Traza 360 al inicio de tu celular</p>
+                <p className="text-xs mb-3" style={{ color: BRAND.textMute }}>Para abrir la app de un toque, como una app descargada (pero sin descargarla).</p>
+
+                <div className="space-y-2.5">
+                  <div className="rounded-lg p-3" style={{ background: "rgba(0,0,0,0.4)" }}>
+                    <p className="text-[11px] font-bold mb-1.5" style={{ color: BRAND.gold }}>📱 Si tenés Android (Chrome):</p>
+                    <ol className="text-xs space-y-1" style={{ color: BRAND.textMute }}>
+                      <li>1. Tocá los <strong style={{ color: BRAND.white }}>3 puntitos</strong> arriba a la derecha del navegador</li>
+                      <li>2. Tocá <strong style={{ color: BRAND.white }}>"Agregar a pantalla principal"</strong></li>
+                      <li>3. Tocá <strong style={{ color: BRAND.white }}>"Agregar"</strong> para confirmar</li>
+                    </ol>
+                  </div>
+
+                  <div className="rounded-lg p-3" style={{ background: "rgba(0,0,0,0.4)" }}>
+                    <p className="text-[11px] font-bold mb-1.5" style={{ color: BRAND.gold }}>🍎 Si tenés iPhone (Safari):</p>
+                    <ol className="text-xs space-y-1" style={{ color: BRAND.textMute }}>
+                      <li>1. Tocá el <strong style={{ color: BRAND.white }}>ícono de compartir</strong> (cuadrado con flecha hacia arriba)</li>
+                      <li>2. Bajá y tocá <strong style={{ color: BRAND.white }}>"Agregar al inicio"</strong></li>
+                      <li>3. Tocá <strong style={{ color: BRAND.white }}>"Agregar"</strong> arriba a la derecha</li>
+                    </ol>
+                  </div>
+                </div>
+
+                <p className="text-[11px] mt-3" style={{ color: BRAND.gold }}>{"\u2713"} El ícono de Traza 360 aparece como cualquier otra app del celular.</p>
               </div>
 
+              {/* OPCIÓN 2: Modo Calculadora con PIN CONFIGURABLE */}
+              <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
+                <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F522}"} 2. Modo Calculadora (acceso oculto total)</p>
+                <p className="text-xs mb-3" style={{ color: BRAND.textMute }}>La app se ve como una calculadora normal. Solo vos sabés que es Traza 360.</p>
+
+                {/* PIN ACTUAL */}
+                <div className="rounded-lg p-3 mb-3" style={{ background: "rgba(0,0,0,0.4)", border: `1px solid ${BRAND.border}` }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[11px] uppercase tracking-wider font-bold" style={{ color: BRAND.textMute }}>Tu PIN actual</p>
+                    <button onClick={() => setMostrarPin(!mostrarPin)} className="text-[11px] font-semibold" style={{ color: BRAND.gold }}>
+                      {mostrarPin ? "Ocultar" : "Mostrar"}
+                    </button>
+                  </div>
+                  <p className="font-mono text-3xl font-bold tracking-widest text-center" style={{ color: BRAND.gold }}>
+                    {mostrarPin ? pin : "•".repeat(pin.length)}
+                  </p>
+                </div>
+
+                {/* CAMBIAR PIN */}
+                <div className="mb-3">
+                  <label className="text-[11px] uppercase tracking-wider block mb-1.5 font-bold" style={{ color: BRAND.textMute }}>
+                    Cambiar PIN (4 a 8 números)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength="8"
+                      value={nuevoPin}
+                      onChange={e => setNuevoPin(e.target.value.replace(/\D/g, ""))}
+                      placeholder="Ej: 4567"
+                      className="flex-1 rounded-lg px-3 py-2.5 text-sm font-mono outline-none"
+                      style={{ background: "rgba(0,0,0,0.5)", border: `1px solid ${BRAND.border}`, color: BRAND.white }}
+                    />
+                    <button onClick={guardarPin} disabled={nuevoPin.length < 4}
+                      className="rounded-lg px-4 text-xs font-bold disabled:opacity-40"
+                      style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+                      Guardar
+                    </button>
+                  </div>
+                  {pinGuardado && <p className="text-[11px] mt-1.5 font-semibold" style={{ color: BRAND.gold }}>{"\u2713"} PIN actualizado correctamente</p>}
+                </div>
+
+                {/* CÓMO SE USA */}
+                <div className="rounded-lg p-3 mb-3" style={{ background: "rgba(0,0,0,0.4)" }}>
+                  <p className="text-[11px] font-bold mb-1.5" style={{ color: BRAND.gold }}>¿Cómo se usa?</p>
+                  <ol className="text-xs space-y-1" style={{ color: BRAND.textMute }}>
+                    <li>1. Abrís el link oculto en tu navegador</li>
+                    <li>2. Te aparece una calculadora normal</li>
+                    <li>3. Escribís tu PIN ({mostrarPin ? pin : "••••"}) y tocás <strong style={{ color: BRAND.white }}>"="</strong></li>
+                    <li>4. Se abre Traza 360</li>
+                  </ol>
+                  <p className="text-[11px] mt-2 italic" style={{ color: BRAND.textDim }}>Si alguien mira tu pantalla, solo ve una calculadora.</p>
+                </div>
+
+                {/* BOTONES DE ACCIÓN */}
+                <div className="space-y-2">
+                  <button onClick={copiarLinkOculto}
+                    className="w-full rounded-lg py-2.5 text-xs font-semibold"
+                    style={{ background: "rgba(212,175,55,0.1)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold }}>
+                    {"\u{1F4CB}"} Copiar link de acceso oculto
+                  </button>
+                  <button onClick={probarModoCalculadora}
+                    className="w-full rounded-lg py-2.5 text-xs font-bold"
+                    style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+                    {"\u{1F510}"} Probar modo calculadora ahora
+                  </button>
+                </div>
+
+                <p className="text-[11px] mt-3" style={{ color: BRAND.textDim }}>
+                  💡 <strong style={{ color: BRAND.gold }}>Tip:</strong> Agregá el link oculto a tu pantalla de inicio con nombre "Calculadora". Nadie va a sospechar.
+                </p>
+              </div>
+
+              {/* OPCIÓN 3: Emergencia real */}
               <div className="rounded-xl p-4" style={{ background: "rgba(220,38,38,0.05)", border: `1px solid ${BRAND.red}30` }}>
-                <p className="text-sm font-semibold mb-2" style={{ color: BRAND.red }}>{"\u26A0\u{FE0F}"} En emergencia real</p>
-                <p className="text-xs" style={{ color: BRAND.textMute }}>Llamá primero al 911 (o al número de emergencias de tu país). Traza 360 no reemplaza a la policía ni a los servicios médicos.</p>
+                <p className="text-sm font-bold mb-2" style={{ color: BRAND.red }}>{"\u26A0\u{FE0F}"} 3. En una emergencia REAL</p>
+                <p className="text-xs" style={{ color: BRAND.textMute }}>Si tu vida o la de alguien está en peligro inminente, llamá <strong style={{ color: BRAND.red }}>primero</strong> al 911 (o al número de emergencias de tu país). Traza 360 te ayuda a avisar a tus contactos, pero NO reemplaza a la policía ni a los servicios médicos.</p>
               </div>
             </>
           )}
@@ -2198,7 +2469,7 @@ function InstruccionesScreen({ onBack }) {
                   </div>
                 ))}
               </div>
-              <p className="text-xs mt-4" style={{ color: BRAND.textDim }}>Contacto: info@traza360.app</p>
+              <p className="text-xs mt-4" style={{ color: BRAND.textDim }}>Contacto: {SUPPORT_EMAIL}</p>
             </>
           )}
         </div>
@@ -2207,6 +2478,1095 @@ function InstruccionesScreen({ onBack }) {
   );
 }
 
+
+// ═══════════════════════════════════════════════
+// POLÍTICA DE PRIVACIDAD (v19.6) — pantalla completa
+// ═══════════════════════════════════════════════
+function PoliticaPrivacidadScreen({ onBack }) {
+  return (
+    <div className="min-h-screen px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
+      <div className="mx-auto max-w-2xl">
+        <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver</button>
+
+        <div className="mb-6 text-center">
+          <PinEyeLogo size={60} showText={false} />
+          <p className="text-[11px] uppercase tracking-[3px] mt-2" style={{ color: BRAND.gold }}>Política de Privacidad</p>
+          <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>Tus datos son tuyos</h2>
+          <p className="text-[11px] mt-2" style={{ color: BRAND.textDim }}>Versión 19.6 · Vigente desde Mayo 2026</p>
+        </div>
+
+        <div className="rounded-2xl p-6 space-y-5" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.border}` }}>
+
+          {/* 1. Quién es el responsable */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>1. Responsable del tratamiento de datos</h3>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+              <strong style={{ color: BRAND.white }}>Tristan Passaglia</strong>, con domicilio en Córdoba, Argentina, es el responsable del tratamiento de los datos personales recolectados a través de Traza 360. Para cualquier consulta sobre privacidad: <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span>.
+            </p>
+          </div>
+
+          {/* 2. Qué datos guardamos */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>2. Qué datos guardamos</h3>
+            <p className="text-sm mb-2" style={{ color: BRAND.textMute }}>Para que la app funcione, almacenamos:</p>
+            <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+              <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>Tu cuenta:</strong> nombre, email, contraseña encriptada.</li>
+              <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>Tus contactos de confianza:</strong> nombre, teléfono, relación.</li>
+              <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>Tu ubicación GPS:</strong> SOLO cuando activás una alerta o función que la requiere. NUNCA en background.</li>
+              <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>Tus grabaciones de audio:</strong> guardadas encriptadas en la nube (Supabase). Solo vos las podés ver, escuchar o eliminar.</li>
+              <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>Historial de alertas:</strong> fecha, hora, módulo usado, contactos avisados.</li>
+            </ul>
+          </div>
+
+          {/* 3. Para qué usamos la ubicación */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>3. Sobre tu ubicación GPS</h3>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+              Tu ubicación se comparte <strong style={{ color: BRAND.white }}>únicamente</strong> cuando:
+            </p>
+            <ul className="text-xs space-y-1 mt-2" style={{ color: BRAND.textMute }}>
+              <li>{"\u2713"} Tocás el botón de pánico</li>
+              <li>{"\u2713"} Activás "Me perdí" o "Compartir ubicación"</li>
+              <li>{"\u2713"} Iniciás un Botón de ingreso a un lugar</li>
+              <li>{"\u2713"} Llamás un Uber/taxi desde la app</li>
+            </ul>
+            <p className="text-xs mt-2 italic" style={{ color: BRAND.textDim }}>
+              No te seguimos. No vendemos tu ubicación. No la compartimos con terceros excepto los contactos que VOS elegís.
+            </p>
+          </div>
+
+          {/* 4. Con quién compartimos */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>4. ¿Con quién compartimos tus datos?</h3>
+            <p className="text-sm mb-2" style={{ color: BRAND.textMute }}>Compartimos datos SOLO con estos servicios necesarios:</p>
+            <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+              <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>Supabase:</strong> base de datos y almacenamiento de archivos (servidores en São Paulo, Brasil).</li>
+              <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>Meta WhatsApp Business:</strong> para enviar alertas a tus contactos via WhatsApp.</li>
+              <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>Google (opcional):</strong> si elegís login con Google.</li>
+              <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>MercadoPago:</strong> solo para procesar pagos cuando habilitemos planes. No almacenamos datos de tarjeta.</li>
+            </ul>
+            <p className="text-xs mt-3 font-semibold" style={{ color: BRAND.gold }}>
+              {"\u2713"} NO vendemos información a terceros con fines comerciales.
+            </p>
+          </div>
+
+          {/* 5. Contactos de terceros */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>5. Sobre los contactos que agregás</h3>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+              Al agregar un contacto de confianza, <strong style={{ color: BRAND.white }}>vos sos responsable</strong> de haber obtenido su consentimiento para recibir mensajes por WhatsApp. Al guardar el contacto, le enviamos automáticamente un mensaje de verificación.
+            </p>
+            <div className="rounded-xl p-3 mt-3" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
+              <p className="text-xs" style={{ color: BRAND.gold }}>
+                <strong>Importante:</strong> Si un contacto te pide que lo elimines, hacelo desde la pantalla "Mis Contactos" {"\u2192"} "Eliminar".
+              </p>
+            </div>
+          </div>
+
+          {/* 6. Tus derechos */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>6. Tus derechos (Ley 25.326 Argentina)</h3>
+            <p className="text-sm mb-2" style={{ color: BRAND.textMute }}>Tenés derecho a:</p>
+            <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+              <li>{"\u2713"} <strong style={{ color: BRAND.white }}>Acceder</strong> a todos tus datos guardados</li>
+              <li>{"\u2713"} <strong style={{ color: BRAND.white }}>Rectificar</strong> datos incorrectos (editando tu perfil)</li>
+              <li>{"\u2713"} <strong style={{ color: BRAND.white }}>Borrar tu cuenta</strong> y todos tus datos cuando quieras (desde el panel)</li>
+              <li>{"\u2713"} <strong style={{ color: BRAND.white }}>Descargar</strong> una copia de tus datos (escribinos a {SUPPORT_EMAIL})</li>
+              <li>{"\u2713"} <strong style={{ color: BRAND.white }}>Oponerte</strong> al tratamiento de datos en cualquier momento</li>
+            </ul>
+          </div>
+
+          {/* 7. Borrado */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>7. Cómo borrar tu cuenta</h3>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+              Desde el panel principal {"\u2192"} "Cerrar sesión" {"\u2192"} "Borrar mi cuenta". Esta acción es <strong style={{ color: BRAND.red }}>permanente</strong> y elimina TODOS tus datos (contactos, grabaciones, historial) en máximo 48hs.
+            </p>
+          </div>
+
+          {/* 8. Cookies */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>8. Cookies y almacenamiento local</h3>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+              Usamos almacenamiento local del navegador (sessionStorage) para mantener tu sesión activa y guardar configuraciones (PIN, idioma). No usamos cookies de seguimiento ni publicidad.
+            </p>
+          </div>
+
+          {/* 9. Menores */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>9. Edad mínima</h3>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+              Traza 360 está pensada para personas de <strong style={{ color: BRAND.white }}>13 años o más</strong>. Si sos menor de 18 años, necesitás autorización de tu padre, madre o tutor legal. No recolectamos datos a sabiendas de menores de 13 años.
+            </p>
+          </div>
+
+          {/* 10. Cambios */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>10. Cambios a esta política</h3>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+              Si cambiamos esta política te avisaremos por email y en la app. La fecha de "Vigente desde" arriba indica la versión actual.
+            </p>
+          </div>
+
+          {/* Contacto */}
+          <div className="rounded-xl p-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
+            <p className="text-sm font-bold mb-1" style={{ color: BRAND.gold }}>{"\u{1F4E7}"} Contacto por privacidad</p>
+            <p className="text-xs" style={{ color: BRAND.textMute }}>
+              Si tenés dudas, querés ejercer un derecho o reclamar, escribinos a:<br/>
+              <strong style={{ color: BRAND.white }}>{SUPPORT_EMAIL}</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// TÉRMINOS Y CONDICIONES (v19.6) — pantalla completa
+// ═══════════════════════════════════════════════
+function TerminosScreen({ onBack }) {
+  return (
+    <div className="min-h-screen px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
+      <div className="mx-auto max-w-2xl">
+        <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver</button>
+
+        <div className="mb-6 text-center">
+          <PinEyeLogo size={60} showText={false} />
+          <p className="text-[11px] uppercase tracking-[3px] mt-2" style={{ color: BRAND.gold }}>Términos y Condiciones</p>
+          <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>Acuerdo de uso</h2>
+          <p className="text-[11px] mt-2" style={{ color: BRAND.textDim }}>Versión 19.6 · Vigente desde Mayo 2026</p>
+        </div>
+
+        <div className="rounded-2xl p-6 space-y-5" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.border}` }}>
+
+          {/* ⚠️ ALERTA CRÍTICA */}
+          <div className="rounded-xl p-4" style={{ background: "rgba(220,38,38,0.1)", border: `2px solid ${BRAND.red}` }}>
+            <p className="text-sm font-bold mb-2" style={{ color: BRAND.red }}>{"\u26A0\u{FE0F}"} IMPORTANTE — LEELO ANTES DE USAR LA APP</p>
+            <p className="text-xs leading-relaxed" style={{ color: BRAND.white }}>
+              <strong>Traza 360 NO es un servicio de emergencia.</strong> NO reemplaza a la policía (911, 101), bomberos, SAME (107), ni a ningún servicio oficial de emergencia. En una situación de peligro real e inminente, <strong style={{ color: BRAND.red }}>SIEMPRE llamá primero al número de emergencias de tu país.</strong>
+            </p>
+          </div>
+
+          {/* 1. Aceptación */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>1. Aceptación de los términos</h3>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+              Al registrarte en Traza 360 aceptás estos Términos y Condiciones y la Política de Privacidad. Si no estás de acuerdo, no uses la app.
+            </p>
+          </div>
+
+          {/* 2. Qué es la app */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>2. Qué hace Traza 360</h3>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+              Traza 360 es una herramienta de seguridad personal que te permite enviar mensajes de alerta vía WhatsApp a tus contactos de confianza, compartir tu ubicación, y grabar audio del entorno. Es una <strong style={{ color: BRAND.white }}>herramienta complementaria</strong> a los servicios de emergencia oficiales.
+            </p>
+          </div>
+
+          {/* 3. NO garantías */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>3. Limitación de responsabilidad</h3>
+            <p className="text-sm mb-2" style={{ color: BRAND.textMute }}>
+              <strong style={{ color: BRAND.white }}>NO garantizamos que:</strong>
+            </p>
+            <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+              <li><span style={{ color: BRAND.red }}>✗</span> Tu mensaje llegue al destinatario inmediatamente.</li>
+              <li><span style={{ color: BRAND.red }}>✗</span> Tus contactos vean el mensaje o respondan a tiempo.</li>
+              <li><span style={{ color: BRAND.red }}>✗</span> La app funcione si no tenés internet o señal.</li>
+              <li><span style={{ color: BRAND.red }}>✗</span> El GPS funcione en lugares cerrados, bajo tierra o sin señal.</li>
+              <li><span style={{ color: BRAND.red }}>✗</span> WhatsApp esté operativo en todo momento.</li>
+              <li><span style={{ color: BRAND.red }}>✗</span> La grabación de audio se complete si el navegador la corta.</li>
+            </ul>
+            <p className="text-xs mt-3 italic" style={{ color: BRAND.textDim }}>
+              Traza 360 hace todo lo posible para que el servicio funcione, pero depende de servicios externos (internet, GPS, WhatsApp, Supabase) que pueden fallar.
+            </p>
+          </div>
+
+          {/* 4. Qué pasa si falla */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>4. Qué hacer si la app falla</h3>
+            <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+              <li><span style={{ color: BRAND.gold }}>•</span> Si <strong style={{ color: BRAND.white }}>no tenés internet:</strong> llamá directamente al 911 o a tu contacto desde Teléfono.</li>
+              <li><span style={{ color: BRAND.gold }}>•</span> Si <strong style={{ color: BRAND.white }}>el GPS no funciona:</strong> la app envía la última ubicación conocida.</li>
+              <li><span style={{ color: BRAND.gold }}>•</span> Si <strong style={{ color: BRAND.white }}>WhatsApp está caído:</strong> el mensaje queda pendiente hasta que se restablezca.</li>
+              <li><span style={{ color: BRAND.gold }}>•</span> Si <strong style={{ color: BRAND.white }}>la app se cuelga:</strong> reintentá. Si persiste, escribinos.</li>
+            </ul>
+          </div>
+
+          {/* 5. Tu responsabilidad */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>5. Tu responsabilidad como usuario</h3>
+            <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+              <li>{"\u2713"} Sos responsable de mantener actualizados tus contactos de confianza.</li>
+              <li>{"\u2713"} Sos responsable de informarles que pueden recibir alertas de WhatsApp.</li>
+              <li>{"\u2713"} Sos responsable de no usar la app para acosar, espiar o grabar a otros sin consentimiento (es delito).</li>
+              <li>{"\u2713"} No podés usar Traza 360 para actividades ilegales.</li>
+              <li>{"\u2713"} Sos responsable de la veracidad de tus datos.</li>
+            </ul>
+          </div>
+
+          {/* 6. Suspensión */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>6. Suspensión de cuentas</h3>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+              Nos reservamos el derecho de suspender o eliminar cuentas que usen la app para fines ilegales, abuso, acoso, o uso indebido del servicio de WhatsApp Business.
+            </p>
+          </div>
+
+          {/* 7. Pagos (futuro) */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>7. Planes pagos (cuando se habiliten)</h3>
+            <p className="text-sm mb-2" style={{ color: BRAND.textMute }}>
+              Actualmente <strong style={{ color: BRAND.gold }}>todos los planes son gratuitos durante la beta.</strong> Cuando habilitemos planes pagos:
+            </p>
+            <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+              <li><span style={{ color: BRAND.gold }}>•</span> Los precios serán los publicados en la pantalla de planes.</li>
+              <li><span style={{ color: BRAND.gold }}>•</span> Se cobra por MercadoPago (Argentina y LATAM).</li>
+              <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>Sin permanencia:</strong> podés cancelar cuando quieras desde "Mi cuenta".</li>
+              <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>Sin reembolso del mes en curso</strong>, pero al cancelar no se renueva el siguiente.</li>
+              <li><span style={{ color: BRAND.gold }}>•</span> Los precios pueden cambiar con aviso de 30 días por email.</li>
+            </ul>
+          </div>
+
+          {/* 8. Edad */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>8. Edad mínima</h3>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+              Debés tener al menos <strong style={{ color: BRAND.white }}>13 años</strong> para usar Traza 360. Si sos menor de 18 años, necesitás autorización de tu padre/madre/tutor.
+            </p>
+          </div>
+
+          {/* 9. Modificaciones */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>9. Modificaciones</h3>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+              Podemos modificar estos términos. Si lo hacemos, te avisaremos por email y en la app. El uso continuado de la app implica aceptación de los nuevos términos.
+            </p>
+          </div>
+
+          {/* 10. Ley aplicable */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>10. Ley aplicable y jurisdicción</h3>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+              Estos términos se rigen por las leyes de la <strong style={{ color: BRAND.white }}>República Argentina</strong>. Cualquier disputa se resolverá en los tribunales ordinarios de la ciudad de Córdoba, Argentina.
+            </p>
+          </div>
+
+          {/* Contacto */}
+          <div className="rounded-xl p-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
+            <p className="text-sm font-bold mb-1" style={{ color: BRAND.gold }}>{"\u{1F4E7}"} Contacto legal</p>
+            <p className="text-xs" style={{ color: BRAND.textMute }}>
+              <strong style={{ color: BRAND.white }}>Tristan Passaglia</strong><br/>
+              Córdoba, Argentina<br/>
+              <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// BORRAR CUENTA (v19.6) — pantalla con confirmación
+// ═══════════════════════════════════════════════
+function BorrarCuentaScreen({ onBack, onAccountDeleted }) {
+  const [paso, setPaso] = useState(1); // 1: advertencia | 2: confirmar texto | 3: procesando | 4: hecho
+  const [confirmText, setConfirmText] = useState("");
+  const [error, setError] = useState("");
+
+  async function borrarCuenta() {
+    setError("");
+    setPaso(3);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError("No hay sesión activa.");
+        setPaso(2);
+        return;
+      }
+
+      // 1. Borrar contactos
+      await supabase.from("contactos").delete().eq("usuario_id", user.id);
+      // 2. Borrar grabaciones del storage
+      try {
+        const { data: files } = await supabase.storage.from("evidencias").list(user.id);
+        if (files && files.length > 0) {
+          const paths = files.map(f => `${user.id}/${f.name}`);
+          await supabase.storage.from("evidencias").remove(paths);
+        }
+      } catch(e) { console.warn("Error borrando evidencias:", e); }
+      // 3. Borrar perfil
+      await supabase.from("usuarios").delete().eq("auth_user_id", user.id);
+      // 4. Cerrar sesión y borrar storage local
+      await supabase.auth.signOut();
+      try {
+        sessionStorage.clear();
+      } catch(e){}
+
+      setPaso(4);
+      setTimeout(() => { onAccountDeleted(); }, 3000);
+    } catch (e) {
+      console.error("Error borrando cuenta:", e);
+      setError("No se pudo borrar la cuenta. Escribinos a " + SUPPORT_EMAIL + " para que lo hagamos manualmente.");
+      setPaso(2);
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
+      <div className="w-full max-w-md">
+        <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver</button>
+
+        <div className="rounded-2xl p-6" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `2px solid ${BRAND.red}` }}>
+
+          {paso === 1 && (
+            <>
+              <div className="text-center mb-5">
+                <div className="text-5xl mb-3">{"\u26A0\u{FE0F}"}</div>
+                <h2 className="text-xl font-bold" style={{ color: BRAND.red }}>Borrar mi cuenta</h2>
+                <p className="text-xs mt-2" style={{ color: BRAND.textMute }}>Esta acción es <strong style={{ color: BRAND.red }}>PERMANENTE e IRREVERSIBLE</strong></p>
+              </div>
+
+              <div className="rounded-xl p-4 mb-5" style={{ background: "rgba(220,38,38,0.08)", border: `1px solid ${BRAND.red}40` }}>
+                <p className="text-xs font-bold mb-2" style={{ color: BRAND.red }}>Al borrar tu cuenta se eliminará:</p>
+                <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+                  <li><span style={{ color: BRAND.red }}>✗</span> Tu perfil (nombre, email, configuración)</li>
+                  <li><span style={{ color: BRAND.red }}>✗</span> Todos tus contactos de confianza</li>
+                  <li><span style={{ color: BRAND.red }}>✗</span> Todas tus grabaciones de audio</li>
+                  <li><span style={{ color: BRAND.red }}>✗</span> Tu historial de alertas</li>
+                  <li><span style={{ color: BRAND.red }}>✗</span> Tu PIN del modo calculadora</li>
+                </ul>
+              </div>
+
+              <div className="rounded-xl p-3 mb-5" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
+                <p className="text-xs" style={{ color: BRAND.gold }}>
+                  💡 <strong>¿Cambiaste de opinión?</strong> Podés solo cerrar sesión y tus datos quedan guardados para volver más adelante.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <button onClick={() => setPaso(2)} className="w-full rounded-xl py-3 text-sm font-bold"
+                  style={{ background: BRAND.red, color: BRAND.white, border: `1px solid ${BRAND.red}` }}>
+                  Sí, quiero borrar mi cuenta
+                </button>
+                <button onClick={onBack} className="w-full rounded-xl py-3 text-sm font-semibold"
+                  style={{ background: "rgba(212,175,55,0.1)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold }}>
+                  Cancelar (volver al panel)
+                </button>
+              </div>
+            </>
+          )}
+
+          {paso === 2 && (
+            <>
+              <div className="text-center mb-5">
+                <div className="text-5xl mb-3">{"\u{1F512}"}</div>
+                <h2 className="text-lg font-bold" style={{ color: BRAND.red }}>Confirmación final</h2>
+                <p className="text-xs mt-2" style={{ color: BRAND.textMute }}>Escribí la palabra <strong style={{ color: BRAND.red }}>BORRAR</strong> para confirmar</p>
+              </div>
+
+              <input
+                type="text"
+                value={confirmText}
+                onChange={e => setConfirmText(e.target.value.toUpperCase())}
+                placeholder="BORRAR"
+                className="w-full rounded-xl px-4 py-3 text-center font-mono text-lg font-bold mb-3 outline-none tracking-widest"
+                style={{ background: "rgba(0,0,0,0.5)", border: `2px solid ${confirmText === "BORRAR" ? BRAND.red : BRAND.border}`, color: BRAND.white }}
+              />
+
+              {error && (
+                <div className="rounded-lg p-2.5 mb-3" style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}40` }}>
+                  <p className="text-xs" style={{ color: "#fca5a5" }}>{error}</p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <button onClick={borrarCuenta} disabled={confirmText !== "BORRAR"}
+                  className="w-full rounded-xl py-3 text-sm font-bold disabled:opacity-30"
+                  style={{ background: BRAND.red, color: BRAND.white }}>
+                  {"\u{1F5D1}\u{FE0F}"} Borrar para siempre
+                </button>
+                <button onClick={() => { setPaso(1); setConfirmText(""); }} className="w-full rounded-xl py-2.5 text-xs"
+                  style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
+                  Volver atrás
+                </button>
+              </div>
+            </>
+          )}
+
+          {paso === 3 && (
+            <div className="text-center py-10">
+              <div className="animate-spin text-5xl mb-4">{"\u{1F504}"}</div>
+              <p className="text-sm font-semibold" style={{ color: BRAND.white }}>Borrando tu cuenta...</p>
+              <p className="text-xs mt-2" style={{ color: BRAND.textMute }}>No cierres esta ventana.</p>
+            </div>
+          )}
+
+          {paso === 4 && (
+            <div className="text-center py-6">
+              <div className="text-5xl mb-3">{"\u2705"}</div>
+              <h2 className="text-lg font-bold" style={{ color: BRAND.gold }}>Cuenta eliminada</h2>
+              <p className="text-xs mt-2" style={{ color: BRAND.textMute }}>Todos tus datos fueron borrados. Te redirigimos al inicio.</p>
+              <p className="text-[11px] mt-3 italic" style={{ color: BRAND.textDim }}>Si querés volver, podés crear una cuenta nueva en cualquier momento.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// RECUPERAR CONTRASEÑA (v19.6)
+// ═══════════════════════════════════════════════
+function RecuperarPasswordScreen({ onBack }) {
+  const [email, setEmail] = useState("");
+  const [enviado, setEnviado] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function enviar() {
+    setError("");
+    if (!email.trim() || !email.includes("@")) {
+      setError("Ingresá un email válido.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: window.location.origin,
+      });
+      setLoading(false);
+      if (err) {
+        setError("Error: " + err.message);
+        return;
+      }
+      setEnviado(true);
+    } catch (e) {
+      setLoading(false);
+      setError("Error al enviar. Probá de nuevo.");
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
+      <div className="w-full max-w-md rounded-3xl p-6 shadow-2xl md:p-8" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.borderStrong}` }}>
+        <button onClick={onBack} className="text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver</button>
+
+        {enviado ? (
+          <div className="text-center mt-6">
+            <div className="text-5xl mb-3">{"\u{1F4E7}"}</div>
+            <h2 className="text-xl font-bold mb-2" style={{ color: BRAND.gold }}>Email enviado</h2>
+            <p className="text-sm" style={{ color: BRAND.textMute }}>
+              Te enviamos un email a <strong style={{ color: BRAND.white }}>{email}</strong> con un link para restablecer tu contraseña.
+            </p>
+            <p className="text-xs mt-3" style={{ color: BRAND.textDim }}>
+              Revisá también la carpeta de SPAM si no lo ves en 5 minutos.
+            </p>
+            <button onClick={onBack} className="mt-6 w-full rounded-xl py-3 text-sm font-bold"
+              style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+              Volver al login
+            </button>
+          </div>
+        ) : (
+          <>
+            <h2 className="mt-5 text-center text-xl font-bold" style={{ color: BRAND.white }}>Recuperar contraseña</h2>
+            <p className="text-xs text-center mt-2 mb-6" style={{ color: BRAND.textMute }}>
+              Te enviamos un email con un link para crear una contraseña nueva.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-[11px] uppercase tracking-wider block mb-1.5 font-bold" style={{ color: BRAND.textMute }}>Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="tu@email.com"
+                  className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                  style={{ background: "rgba(0,0,0,0.5)", border: `1px solid ${BRAND.border}`, color: BRAND.white }}
+                />
+              </div>
+
+              {error && <p className="text-xs" style={{ color: "#fca5a5" }}>{error}</p>}
+
+              <button onClick={enviar} disabled={loading}
+                className="w-full rounded-xl py-3.5 font-bold disabled:opacity-50"
+                style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+                {loading ? "Enviando..." : "Enviar email de recuperación"}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// SOBRE NOSOTROS (v19.7)
+// ═══════════════════════════════════════════════
+function SobreNosotrosScreen({ onBack }) {
+  return (
+    <div className="min-h-screen px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
+      <div className="mx-auto max-w-2xl">
+        <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver</button>
+
+        <div className="mb-6 text-center">
+          <PinEyeLogo size={80} showText={false} />
+          <p className="text-[11px] uppercase tracking-[3px] mt-3" style={{ color: BRAND.gold }}>Sobre nosotros</p>
+          <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>Quiénes somos</h2>
+        </div>
+
+        <div className="rounded-2xl p-6 space-y-5" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.border}` }}>
+
+          {/* Misión */}
+          <div>
+            <h3 className="font-bold mb-3" style={{ color: BRAND.gold }}>Nuestra misión</h3>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+              Traza 360 es una empresa pensada para el <strong style={{ color: BRAND.white }}>cuidado, soporte, seguimiento y acompañamiento</strong> de personas expuestas a situaciones de riesgo.
+            </p>
+            <p className="text-sm leading-relaxed mt-3" style={{ color: BRAND.textMute }}>
+              Creemos que la tecnología debe estar al servicio de quienes más la necesitan. Por eso construimos una herramienta que conecta a las personas con su gente de confianza cuando más importa.
+            </p>
+          </div>
+
+          {/* Para quién */}
+          <div className="rounded-xl p-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
+            <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F6E1}\u{FE0F}"} ¿Para quién?</p>
+            <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+              <li>{"\u2713"} Mujeres en situación de violencia de género</li>
+              <li>{"\u2713"} Padres y madres con hijos adolescentes</li>
+              <li>{"\u2713"} Jóvenes que salen de noche</li>
+              <li>{"\u2713"} Trabajadores nocturnos (acompañantes, repartidores)</li>
+              <li>{"\u2713"} Familiares que cuidan a alguien a distancia</li>
+            </ul>
+          </div>
+
+          {/* Equipo */}
+          <div>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>Equipo</h3>
+            <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BRAND.border}` }}>
+              <p className="text-sm font-bold" style={{ color: BRAND.white }}>{RESPONSABLE_NAME}</p>
+              <p className="text-xs mt-1" style={{ color: BRAND.gold }}>Fundador y desarrollador</p>
+              <p className="text-xs mt-2" style={{ color: BRAND.textMute }}>{RESPONSABLE_LOCATION}</p>
+            </div>
+          </div>
+
+          {/* Contacto */}
+          <div className="rounded-xl p-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
+            <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F4E7}"} Contacto</p>
+            <div className="text-xs space-y-1" style={{ color: BRAND.textMute }}>
+              <p>Email: <span style={{ color: BRAND.white }}>{SUPPORT_EMAIL}</span></p>
+              <p>WhatsApp: <span style={{ color: BRAND.white }}>+54 9 351 395 6879</span></p>
+              <p>Ubicación: <span style={{ color: BRAND.white }}>{RESPONSABLE_LOCATION}</span></p>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-center italic" style={{ color: BRAND.textDim }}>
+            Versión {APP_VERSION} · Hecho con cuidado en Argentina {"\u{1F1E6}\u{1F1F7}"}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// TOUR DEMO (v19.7) — onboarding interactivo del botón pánico
+// ═══════════════════════════════════════════════
+function TourDemoScreen({ onComplete, onSkip }) {
+  const [paso, setPaso] = useState(0);
+
+  const pasos = [
+    {
+      titulo: "Vamos a hacer una prueba",
+      subtitulo: "Sin enviar nada real",
+      icono: "panic",
+      texto: "Antes de que necesites usar Traza 360 en una emergencia real, te mostramos cómo funciona en 4 pasos rápidos. Esto es una simulación: NO se va a enviar ningún mensaje a nadie.",
+      ctaText: "Empezar prueba",
+    },
+    {
+      titulo: "Paso 1: Tocás el botón de pánico",
+      subtitulo: "El círculo dorado/rojo abajo a la derecha",
+      icono: "panic",
+      texto: "Cuando estés en peligro, tocás el botón flotante. Está siempre visible en el panel principal. Probalo mentalmente: lo ves abajo a la derecha en la app.",
+      ctaText: "Continuar",
+      mostrarBoton: true,
+    },
+    {
+      titulo: "Paso 2: Se manda WhatsApp + ubicación",
+      subtitulo: "A tus contactos de confianza",
+      icono: "alert",
+      texto: "Tus contactos reciben un WhatsApp automático con: tu mensaje, tu ubicación GPS exacta, la hora del evento, y un menú de respuestas rápidas para que respondan más fácil.",
+      ctaText: "Ver cómo responden",
+    },
+    {
+      titulo: "Paso 3: Ellos te responden rápido",
+      subtitulo: "Con un toque",
+      icono: "contacts",
+      texto: "Tus contactos pueden responder con 3 botones de WhatsApp: \"🚗 Salgo\", \"✅ Recibí\", \"📍 Ubicación\". Vos vés sus respuestas en la pantalla post-alerta de tu app.",
+      ctaText: "Continuar",
+      mostrarRespuestas: true,
+    },
+    {
+      titulo: "¡Listo! Ya sabés usarla",
+      subtitulo: "Ahora configurá tus contactos",
+      icono: "shield",
+      texto: "Para que esto funcione en una emergencia real, necesitás agregar al menos 1 contacto de confianza con WhatsApp activo. Lo hacés desde el panel → \"Mis Contactos\".",
+      ctaText: "Ir al panel principal",
+    },
+  ];
+
+  const actual = pasos[paso];
+  const esUltimo = paso === pasos.length - 1;
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
+      {/* Progress dots */}
+      <div className="flex gap-2 mb-6">
+        {pasos.map((_, i) => (
+          <div key={i} className="h-1.5 rounded-full transition-all" style={{
+            width: i === paso ? "32px" : "8px",
+            background: i === paso ? BRAND.gold : i < paso ? "rgba(212,175,55,0.5)" : "rgba(212,175,55,0.15)",
+          }} />
+        ))}
+      </div>
+
+      <div className="w-full max-w-sm">
+        {/* Card */}
+        <div className="rounded-3xl p-7 text-center" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.borderStrong}`, boxShadow: "8px 8px 24px rgba(0,0,0,0.6), 0 0 30px rgba(212,175,55,0.06)" }}>
+
+          {/* Badge de "Modo Demo" */}
+          <div className="inline-block rounded-full px-3 py-1 mb-4 text-[10px] font-bold uppercase tracking-widest"
+            style={{ background: "rgba(212,175,55,0.1)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold }}>
+            {"\u{1F39B}\u{FE0F}"} Modo demo
+          </div>
+
+          {/* Ícono dorado del paso */}
+          <div className="mb-4 flex justify-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl"
+              style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.18), rgba(154,123,15,0.08))", border: `1px solid ${BRAND.borderStrong}` }}>
+              <GoldIcon name={actual.icono} size={42} />
+            </div>
+          </div>
+
+          <h2 className="text-lg font-bold mb-1" style={{ color: BRAND.white }}>{actual.titulo}</h2>
+          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: BRAND.gold }}>{actual.subtitulo}</p>
+          <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>{actual.texto}</p>
+
+          {/* Simulación visual paso 2 */}
+          {actual.mostrarBoton && (
+            <div className="mt-4 flex justify-center">
+              <div className="relative">
+                <div className="absolute inset-[-6px] rounded-full" style={{ border: `2px solid ${BRAND.gold}`, animation: "panicPulseDemo 2s infinite" }} />
+                <div className="flex h-16 w-16 items-center justify-center rounded-full"
+                  style={{ background: BRAND.black, border: `3px solid ${BRAND.gold}`, boxShadow: `0 0 20px ${BRAND.gold}55` }}>
+                  <PinEyeLogo size={42} showText={false} />
+                </div>
+              </div>
+              <style>{`@keyframes panicPulseDemo { 0%,100%{opacity:0.4;transform:scale(1)} 50%{opacity:0.9;transform:scale(1.12)} }`}</style>
+            </div>
+          )}
+
+          {/* Simulación de respuestas rápidas paso 3 */}
+          {actual.mostrarRespuestas && (
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {[
+                { emoji: "\u{1F697}", text: "Salgo" },
+                { emoji: "\u2705", text: "Recibí" },
+                { emoji: "\u{1F4CD}", text: "Ubicación" },
+              ].map((r, i) => (
+                <div key={i} className="rounded-lg py-2 text-center" style={{ background: "rgba(212,175,55,0.08)", border: `1px solid ${BRAND.borderStrong}` }}>
+                  <div className="text-xl">{r.emoji}</div>
+                  <div className="text-[10px] mt-0.5 font-bold" style={{ color: BRAND.gold }}>{r.text}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* CTA */}
+        <button onClick={() => esUltimo ? onComplete() : setPaso(paso + 1)}
+          className="w-full rounded-2xl py-4 mt-6 font-bold shadow-lg"
+          style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.3)" }}>
+          {actual.ctaText} {esUltimo ? "" : "→"}
+        </button>
+
+        {/* Botones secundarios */}
+        <div className="flex justify-between mt-3 px-2">
+          {paso > 0 && (
+            <button onClick={() => setPaso(paso - 1)} className="text-xs font-semibold" style={{ color: BRAND.textMute }}>
+              ← Atrás
+            </button>
+          )}
+          {!esUltimo && (
+            <button onClick={onSkip} className="text-xs ml-auto" style={{ color: BRAND.textDim }}>
+              Saltar tour
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// MODAL EXPLICATIVO GPS (v19.7)
+// Aparece antes de pedir geolocation por primera vez
+// ═══════════════════════════════════════════════
+function GpsExplainerModal({ onAceptar, onRechazar }) {
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 px-5 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-3xl p-6 shadow-2xl" style={{ background: "#000000", border: `2px solid ${BRAND.borderStrong}` }}>
+        <div className="text-center mb-4">
+          <div className="flex justify-center mb-3">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.18), rgba(154,123,15,0.08))", border: `1px solid ${BRAND.borderStrong}` }}>
+              <GoldIcon name="pin" size={36} />
+            </div>
+          </div>
+          <h3 className="text-lg font-bold" style={{ color: BRAND.white }}>Necesitamos tu ubicación</h3>
+          <p className="text-xs mt-2" style={{ color: BRAND.gold }}>Para enviarte ayuda cuando la necesites</p>
+        </div>
+
+        <div className="rounded-xl p-4 mb-4 space-y-2.5" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
+          <div className="flex items-start gap-2">
+            <span className="shrink-0 mt-0.5" style={{ color: BRAND.gold }}>{"\u2713"}</span>
+            <p className="text-xs" style={{ color: BRAND.textMute }}><strong style={{ color: BRAND.white }}>Solo cuando vos lo decidís:</strong> al tocar pánico, compartir ubicación, o cualquier alerta.</p>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="shrink-0 mt-0.5" style={{ color: BRAND.gold }}>{"\u2713"}</span>
+            <p className="text-xs" style={{ color: BRAND.textMute }}><strong style={{ color: BRAND.white }}>NO te seguimos:</strong> jamás recolectamos ubicación en background.</p>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="shrink-0 mt-0.5" style={{ color: BRAND.gold }}>{"\u2713"}</span>
+            <p className="text-xs" style={{ color: BRAND.textMute }}><strong style={{ color: BRAND.white }}>Solo tus contactos la ven:</strong> nadie más, ni nosotros la vendemos.</p>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="shrink-0 mt-0.5" style={{ color: BRAND.gold }}>{"\u2713"}</span>
+            <p className="text-xs" style={{ color: BRAND.textMute }}><strong style={{ color: BRAND.white }}>Podés revocarla cuando quieras</strong> desde la configuración de tu navegador.</p>
+          </div>
+        </div>
+
+        <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(220,38,38,0.05)", border: `1px solid ${BRAND.red}30` }}>
+          <p className="text-[11px]" style={{ color: BRAND.textMute }}>
+            <strong style={{ color: BRAND.red }}>{"\u26A0\u{FE0F}"} Si rechazás:</strong> los contactos recibirán alertas SIN tu ubicación, lo que dificulta que te encuentren rápido.
+          </p>
+        </div>
+
+        <button onClick={onAceptar}
+          className="w-full rounded-xl py-3.5 text-sm font-bold mb-2 shadow-lg"
+          style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+          {"\u2713"} Entendido, permitir ubicación
+        </button>
+        <button onClick={onRechazar}
+          className="w-full rounded-xl py-2.5 text-xs"
+          style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
+          Ahora no
+        </button>
+
+        <p className="text-[10px] text-center mt-3" style={{ color: BRAND.textDim }}>
+          Después de aceptar acá, el navegador te va a pedir confirmación una vez más.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// PIN DE ACCESO RÁPIDO (v19.8)
+// 4 dígitos guardados localmente. NO reemplaza al login.
+// Es un atajo: usuario primero hace login con email,
+// después puede crear un PIN para entrar más rápido próximas veces.
+// ═══════════════════════════════════════════════
+function PinSetupScreen({ onBack, onComplete, modo = "crear" }) {
+  // modo: "crear" | "cambiar" | "eliminar"
+  const [paso, setPaso] = useState(1); // 1: ingresar | 2: confirmar | 3: hecho
+  const [pin, setPin] = useState("");
+  const [pinConfirm, setPinConfirm] = useState("");
+  const [error, setError] = useState("");
+
+  function getTitulo() {
+    if (modo === "crear") return "Configurar PIN de acceso";
+    if (modo === "cambiar") return "Cambiar PIN";
+    if (modo === "eliminar") return "Eliminar PIN";
+    return "PIN";
+  }
+
+  function handleChange(setter, value) {
+    setError("");
+    const clean = value.replace(/\D/g, "").slice(0, 4);
+    setter(clean);
+    // Avanzar automáticamente al completar 4 dígitos
+    if (clean.length === 4 && paso === 1) {
+      setTimeout(() => setPaso(2), 200);
+    }
+  }
+
+  function eliminar() {
+    if (!window.confirm("¿Eliminar tu PIN de acceso rápido?\n\nVas a tener que ingresar con email y contraseña cada vez.")) return;
+    try {
+      sessionStorage.removeItem("traza360_quick_pin");
+      localStorage.removeItem("traza360_quick_pin");
+    } catch(e){}
+    setPaso(3);
+    setTimeout(() => onComplete(), 1800);
+  }
+
+  function confirmar() {
+    setError("");
+    if (pin.length !== 4) { setError("El PIN debe tener 4 números."); return; }
+    if (pinConfirm.length !== 4) { setError("Confirmá tu PIN escribiendo los 4 números otra vez."); return; }
+    if (pin !== pinConfirm) {
+      setError("Los PINs no coinciden. Volvé a empezar.");
+      setPin("");
+      setPinConfirm("");
+      setPaso(1);
+      return;
+    }
+    // Guardar en localStorage (persiste entre sesiones)
+    try {
+      localStorage.setItem("traza360_quick_pin", pin);
+    } catch(e) {
+      setError("Error al guardar el PIN.");
+      return;
+    }
+    setPaso(3);
+    setTimeout(() => onComplete(), 1800);
+  }
+
+  // PinKeypad: teclado numérico visual (mejor UX que input)
+  function PinKeypad({ value, onChange, autoFocus }) {
+    const dots = [0, 1, 2, 3];
+    return (
+      <div>
+        {/* Display de puntos */}
+        <div className="flex justify-center gap-3 mb-6">
+          {dots.map(i => (
+            <div key={i} className="h-4 w-4 rounded-full transition-all"
+              style={{
+                background: i < value.length ? BRAND.gold : "transparent",
+                border: `2px solid ${i < value.length ? BRAND.gold : BRAND.border}`,
+              }} />
+          ))}
+        </div>
+        {/* Teclado */}
+        <div className="grid grid-cols-3 gap-3">
+          {[1,2,3,4,5,6,7,8,9].map(n => (
+            <button key={n} onClick={() => value.length < 4 && onChange(value + n)}
+              className="rounded-2xl py-4 text-2xl font-bold active:scale-95"
+              style={{ background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>
+              {n}
+            </button>
+          ))}
+          <div /> {/* Espacio vacío */}
+          <button onClick={() => value.length < 4 && onChange(value + "0")}
+            className="rounded-2xl py-4 text-2xl font-bold active:scale-95"
+            style={{ background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>
+            0
+          </button>
+          <button onClick={() => onChange(value.slice(0, -1))}
+            className="rounded-2xl py-4 text-lg font-bold active:scale-95"
+            style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}30`, color: BRAND.red }}>
+            ⌫
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
+      <div className="w-full max-w-sm">
+        <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver</button>
+
+        <div className="rounded-3xl p-6 text-center" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.borderStrong}` }}>
+
+          <div className="flex justify-center mb-3">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.18), rgba(154,123,15,0.08))", border: `1px solid ${BRAND.borderStrong}` }}>
+              <GoldIcon name="shield" size={36} />
+            </div>
+          </div>
+
+          <h2 className="text-lg font-bold mb-1" style={{ color: BRAND.white }}>{getTitulo()}</h2>
+
+          {/* Eliminar PIN */}
+          {modo === "eliminar" && paso === 1 && (
+            <>
+              <p className="text-xs mb-5" style={{ color: BRAND.textMute }}>
+                Si eliminás tu PIN, vas a tener que ingresar con email y contraseña cada vez que abras la app.
+              </p>
+              <button onClick={eliminar}
+                className="w-full rounded-xl py-3 text-sm font-bold mb-2"
+                style={{ background: BRAND.red, color: BRAND.white }}>
+                {"\u{1F5D1}\u{FE0F}"} Eliminar PIN
+              </button>
+              <button onClick={onBack}
+                className="w-full rounded-xl py-2.5 text-xs"
+                style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
+                Cancelar
+              </button>
+            </>
+          )}
+
+          {/* Crear/cambiar PIN — paso 1 */}
+          {(modo === "crear" || modo === "cambiar") && paso === 1 && (
+            <>
+              <p className="text-xs mb-4" style={{ color: BRAND.gold }}>Paso 1 de 2 — Elegí tu PIN</p>
+              <p className="text-xs mb-5" style={{ color: BRAND.textMute }}>4 números para entrar más rápido. Solo se guarda en este celular.</p>
+
+              <PinKeypad value={pin} onChange={(v) => handleChange(setPin, v)} autoFocus />
+            </>
+          )}
+
+          {/* Crear/cambiar PIN — paso 2 (confirmar) */}
+          {(modo === "crear" || modo === "cambiar") && paso === 2 && (
+            <>
+              <p className="text-xs mb-4" style={{ color: BRAND.gold }}>Paso 2 de 2 — Confirmá el PIN</p>
+              <p className="text-xs mb-5" style={{ color: BRAND.textMute }}>Repetí los mismos 4 números para confirmar.</p>
+
+              <PinKeypad value={pinConfirm} onChange={(v) => handleChange(setPinConfirm, v)} autoFocus />
+
+              {pinConfirm.length === 4 && (
+                <button onClick={confirmar}
+                  className="w-full mt-6 rounded-xl py-3 text-sm font-bold"
+                  style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+                  Confirmar PIN
+                </button>
+              )}
+
+              <button onClick={() => { setPaso(1); setPin(""); setPinConfirm(""); }} className="w-full mt-3 py-2 text-xs" style={{ color: BRAND.textMute }}>
+                ← Empezar de nuevo
+              </button>
+            </>
+          )}
+
+          {/* Hecho */}
+          {paso === 3 && (
+            <>
+              <div className="text-5xl mb-3">{"\u2705"}</div>
+              <p className="text-base font-bold" style={{ color: BRAND.gold }}>
+                {modo === "eliminar" ? "PIN eliminado" : "PIN configurado"}
+              </p>
+              <p className="text-xs mt-2" style={{ color: BRAND.textMute }}>
+                {modo === "eliminar"
+                  ? "Próxima vez que entres vas a usar email y contraseña."
+                  : "Próxima vez que entres podés usar este PIN."}
+              </p>
+            </>
+          )}
+
+          {error && (
+            <div className="mt-4 rounded-lg p-2.5" style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}40` }}>
+              <p className="text-xs" style={{ color: "#fca5a5" }}>{error}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// AUTENTICACIÓN CON PIN (v19.8)
+// Se muestra al abrir la app si hay PIN configurado.
+// 3 intentos fallidos → vuelve a login email.
+// ═══════════════════════════════════════════════
+function PinAuthScreen({ onSuccess, onFallback, onLogout }) {
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState("");
+  const [intentos, setIntentos] = useState(0);
+  const MAX_INTENTOS = 3;
+
+  function intentarAcceso(value) {
+    setPin(value);
+    if (value.length === 4) {
+      const pinGuardado = localStorage.getItem("traza360_quick_pin");
+      if (value === pinGuardado) {
+        onSuccess();
+      } else {
+        const nuevoIntentos = intentos + 1;
+        setIntentos(nuevoIntentos);
+        if (nuevoIntentos >= MAX_INTENTOS) {
+          setError("Demasiados intentos fallidos. Volvé a ingresar con email y contraseña.");
+          setTimeout(() => onFallback(), 2000);
+        } else {
+          setError(`PIN incorrecto. Te quedan ${MAX_INTENTOS - nuevoIntentos} intento${MAX_INTENTOS - nuevoIntentos > 1 ? "s" : ""}.`);
+          setTimeout(() => setPin(""), 600);
+        }
+      }
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-6">
+          <PinEyeLogo size={70} showText={false} />
+          <p className="text-[11px] uppercase tracking-[3px] mt-3 font-bold" style={{ color: BRAND.gold }}>{TAGLINE}</p>
+        </div>
+
+        <div className="rounded-3xl p-6" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.borderStrong}` }}>
+          <div className="text-center mb-4">
+            <h2 className="text-base font-bold" style={{ color: BRAND.white }}>Ingresá tu PIN</h2>
+            <p className="text-xs mt-1" style={{ color: BRAND.textMute }}>4 números para entrar rápido</p>
+          </div>
+
+          {/* Display de puntos */}
+          <div className="flex justify-center gap-3 mb-6">
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} className="h-4 w-4 rounded-full transition-all"
+                style={{
+                  background: i < pin.length ? BRAND.gold : "transparent",
+                  border: `2px solid ${i < pin.length ? BRAND.gold : BRAND.border}`,
+                }} />
+            ))}
+          </div>
+
+          {/* Teclado numérico */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            {[1,2,3,4,5,6,7,8,9].map(n => (
+              <button key={n} onClick={() => pin.length < 4 && intentarAcceso(pin + n)}
+                className="rounded-2xl py-4 text-2xl font-bold active:scale-95"
+                style={{ background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>
+                {n}
+              </button>
+            ))}
+            <div />
+            <button onClick={() => pin.length < 4 && intentarAcceso(pin + "0")}
+              className="rounded-2xl py-4 text-2xl font-bold active:scale-95"
+              style={{ background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>
+              0
+            </button>
+            <button onClick={() => setPin(pin.slice(0, -1))}
+              className="rounded-2xl py-4 text-lg font-bold active:scale-95"
+              style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}30`, color: BRAND.red }}>
+              ⌫
+            </button>
+          </div>
+
+          {error && (
+            <div className="rounded-lg p-2.5 mb-3 text-center" style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}40` }}>
+              <p className="text-xs" style={{ color: "#fca5a5" }}>{error}</p>
+            </div>
+          )}
+
+          {/* Acciones secundarias */}
+          <div className="flex justify-between items-center text-xs mt-4">
+            <button onClick={onFallback} className="font-semibold underline" style={{ color: BRAND.gold }}>
+              ¿Olvidaste tu PIN?
+            </button>
+            <button onClick={onLogout} style={{ color: BRAND.textDim }}>
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── LANDING SCREEN (v19 — rebrand dorado) ───
 function LandingScreen({ onScreen }) {
@@ -2220,7 +3580,7 @@ function LandingScreen({ onScreen }) {
           <span style={{ background: BRAND.goldGradient, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Traza 360 responde.</span>
         </h2>
         <div className="mt-6 flex flex-col gap-2 items-center max-w-xs mx-auto">
-          {["Un botón → alerta a tu familia", "Ubicación automática en segundos", "Funciona con WhatsApp. Sin apps extra"].map((feat, i) => (
+          {["Un botón → alerta a tu gente de confianza", "Ubicación automática en segundos", "Funciona con WhatsApp. Sin apps extra"].map((feat, i) => (
             <div key={i} className="flex items-center gap-2 text-sm" style={{ color: BRAND.textMute }}>
               <span style={{ color: BRAND.gold }}>{"\u2713"}</span> {feat}
             </div>
@@ -2236,12 +3596,15 @@ function LandingScreen({ onScreen }) {
 
       {/* Footer */}
       <div className="px-5 pb-8 text-center">
-        <div className="flex items-center justify-center gap-4 text-xs" style={{ color: BRAND.textDim }}>
-          <button onClick={() => alert("Política de Privacidad\n\nTraza 360 almacena tus datos de forma segura en Supabase.\n\n✅ Tus datos son solo tuyos\n✅ No vendemos información a terceros\n✅ Las grabaciones son privadas y encriptadas\n✅ Podés eliminar tu cuenta en cualquier momento\n\nContacto: info@traza360.app")} className="hover:underline" style={{ color: BRAND.gold }}>Privacidad</button>
+        <div className="flex items-center justify-center gap-3 text-xs flex-wrap" style={{ color: BRAND.textDim }}>
+          <button onClick={() => onScreen("sobre_nosotros")} className="hover:underline" style={{ color: BRAND.gold }}>Sobre nosotros</button>
           <span>·</span>
-          <button onClick={() => alert("Términos de Uso\n\nTraza 360 es una herramienta de seguridad personal. No reemplaza a los servicios de emergencia oficiales (911, 107, policía).\n\nEn caso de emergencia real, llamá primero al número de emergencias de tu país.\n\nTraza 360 no se hace responsable por fallos de conexión en situaciones de emergencia.\n\nUso exclusivo para mayores de 13 años.")} className="hover:underline" style={{ color: BRAND.gold }}>Términos</button>
+          <button onClick={() => onScreen("privacidad")} className="hover:underline" style={{ color: BRAND.gold }}>Privacidad</button>
           <span>·</span>
-          <span>traza360.app</span>
+          <button onClick={() => onScreen("terminos")} className="hover:underline" style={{ color: BRAND.gold }}>Términos</button>
+        </div>
+        <div className="text-[11px] mt-2" style={{ color: BRAND.textDim }}>
+          {"\u{1F4E7}"} <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span> · traza360.app
         </div>
       </div>
     </div>
@@ -2256,11 +3619,28 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
   const [contactos, setContactos] = useState([]);
   const [systemStatus, setSystemStatus] = useState("warning");
   const [panicoEnviado, setPanicoEnviado] = useState(false);
+  // v19.7: state para modal GPS y banner config
+  const [showGpsModal, setShowGpsModal] = useState(false);
+  const [pendingGpsAction, setPendingGpsAction] = useState(null); // función a ejecutar después del aceptar
+  const [showPinPrompt, setShowPinPrompt] = useState(false);
+  const [hasPin, setHasPin] = useState(false);
 
   const nombreUsuario = userProfile?.nombre || pendingName || sessionStorage.getItem("traza360_pending_name") || authUser?.email?.split("@")[0] || "Usuario";
   const userPlan = userProfile?.plan || "gratis";
 
-  useEffect(() => { cargarContactos(); checkSystemStatus(); }, []);
+  useEffect(() => {
+    cargarContactos();
+    checkSystemStatus();
+    // Detectar si ya tiene PIN configurado
+    try { setHasPin(!!localStorage.getItem("traza360_quick_pin")); } catch(e){}
+    // Detectar si debe ver el prompt de configurar PIN (primera vez con contactos OK)
+    try {
+      const promptVisto = localStorage.getItem("traza360_pin_prompt_dismissed");
+      if (!promptVisto && !localStorage.getItem("traza360_quick_pin")) {
+        setTimeout(() => setShowPinPrompt(true), 3000);
+      }
+    } catch(e){}
+  }, []);
 
   async function cargarContactos() { setContactos(await getContactos()); }
 
@@ -2277,11 +3657,18 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
   }
 
   if (activeScreen === "contactos") return <ContactosScreen onBack={() => { setActiveScreen("home"); cargarContactos(); }} userPlan={userPlan} nombreUsuario={nombreUsuario} />;
-  if (activeScreen === "pastillero") return <PastilleroScreen onBack={() => setActiveScreen("home")} userPlan={userPlan} contactos={contactos} />;
   if (activeScreen === "evidencias") return <EvidenciasScreen onBack={() => setActiveScreen("home")} />;
-  // v19: Nuevas pantallas
   if (activeScreen === "te_cuido") return <TeCuidoScreen onBack={() => setActiveScreen("home")} contactos={contactos} />;
   if (activeScreen === "instrucciones") return <InstruccionesScreen onBack={() => setActiveScreen("home")} />;
+  // v19.6: Pantallas legales y borrar cuenta
+  if (activeScreen === "terminos") return <TerminosScreen onBack={() => setActiveScreen("home")} />;
+  if (activeScreen === "privacidad") return <PoliticaPrivacidadScreen onBack={() => setActiveScreen("home")} />;
+  if (activeScreen === "borrar_cuenta") return <BorrarCuentaScreen onBack={() => setActiveScreen("home")} onAccountDeleted={onLogout} />;
+  // v19.7+: Nuevas pantallas Nivel 2
+  if (activeScreen === "sobre_nosotros") return <SobreNosotrosScreen onBack={() => setActiveScreen("home")} />;
+  if (activeScreen === "pin_setup") return <PinSetupScreen onBack={() => setActiveScreen("home")} onComplete={() => setActiveScreen("home")} modo={localStorage.getItem("traza360_quick_pin") ? "cambiar" : "crear"} />;
+  if (activeScreen === "pin_eliminar") return <PinSetupScreen onBack={() => setActiveScreen("home")} onComplete={() => setActiveScreen("home")} modo="eliminar" />;
+  if (activeScreen === "tour_demo") return <TourDemoScreen onComplete={() => setActiveScreen("home")} onSkip={() => setActiveScreen("home")} />;
 
   // ─── QUICK CARDS (v18 — Limpieza UI) ──────────
   // CAMBIOS v18:
@@ -2293,7 +3680,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
     /* ❌ v18: Adulto Mayor comentado
     { key: "los_protejo", emoji: "\u{1FAF6}", title: "Adulto Mayor Seguro", text: "Adulto mayor — Medicamentos, caídas y asistencia." },
     */
-    { key: "turno_seguro",emoji: "\u{1F303}", title: "Noche Segura", text: "Salí tranqui. Volvé tranqui. — Para boliche, fiesta y noche." },
+    { key: "turno_seguro",emoji: "\u{1F303}", title: "Noche Segura", text: "Para jóvenes de noche, acompañantes, repartidores y cualquier situación de riesgo." },
     /* ❌ v18: Hogar Seguro comentado
     { key: "mi_nido",     emoji: "\u{1F3E0}", title: "Hogar Seguro",     text: "Hogar seguro — Intrusos, accidentes y emergencias." },
     */
@@ -2315,11 +3702,39 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
 
   async function handlePanico() {
     if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza primero."); return; }
+
+    // v19.7: Si nunca aceptó GPS, mostrar modal explicativo primero
+    const gpsAccepted = localStorage.getItem("traza360_gps_consent");
+    if (!gpsAccepted) {
+      setPendingGpsAction(() => ejecutarPanico);
+      setShowGpsModal(true);
+      return;
+    }
+    await ejecutarPanico();
+  }
+
+  async function ejecutarPanico() {
     const { location } = await getCurrentLocationWithFallback();
     const msg = buildMessageWithReply("ALERTA — Botón de pánico activado. Necesito ayuda urgente.", location);
     const result = await enviarWhatsApp(contactos[0].telefono, msg);
     reproducirSonido();
     setPanicoEnviado(true);
+  }
+
+  function aceptarGps() {
+    try { localStorage.setItem("traza360_gps_consent", new Date().toISOString()); } catch(e){}
+    setShowGpsModal(false);
+    if (pendingGpsAction) {
+      const fn = pendingGpsAction;
+      setPendingGpsAction(null);
+      setTimeout(() => fn(), 100);
+    }
+  }
+
+  function rechazarGps() {
+    setShowGpsModal(false);
+    setPendingGpsAction(null);
+    alert("Sin GPS, los contactos recibirán alertas sin tu ubicación. Podés aceptarlo después desde el panel.");
   }
 
   return (
@@ -2357,12 +3772,16 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
             </button>
           )}
 
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 flex gap-2 flex-wrap">
             <button onClick={handleLogout} disabled={loggingOut} className="rounded-xl px-3 py-1.5 text-xs disabled:opacity-50" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
               {loggingOut ? "Saliendo..." : "Cerrar sesión"}
             </button>
             <button onClick={checkSystemStatus} className="rounded-xl px-3 py-1.5 text-xs" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>
               {"\u{1F504}"} Verificar sistema
+            </button>
+            {/* v19.6: Borrar cuenta */}
+            <button onClick={() => setActiveScreen("borrar_cuenta")} className="rounded-xl px-3 py-1.5 text-xs" style={{ background: "rgba(220,38,38,0.08)", border: `1px solid ${BRAND.red}40`, color: "#fca5a5" }}>
+              {"\u{1F5D1}\u{FE0F}"} Borrar cuenta
             </button>
           </div>
         </div>
@@ -2408,35 +3827,110 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
               })}
             </div>
 
-            {/* Upgrade Banner para plan gratis — FUNCIONAL */}
+            {/* v19.6: Disclaimer importante visible */}
+            <div className="mt-4 rounded-xl p-3" style={{ background: "rgba(220,38,38,0.05)", border: `1px solid ${BRAND.red}30` }}>
+              <div className="flex items-start gap-2">
+                <span className="text-base shrink-0">{"\u26A0\u{FE0F}"}</span>
+                <p className="text-[11px] leading-relaxed" style={{ color: BRAND.textMute }}>
+                  Traza 360 <strong style={{ color: BRAND.red }}>NO reemplaza</strong> al 911 ni a los servicios oficiales de emergencia. No garantizamos que los mensajes lleguen siempre en tiempo real. {" "}
+                  <button onClick={() => setActiveScreen("terminos")} className="underline font-semibold" style={{ color: BRAND.gold }}>Ver términos</button>
+                </p>
+              </div>
+            </div>
+
+            {/* Banner beta gratis — v19.5 coherente con lista de espera */}
             {userPlan === "gratis" && (
               <button onClick={onViewPlans} className="mt-4 w-full rounded-2xl p-4 text-left active:scale-[0.98]" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.03))", border: `1px solid ${BRAND.borderStrong}` }}>
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">{"\u{1F451}"}</span>
+                  <span className="text-2xl">{"\u{1F381}"}</span>
                   <div className="flex-1">
-                    <div className="text-sm font-bold" style={{ color: BRAND.gold }}>Protección completa desde US$2.99</div>
-                    <p className="text-xs mt-0.5" style={{ color: BRAND.textMute }}>Más contactos, grabación, Te Cuido y soporte prioritario.</p>
+                    <div className="text-sm font-bold" style={{ color: BRAND.gold }}>Estás en la beta gratuita</div>
+                    <p className="text-xs mt-0.5" style={{ color: BRAND.textMute }}>Pronto habrá planes pagos con más funciones. Inscribite para 30% OFF de por vida.</p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <div className="text-sm font-bold" style={{ color: BRAND.gold }}>Ver planes →</div>
+                    <div className="text-sm font-bold" style={{ color: BRAND.gold }}>Ver →</div>
                   </div>
                 </div>
               </button>
             )}
 
-            {/* Footer privacidad */}
-            <div className="mt-6 text-center">
-              <div className="flex items-center justify-center gap-4 text-xs" style={{ color: BRAND.textDim }}>
+            {/* Footer privacidad y legal */}
+            <div className="mt-6 text-center space-y-3">
+              {/* Acceso rápido a configuraciones */}
+              <div className="flex items-center justify-center gap-2 text-xs flex-wrap">
+                <button onClick={() => setActiveScreen("pin_setup")}
+                  className="rounded-lg px-3 py-1.5 font-semibold"
+                  style={{ background: "rgba(212,175,55,0.08)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>
+                  {"\u{1F510}"} {hasPin ? "Cambiar PIN" : "Configurar PIN"}
+                </button>
+                {hasPin && (
+                  <button onClick={() => setActiveScreen("pin_eliminar")}
+                    className="rounded-lg px-3 py-1.5"
+                    style={{ background: "rgba(220,38,38,0.08)", border: `1px solid ${BRAND.red}30`, color: "#fca5a5" }}>
+                    Eliminar PIN
+                  </button>
+                )}
+                <button onClick={() => setActiveScreen("tour_demo")}
+                  className="rounded-lg px-3 py-1.5"
+                  style={{ background: "rgba(212,175,55,0.08)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>
+                  {"\u{1F39B}\u{FE0F}"} Tour demo
+                </button>
+              </div>
+
+              {/* Links legales */}
+              <div className="flex items-center justify-center gap-3 text-xs flex-wrap" style={{ color: BRAND.textDim }}>
                 <button onClick={() => setActiveScreen("instrucciones")} className="hover:underline" style={{ color: BRAND.gold }}>¿Cómo funciona?</button>
                 <span>·</span>
-                <button onClick={() => alert("Tus datos son solo tuyos. No compartimos información con terceros. Las grabaciones son privadas y encriptadas. Podés eliminar tu cuenta en cualquier momento.\n\nContacto: info@traza360.app")} className="hover:underline" style={{ color: BRAND.gold }}>Privacidad</button>
+                <button onClick={() => setActiveScreen("sobre_nosotros")} className="hover:underline" style={{ color: BRAND.gold }}>Sobre nosotros</button>
                 <span>·</span>
-                <span>v19.0</span>
+                <button onClick={() => setActiveScreen("privacidad")} className="hover:underline" style={{ color: BRAND.gold }}>Privacidad</button>
+                <span>·</span>
+                <button onClick={() => setActiveScreen("terminos")} className="hover:underline" style={{ color: BRAND.gold }}>Términos</button>
+              </div>
+
+              {/* Email soporte siempre visible */}
+              <div className="text-[11px]" style={{ color: BRAND.textDim }}>
+                {"\u{1F4E7}"} Soporte: <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span>
+              </div>
+
+              <div className="text-[11px]" style={{ color: BRAND.textDim }}>
+                v{APP_VERSION} · Traza 360 por {RESPONSABLE_NAME} · {RESPONSABLE_LOCATION}
+              </div>
+              <div className="text-[11px] mt-1" style={{ color: BRAND.textDim }}>
+                Soporte: {SUPPORT_EMAIL}
               </div>
             </div>
           </>
         )}
       </div>
+
+      {/* GPS modal se muestra desde App principal, no desde HomeScreen */}
+
+      {/* v19.8: Prompt para configurar PIN de acceso rápido (primera vez) */}
+      {showPinPrompt && !hasPin && contactos.length > 0 && (
+        <div className="fixed bottom-24 left-5 right-5 z-40 rounded-2xl p-4 shadow-2xl" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.borderStrong}`, maxWidth: "400px", margin: "0 auto" }}>
+          <div className="flex items-start gap-3">
+            <div className="shrink-0"><GoldIcon name="shield" size={28} /></div>
+            <div className="flex-1">
+              <p className="text-sm font-bold" style={{ color: BRAND.gold }}>¿Querés entrar más rápido?</p>
+              <p className="text-xs mt-1" style={{ color: BRAND.textMute }}>Configurá un PIN de 4 dígitos para no escribir email y contraseña cada vez.</p>
+              <div className="flex gap-2 mt-3">
+                <button onClick={() => { setShowPinPrompt(false); setActiveScreen("pin_setup"); }}
+                  className="rounded-lg px-3 py-1.5 text-xs font-bold"
+                  style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+                  Configurar PIN
+                </button>
+                <button onClick={() => { setShowPinPrompt(false); try { localStorage.setItem("traza360_pin_prompt_dismissed", "1"); } catch(e){} }}
+                  className="rounded-lg px-3 py-1.5 text-xs"
+                  style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
+                  Ahora no
+                </button>
+              </div>
+            </div>
+            <button onClick={() => { setShowPinPrompt(false); try { localStorage.setItem("traza360_pin_prompt_dismissed", "1"); } catch(e){} }} className="text-base" style={{ color: BRAND.textDim }}>×</button>
+          </div>
+        </div>
+      )}
 
       {/* PANEL POST-PÁNICO */}
       {panicoEnviado && (
@@ -2534,12 +4028,21 @@ export default function App() {
   const [pendingName, setPendingName] = useState(null);
   const [modoCalc, setModoCalc] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  // v19.7: Tour demo, GPS explainer, PIN acceso rápido
+  const [showTour, setShowTour] = useState(false);
+  const [showGpsModal, setShowGpsModal] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("modo") === "calc") { setModoCalc(true); setScreen("calculadora"); return; }
     checkSession();
-    if (navigator.geolocation) navigator.geolocation.getCurrentPosition(pos => saveLastLocation(pos.coords.latitude, pos.coords.longitude), () => {}, { enableHighAccuracy: true, timeout: 10000 });
+    // v19.7: pedir GPS con explicación primero
+    const gpsAsked = sessionStorage.getItem("traza360_gps_asked");
+    if (!gpsAsked) {
+      setShowGpsModal(true);
+    } else {
+      if (navigator.geolocation) navigator.geolocation.getCurrentPosition(pos => saveLastLocation(pos.coords.latitude, pos.coords.longitude), () => {}, { enableHighAccuracy: true, timeout: 10000 });
+    }
     try { const s = sessionStorage.getItem("traza360_pending_name"); if (s) setPendingName(s); } catch(e){}
   }, []);
 
@@ -2548,7 +4051,16 @@ export default function App() {
     if (r?.authUser) {
       setAuthUser(r.authUser); setUserProfile(r.profile);
       if (!r.profile) await tryCreateProfile(r.authUser);
-      // Verificar onboarding
+
+      // v19.8: Si tiene PIN configurado y NO viene de login fresco, pedir PIN
+      const tienePin = localStorage.getItem("traza360_quick_pin");
+      const sessionUnlocked = sessionStorage.getItem("traza360_pin_unlocked");
+      if (tienePin && !sessionUnlocked) {
+        setScreen("pin_auth");
+        return;
+      }
+      setPinUnlocked(true);
+
       const done = sessionStorage.getItem("traza360_onboarding_done");
       if (!done) { setShowOnboarding(true); setScreen("home"); }
       else setScreen("home");
@@ -2566,33 +4078,106 @@ export default function App() {
   async function handleLoginSuccess() {
     const r = await getCurrentUser();
     if (r?.authUser) { setAuthUser(r.authUser); setUserProfile(r.profile); if (!r.profile) await tryCreateProfile(r.authUser); }
-    // Usuarios que loguean por primera vez también ven onboarding
+    // Login fresco = saltar PIN para esta sesión
+    try { sessionStorage.setItem("traza360_pin_unlocked", "1"); } catch(e){}
+    setPinUnlocked(true);
     const done = sessionStorage.getItem("traza360_onboarding_done");
     if (!done) setShowOnboarding(true);
     setScreen("home");
   }
 
-  function handleLogout() { setUserProfile(null); setAuthUser(null); setPendingName(null); try { sessionStorage.removeItem("traza360_pending_name"); sessionStorage.removeItem("traza360_onboarding_done"); } catch(e){} setScreen("landing"); }
+  function handlePinSuccess() {
+    try { sessionStorage.setItem("traza360_pin_unlocked", "1"); } catch(e){}
+    setPinUnlocked(true);
+    const done = sessionStorage.getItem("traza360_onboarding_done");
+    if (!done) { setShowOnboarding(true); setScreen("home"); }
+    else setScreen("home");
+  }
+
+  async function handlePinFallback() {
+    // Fallback: cerrar sesión y volver a login con email
+    await signOut();
+    try {
+      sessionStorage.removeItem("traza360_pin_unlocked");
+      sessionStorage.removeItem("traza360_pending_name");
+      sessionStorage.removeItem("traza360_onboarding_done");
+    } catch(e){}
+    setAuthUser(null);
+    setUserProfile(null);
+    setPinUnlocked(false);
+    setScreen("login");
+  }
+
+  function handleLogout() {
+    setUserProfile(null); setAuthUser(null); setPendingName(null);
+    try {
+      sessionStorage.removeItem("traza360_pending_name");
+      sessionStorage.removeItem("traza360_onboarding_done");
+      sessionStorage.removeItem("traza360_pin_unlocked");
+    } catch(e){}
+    setPinUnlocked(false);
+    setScreen("landing");
+  }
   function handleUnlockCalc() { setModoCalc(false); checkSession(); }
-  function handleOnboardingComplete(selectedModule) { setShowOnboarding(false); }
+  // v19.7: Onboarding → Tour Demo → Home
+  function handleOnboardingComplete(selectedModule) {
+    setShowOnboarding(false);
+    const tourDone = sessionStorage.getItem("traza360_tour_done");
+    if (!tourDone) { setShowTour(true); } // Mostrar tour si nunca lo hizo
+  }
+
+  function handleTourComplete() {
+    setShowTour(false);
+    try { sessionStorage.setItem("traza360_tour_done", "1"); } catch(e){}
+  }
+
+  function handleGpsAceptar() {
+    setShowGpsModal(false);
+    try { sessionStorage.setItem("traza360_gps_asked", "1"); } catch(e){}
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => saveLastLocation(pos.coords.latitude, pos.coords.longitude),
+        () => {},
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+  }
+
+  function handleGpsRechazar() {
+    setShowGpsModal(false);
+    try { sessionStorage.setItem("traza360_gps_asked", "1"); } catch(e){}
+  }
 
   if (screen === "calculadora") return <CalculadoraScreen onUnlock={handleUnlockCalc} />;
 
   if (screen === "loading") return (
-    <div className="flex min-h-screen items-center justify-center text-white" style={{ background: "linear-gradient(180deg, #050508 0%, #0a0a14 100%)" }}>
+    <div className="flex min-h-screen items-center justify-center" style={{ background: BRAND.blackBg }}>
       <div className="text-center">
-        <div className="mb-4 flex items-center justify-center"><EagleEyeLogo size={80} /></div>
-        <div className="text-xs mt-2" style={{ color: "rgba(224,224,224,0.7)" }}>Cargando...</div>
+        <div className="mb-4 flex items-center justify-center"><PinEyeLogo size={80} showText={false} /></div>
+        <div className="text-xs mt-2" style={{ color: BRAND.gold }}>Cargando...</div>
       </div>
     </div>
   );
 
-  // Onboarding overlay sobre home
-  if (screen === "home" && showOnboarding) return <OnboardingScreen onComplete={handleOnboardingComplete} />;
+  // v19.8: Pantalla de PIN auth (entre Supabase auth y panel home)
+  if (screen === "pin_auth") return <PinAuthScreen onSuccess={handlePinSuccess} onFallback={handlePinFallback} onLogout={handleLogout} />;
 
-  if (screen === "login") return <LoginScreen onBack={() => setScreen("landing")} onSuccess={handleLoginSuccess} />;
-  if (screen === "register") return <RegisterScreen onBack={() => setScreen("landing")} onSuccess={handleLoginSuccess} setPendingName={setPendingName} />;
+  // Onboarding → Tour Demo → Home
+  if (screen === "home" && showOnboarding) return <OnboardingScreen onComplete={handleOnboardingComplete} />;
+  if (screen === "home" && showTour) return <TourDemoScreen onComplete={handleTourComplete} onSkip={handleTourComplete} />;
+
+  if (screen === "login") return <LoginScreen onBack={() => setScreen("landing")} onSuccess={handleLoginSuccess} onRecuperar={() => setScreen("recuperar")} />;
+  if (screen === "register") return <RegisterScreen onBack={() => setScreen("landing")} onSuccess={handleLoginSuccess} setPendingName={setPendingName} onScreen={setScreen} />;
+  if (screen === "recuperar") return <RecuperarPasswordScreen onBack={() => setScreen("login")} />;
+  if (screen === "terminos") return <TerminosScreen onBack={() => setScreen(authUser ? "home" : "landing")} />;
+  if (screen === "privacidad") return <PoliticaPrivacidadScreen onBack={() => setScreen(authUser ? "home" : "landing")} />;
+  if (screen === "sobre_nosotros") return <SobreNosotrosScreen onBack={() => setScreen(authUser ? "home" : "landing")} />;
   if (screen === "planes") return <PlanesScreen onBack={() => setScreen("home")} currentPlan={userProfile?.plan || "gratis"} />;
-  if (screen === "home") return <HomeScreen userProfile={userProfile} authUser={authUser} pendingName={pendingName} onLogout={handleLogout} onViewPlans={() => setScreen("planes")} />;
+  if (screen === "home") return (
+    <>
+      {showGpsModal && <GpsExplainerModal onAceptar={handleGpsAceptar} onRechazar={handleGpsRechazar} />}
+      <HomeScreen userProfile={userProfile} authUser={authUser} pendingName={pendingName} onLogout={handleLogout} onViewPlans={() => setScreen("planes")} />
+    </>
+  );
   return <LandingScreen onScreen={setScreen} />;
 }
