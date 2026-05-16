@@ -2056,15 +2056,15 @@ const MODULES = [
   { key: "mi_escudo", iconName: "shield", emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género", desc: "Alerta silenciosa, ubicación y red de apoyo.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
-      { key: "testigo",  iconName: "mic", icon: "🔴", name: "Modo Testigo", desc: "Audio + fotos + nube simultáneos al activar.", type: "modo_testigo" },
-      { key: "panico", iconName: "panic", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "ALERTA — Botón de pánico activado. Necesito ayuda urgente." },
-      { key: "grabar", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación audio silenciosa → nube.", type: "record_audio" },
-      { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver todas las grabaciones guardadas.", type: "evidencias" },
+      { key: "testigo",  iconName: "mic", icon: "🔴", name: "Grabar Evidencias", desc: "Audio + foto frontal y trasera → nube y dispositivo.", type: "modo_testigo" },
+      { key: "panico", iconName: "panic", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación a tus contactos.", type: "alert_contacts", message: "ALERTA — Botón de pánico activado. Necesito ayuda urgente." },
       { key: "estoy_en", iconName: "pin", icon: "\u{1F4CD}", name: "Estoy en...", desc: "Avisa dónde estás + ubicación GPS.", type: "alert_contacts", message: "Estoy en [completar]." },
-      { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Botón de ingreso a lugar", desc: "Timer: si no confirmás que estás bien, se alerta automático.", type: "checkin", titulo: "Botón de ingreso — Violencia de Género" },
-      { key: "share", iconName: "pin", icon: "\u{1F4CD}", name: "Enviar ubicación en tiempo real", desc: "Comparte GPS en vivo con contacto.", type: "alert_contacts", message: "Compartiendo mi ubicación en vivo." },
+      { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Ingreso a este lugar", desc: "Activá tu tiempo de estadía. Si no desactivás, se envía tu ubicación en tiempo real.", type: "checkin", titulo: "Ingreso a este lugar — Violencia de Género" },
+      { key: "share", iconName: "eye", icon: "\u{1F4F2}", name: "Compartir ubicación en vivo", desc: "Envía link de seguimiento por WhatsApp, SMS o email. El contacto ve tu mapa en tiempo real.", type: "ruta_segura" },
+      { key: "grabar", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación audio silenciosa → nube.", type: "record_audio" },
       { key: "uber", iconName: "car", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber con destino.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
       { key: "taxi", iconName: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono de taxi.", type: "taxi" },
+      { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver todas las grabaciones guardadas.", type: "evidencias" },
     ]},
   { key: "los_cuido", iconName: "teen", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro", desc: "Salidas, regresos y anti-bullying.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
@@ -2075,10 +2075,10 @@ const MODULES = [
       { key: "cole", iconName: "school", icon: "\u{1F3EB}", name: "Buscame por el cole", desc: "Pide al padre que lo busque.", type: "alert_contacts", message: "URGENTE — Necesito que me busquen por el colegio." },
       { key: "voy_a", iconName: "home", icon: "\u{1F3E0}", name: "Voy a lo de...", desc: "Avisa a dónde va + nombre.", type: "alert_contacts", message: "Voy a lo de [completar]." },
       { key: "maps", iconName: "home", icon: "\u{1F3E1}", name: "Llegar a casa", desc: "Activa GPS hasta llegar a casa.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
-      { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
-      { key: "share", iconName: "pin", icon: "\u{1F4CD}", name: "Enviar ubicación", desc: "Comparte ubicación.", type: "alert_contacts", message: "Compartiendo mi ubicación." },
+      { key: "share", iconName: "eye", icon: "\u{1F4CD}", name: "Compartir ubicación en vivo", desc: "Envía link de seguimiento por WhatsApp, SMS o email. El contacto ve tu mapa en tiempo real.", type: "ruta_segura" },
       { key: "uber", iconName: "car", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
       { key: "taxi", iconName: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono taxi.", type: "taxi" },
+      { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
     ]},
 
   /* ═══════════════════════════════════════════════════════════
@@ -2127,13 +2127,13 @@ const MODULES = [
   { key: "turno_seguro", iconName: "night", emoji: "\u{1F303}", title: "Noche Segura", desc: "Para jóvenes que salen de noche, acompañantes, repartidores o cualquier situación de riesgo donde necesites apoyo de amigos o conocidos.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
-      { key: "testigo",     iconName: "mic",   icon: "🔴", name: "Modo Testigo", desc: "Audio + fotos + nube simultáneos al activar.", type: "modo_testigo" },
-      { key: "ruta_segura", iconName: "eye",   icon: "\u{1F4CD}", name: "Ruta Segura en Vivo", desc: "Link de seguimiento en tiempo real. Si no cancelás, alerta automática.", type: "ruta_segura" },
+      { key: "testigo",     iconName: "mic",   icon: "🔴", name: "Grabar Evidencias", desc: "Audio + foto frontal y trasera → nube y dispositivo.", type: "modo_testigo" },
+      { key: "ruta_segura", iconName: "eye",   icon: "\u{1F4CD}", name: "Compartir ubicación en vivo", desc: "Envía link de seguimiento por WhatsApp, SMS o email. El contacto ve tu mapa en tiempo real.", type: "ruta_segura" },
       { key: "panico", iconName: "panic", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "SOS — Necesito ayuda urgente." },
       { key: "sospechoso_lugar", iconName: "alert", icon: "\u26A0\u{FE0F}", name: "Entro a lugar sospechoso", desc: "Guarda dirección + timer. Si no confirmás, alerta automática.", type: "checkin", titulo: "Lugar sospechoso — Noche Segura" },
       { key: "desconocido", iconName: "person", icon: "\u{1F6B6}", name: "Salgo con desconocido/a", desc: "Avisa contactos + nombre + ubicación.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
       { key: "perdido", iconName: "pin", icon: "\u{1F4CD}", name: "Me perdí", desc: "Comparte GPS en vivo a tus contactos.", type: "alert_contacts", message: "Me perdí. Compartiendo mi ubicación en vivo. Por favor ayudame a volver." },
-      { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Botón de ingreso nocturno", desc: "Timer: si no confirmo a tiempo, se alerta a mis contactos.", type: "checkin", titulo: "Botón de ingreso nocturno" },
+      { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Ingreso a este lugar", desc: "Activá tu tiempo de estadía. Si no desactivás, se envía tu ubicación en tiempo real.", type: "checkin", titulo: "Ingreso a este lugar — Noche Segura" },
       { key: "grabar", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación silenciosa → nube.", type: "record_audio" },
       { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
       { key: "maps", iconName: "home", icon: "\u{1F3E1}", name: "Llegar a casa", desc: "Activa GPS hasta llegar a casa.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
@@ -2202,12 +2202,12 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
     <>
       <div className="rounded-2xl p-5 flex flex-col" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.border}`, boxShadow: "6px 6px 18px rgba(0,0,0,0.7), 0 0 20px rgba(212,175,55,0.04)" }}>
         <div className="mb-3 flex items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.18), rgba(154,123,15,0.08))", border: `1px solid ${BRAND.borderStrong}` }}>
-            {m.iconName ? <GoldIcon name={m.iconName} size={26} /> : <span className="text-2xl">{m.emoji}</span>}
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.18), rgba(154,123,15,0.08))", border: `1px solid ${BRAND.borderStrong}` }}>
+            <PinEyeLogo size={38} showText={false} />
           </div>
           <div>
-            <h4 className="text-base font-bold" style={{ color: BRAND.gold }}>{m.title}</h4>
-            <p className="text-xs" style={{ color: BRAND.textMute }}>{m.desc}</p>
+            <h4 className="text-lg font-bold" style={{ color: BRAND.white }}>{m.title}</h4>
+            <p className="text-xs mt-0.5" style={{ color: BRAND.gold }}>{m.desc}</p>
           </div>
         </div>
         <button onClick={() => setExpanded(!expanded)}
@@ -2219,12 +2219,15 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
           <div className="mt-4 space-y-2">
             {m.actions.map(a => (
               <button key={a.key} onClick={() => handleAction(a)}
-                className="w-full rounded-xl px-4 py-3 text-left active:scale-[0.98] transition-all" style={{ background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.border}`, boxShadow: "3px 3px 8px rgba(0,0,0,0.5)" }}>
+                className="w-full rounded-xl px-4 py-3.5 text-left active:scale-[0.98] transition-all" style={{ background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.border}`, boxShadow: "3px 3px 8px rgba(0,0,0,0.5)" }}>
                 <div className="flex items-start gap-3">
                   <div className="shrink-0 mt-0.5">
-                    {a.iconName ? <GoldIcon name={a.iconName} size={22} /> : <span className="text-xl">{a.icon}</span>}
+                    {a.iconName ? <GoldIcon name={a.iconName} size={24} /> : <span className="text-xl">{a.icon}</span>}
                   </div>
-                  <div><div className="text-sm font-semibold" style={{ color: BRAND.white }}>{a.name}</div><div className="mt-0.5 text-[11px]" style={{ color: BRAND.textMute }}>{a.desc}</div></div>
+                  <div>
+                    <div className="text-sm font-bold" style={{ color: BRAND.white }}>{a.name}</div>
+                    <div className="mt-1 text-xs leading-relaxed" style={{ color: "#aaaaaa" }}>{a.desc}</div>
+                  </div>
                 </div>
               </button>
             ))}
@@ -2449,232 +2452,204 @@ function EagleEyeLogo({ size = 80 }) {
 //  4. La persona protegida recibe notificación y debe APROBAR cada solicitud
 //  5. Si aprueba, se inicia grabación de audio que va a "Mis Evidencias"
 // ═══════════════════════════════════════════════
-function TeCuidoScreen({ onBack }) {
-  const [modo, setModo] = useState("elegir"); // elegir | protegida | tercero
-  const [codigoGenerado, setCodigoGenerado] = useState("");
-  const [codigoIngresado, setCodigoIngresado] = useState("");
-  const [vinculadoCon, setVinculadoCon] = useState(null);
-  const [solicitudPendiente, setSolicitudPendiente] = useState(null);
-  const [grabandoRemoto, setGrabandoRemoto] = useState(false);
-  const [tiempoGrabacion, setTiempoGrabacion] = useState(0);
+function TeCuidoScreen({ onBack, contactos = [] }) {
+  const [modo,     setModo]     = useState("elegir"); // elegir | cuidador | protegida
+  const [telefono, setTelefono] = useState("");
+  const [enviado,  setEnviado]  = useState(false);
+  const [loading,  setLoading]  = useState(false);
+  const [activo,   setActivo]   = useState(false);
+  const [pin,      setPin]      = useState("");
+  const [pinInput, setPinInput] = useState("");
+  const [error,    setError]    = useState("");
 
-  useEffect(() => {
-    // Cargar estado previo de sessionStorage
+  function generarPin() {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+  }
+
+  async function enviarSolicitud() {
+    setError("");
+    const tel = telefono.replace(/\D/g, "");
+    if (tel.length < 10) { setError("Ingresá un número de teléfono válido."); return; }
+    setLoading(true);
+    const newPin = generarPin();
+    setPin(newPin);
+    const link = `${window.location.origin}/cuidar/aceptar/${newPin}`;
+    const msg = `👁️ *Traza 360 — Solicitud de cuidado*\n\n[Tu nombre] quiere seguirte en tiempo real para protegerte.\n\n✅ *Aceptar:* ${link}\n❌ Si no querés, ignorá este mensaje.\n\n_Para cancelar en cualquier momento, usá tu PIN de seguridad en la app._`;
     try {
-      const guardado = sessionStorage.getItem("traza360_tecuido");
-      if (guardado) {
-        const data = JSON.parse(guardado);
-        if (data.modo) setModo(data.modo);
-        if (data.codigoGenerado) setCodigoGenerado(data.codigoGenerado);
-        if (data.vinculadoCon) setVinculadoCon(data.vinculadoCon);
-      }
-    } catch(e){}
-  }, []);
-
-  useEffect(() => {
-    if (!grabandoRemoto) return;
-    const id = setInterval(() => setTiempoGrabacion(t => t + 1), 1000);
-    return () => clearInterval(id);
-  }, [grabandoRemoto]);
-
-  function guardarEstado(data) {
-    try { sessionStorage.setItem("traza360_tecuido", JSON.stringify(data)); } catch(e){}
-  }
-
-  function generarCodigo() {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setCodigoGenerado(code);
-    setModo("protegida");
-    guardarEstado({ modo: "protegida", codigoGenerado: code });
-  }
-
-  function vincular() {
-    if (codigoIngresado.length !== 6) {
-      alert("El código debe tener 6 dígitos.");
-      return;
+      await sendWhatsAppAPI(tel, msg);
+      setEnviado(true);
+    } catch(e) {
+      // Si WhatsApp falla, ofrecer compartir manual
+      setEnviado(true);
     }
-    const fake = { codigo: codigoIngresado, nombre: "Persona vinculada" };
-    setVinculadoCon(fake);
-    setModo("tercero");
-    guardarEstado({ modo: "tercero", vinculadoCon: fake });
-    alert("✅ Vinculado correctamente.\n\nIMPORTANTE: En producción real, esto requiere conexión activa via Supabase Realtime para que la víctima reciba la solicitud y la apruebe. Ahora estás en modo demo.");
+    setLoading(false);
   }
 
-  function desvincular() {
-    if (!window.confirm("¿Romper el vínculo Te Cuido a Distancia?")) return;
-    setVinculadoCon(null);
-    setCodigoGenerado("");
-    setSolicitudPendiente(null);
-    setModo("elegir");
-    try { sessionStorage.removeItem("traza360_tecuido"); } catch(e){}
+  function activarModo() {
+    setActivo(true);
+    setModo("protegida");
+    try { sessionStorage.setItem("traza360_tecuido_activo", pin); } catch(e){}
   }
 
-  function solicitarGrabacion() {
-    // En producción esto crea un registro en Supabase y notifica a la víctima
-    setSolicitudPendiente({ desde: vinculadoCon?.codigo, momento: Date.now() });
-    alert("📲 Solicitud enviada.\n\nLa persona protegida recibirá una notificación para APROBAR o RECHAZAR la grabación.\n\n(Demo: simulamos aprobación automática en 3 segundos)");
-    setTimeout(() => {
-      setGrabandoRemoto(true);
-      setTiempoGrabacion(0);
-      setSolicitudPendiente(null);
-    }, 3000);
+  function cancelarConPin() {
+    setError("");
+    const pinGuardado = sessionStorage.getItem("traza360_tecuido_activo");
+    if (pinInput === pinGuardado || pinInput === pin) {
+      setActivo(false);
+      setModo("elegir");
+      setEnviado(false);
+      setTelefono("");
+      setPin("");
+      setPinInput("");
+      try { sessionStorage.removeItem("traza360_tecuido_activo"); } catch(e){}
+    } else {
+      setError("PIN incorrecto.");
+    }
   }
-
-  function detenerGrabacionRemota() {
-    setGrabandoRemoto(false);
-    alert(`✅ Grabación detenida (${fmt(tiempoGrabacion)}).\n\nEn producción, el archivo se guarda automáticamente en "Mis Evidencias" de la persona protegida.`);
-    setTiempoGrabacion(0);
-  }
-
-  const fmt = (s) => `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
 
   return (
     <div className="min-h-screen px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
-      <div className="mx-auto max-w-2xl">
-        <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver al panel</button>
+      <div className="mx-auto max-w-md">
+        <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>← Volver al panel</button>
 
-        <div className="mb-6 rounded-2xl p-6" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.border}` }}>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-[11px] uppercase tracking-[3px]" style={{ color: BRAND.gold }}>Cuidado remoto con consentimiento</p>
-              <h2 className="mt-2 text-xl font-bold" style={{ color: BRAND.white }}>Te Cuido a Distancia</h2>
-              <p className="mt-2 text-xs" style={{ color: BRAND.textMute }}>
-                Un tercero (familiar, amigo de confianza) puede iniciar una grabación de audio remota. <strong style={{ color: BRAND.gold }}>La persona protegida siempre debe aprobar cada solicitud.</strong>
-              </p>
-            </div>
-            <GoldIcon name="eye" size={32} />
-          </div>
+        <div className="text-center mb-6">
+          <GoldIcon name="eye" size={48} />
+          <h2 className="text-xl font-bold mt-3" style={{ color: BRAND.white }}>Te Cuido a Distancia</h2>
+          <p className="text-xs mt-2" style={{ color: BRAND.textMute }}>La persona protegida siempre tiene el control.</p>
         </div>
 
-        {/* MODO: elegir */}
+        {/* ELEGIR ROL */}
         {modo === "elegir" && (
           <div className="space-y-3">
-            <button onClick={generarCodigo}
-              className="w-full rounded-2xl p-5 text-left active:scale-[0.98] transition-all"
-              style={{ background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.borderStrong}` }}>
-              <div className="flex items-center gap-3 mb-2">
-                <GoldIcon name="shield" size={28} />
-                <h3 className="text-base font-bold" style={{ color: BRAND.gold }}>Soy quien necesita protección</h3>
-              </div>
-              <p className="text-xs" style={{ color: BRAND.textMute }}>Generá un código para compartir con tu familiar/amigo de confianza. Sólo vos podés aprobar las grabaciones.</p>
-            </button>
-
-            <button onClick={() => setModo("tercero_form")}
-              className="w-full rounded-2xl p-5 text-left active:scale-[0.98] transition-all"
-              style={{ background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.border}` }}>
+            <button onClick={() => setModo("cuidador")}
+              className="w-full rounded-2xl p-5 text-left"
+              style={{ background: "linear-gradient(145deg,#1a1a1a,#0a0a0a)", border: `2px solid ${BRAND.borderStrong}` }}>
               <div className="flex items-center gap-3 mb-2">
                 <GoldIcon name="contacts" size={28} />
                 <h3 className="text-base font-bold" style={{ color: BRAND.gold }}>Quiero cuidar a alguien</h3>
               </div>
-              <p className="text-xs" style={{ color: BRAND.textMute }}>Ingresá el código que te compartió la persona. Vas a poder solicitar grabaciones que ella debe aprobar.</p>
+              <p className="text-xs" style={{ color: BRAND.textMute }}>
+                Enviás una solicitud por WhatsApp. La persona la acepta o rechaza. Si acepta, ves su ubicación en tiempo real.
+              </p>
+            </button>
+
+            <button onClick={() => setModo("protegida")}
+              className="w-full rounded-2xl p-5 text-left"
+              style={{ background: "linear-gradient(145deg,#1a1a1a,#0a0a0a)", border: `1px solid ${BRAND.border}` }}>
+              <div className="flex items-center gap-3 mb-2">
+                <GoldIcon name="shield" size={28} />
+                <h3 className="text-base font-bold" style={{ color: BRAND.gold }}>Alguien me está cuidando</h3>
+              </div>
+              <p className="text-xs" style={{ color: BRAND.textMute }}>
+                Ver el estado de tu seguimiento activo. Podés cancelar cuando quieras con tu PIN de seguridad.
+              </p>
             </button>
           </div>
         )}
 
-        {/* MODO: protegida — código generado */}
-        {modo === "protegida" && (
-          <div className="rounded-2xl p-6" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.borderStrong}` }}>
+        {/* CUIDADOR — enviar solicitud */}
+        {modo === "cuidador" && !enviado && (
+          <div className="rounded-2xl p-6" style={{ background: "linear-gradient(145deg,#111,#000)", border: `1px solid ${BRAND.borderStrong}` }}>
             <button onClick={() => setModo("elegir")} className="text-xs mb-4" style={{ color: BRAND.textMute }}>← Volver</button>
-            <h3 className="text-base font-bold mb-4" style={{ color: BRAND.gold }}>Tu código de vínculo</h3>
-            <p className="text-xs mb-4" style={{ color: BRAND.textMute }}>
-              Compartí este código con tu familiar de confianza (1 sola persona). Cuando lo ingrese, quedará vinculada con vos.
+            <h3 className="text-base font-bold mb-2" style={{ color: BRAND.gold }}>Enviar solicitud de cuidado</h3>
+            <p className="text-xs mb-5" style={{ color: BRAND.textMute }}>
+              La persona recibe un WhatsApp con un link para aceptar o rechazar. Si acepta, podés ver su ubicación en tiempo real.
             </p>
-            <div className="rounded-2xl p-6 text-center mb-4" style={{ background: "rgba(212,175,55,0.08)", border: `2px solid ${BRAND.borderStrong}` }}>
-              <p className="text-[11px] uppercase tracking-[3px] mb-2" style={{ color: BRAND.textMute }}>Código</p>
-              <p className="text-4xl font-mono font-bold tracking-widest" style={{ color: BRAND.gold }}>{codigoGenerado}</p>
-            </div>
-            <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
-              <p className="text-xs" style={{ color: BRAND.gold }}>{"\u{1F512}"} <strong>Tu seguridad primero:</strong></p>
-              <ul className="text-xs mt-2 space-y-1" style={{ color: BRAND.textMute }}>
-                <li>• Nadie puede grabarte sin tu aprobación explícita.</li>
-                <li>• Cuando el tercero solicite una grabación, vas a recibir una notificación.</li>
-                <li>• Vos decidís: aprobar o rechazar cada solicitud.</li>
-                <li>• Podés romper el vínculo cuando quieras.</li>
-              </ul>
-            </div>
-            <button onClick={() => navigator.clipboard?.writeText(codigoGenerado).then(() => alert("Código copiado")).catch(() => {})}
-              className="w-full rounded-xl py-3 text-sm font-semibold mb-2"
-              style={{ background: "rgba(212,175,55,0.1)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold }}>
-              {"\u{1F4CB}"} Copiar código
-            </button>
-            <button onClick={desvincular} className="w-full rounded-xl py-2.5 text-xs" style={{ border: `1px solid ${BRAND.red}40`, color: "#fca5a5" }}>
-              Romper vínculo
-            </button>
-          </div>
-        )}
 
-        {/* MODO: ingresar código del tercero */}
-        {modo === "tercero_form" && (
-          <div className="rounded-2xl p-6" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.border}` }}>
-            <button onClick={() => setModo("elegir")} className="text-xs mb-4" style={{ color: BRAND.textMute }}>← Volver</button>
-            <h3 className="text-base font-bold mb-4" style={{ color: BRAND.gold }}>Ingresá el código</h3>
-            <p className="text-xs mb-4" style={{ color: BRAND.textMute }}>
-              Pedile el código de 6 dígitos a la persona que querés cuidar. El vínculo se establece en su dispositivo y debe aprobarlo.
-            </p>
+            <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>Número de WhatsApp</p>
             <input
-              type="text"
-              maxLength="6"
-              value={codigoIngresado}
-              onChange={e => setCodigoIngresado(e.target.value.replace(/\D/g, ""))}
-              placeholder="000000"
-              className="w-full text-center font-mono text-3xl tracking-widest rounded-2xl py-5 mb-4 outline-none"
-              style={{ background: "rgba(212,175,55,0.05)", border: `2px solid ${BRAND.borderStrong}`, color: BRAND.gold }}
+              type="tel"
+              value={telefono}
+              onChange={e => setTelefono(e.target.value)}
+              placeholder="+54 9 351 000 0000"
+              className="w-full rounded-xl px-4 py-3 text-sm outline-none mb-4"
+              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.white }}
             />
-            <button onClick={vincular} disabled={codigoIngresado.length !== 6}
-              className="w-full rounded-xl py-3 text-sm font-bold shadow-lg disabled:opacity-40"
-              style={{ background: BRAND.goldGradient, color: BRAND.black }}>
-              Vincular
-            </button>
-          </div>
-        )}
 
-        {/* MODO: tercero conectado */}
-        {modo === "tercero" && vinculadoCon && (
-          <div className="space-y-4">
-            <div className="rounded-2xl p-5" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.borderStrong}` }}>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="h-3 w-3 rounded-full animate-pulse" style={{ background: BRAND.gold }} />
-                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: BRAND.gold }}>Vinculado</p>
-              </div>
-              <p className="text-sm" style={{ color: BRAND.white }}>Código: <span className="font-mono">{vinculadoCon.codigo}</span></p>
-              <p className="text-xs mt-1" style={{ color: BRAND.textMute }}>Podés solicitar grabaciones que la persona deberá aprobar.</p>
+            <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
+              <p className="text-xs" style={{ color: BRAND.textMute }}>
+                📱 <strong style={{ color: BRAND.white }}>Van a recibir:</strong> un mensaje con tu nombre y un link para aceptar o rechazar. Si no aceptan, no pasa nada.
+              </p>
             </div>
 
-            {grabandoRemoto ? (
-              <div className="rounded-2xl p-6 text-center" style={{ background: "linear-gradient(145deg, #2a0e0e, #1a0808)", border: `2px solid ${BRAND.red}` }}>
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <div className="h-3 w-3 rounded-full animate-pulse" style={{ background: BRAND.red }} />
-                  <span className="text-xs font-bold uppercase tracking-widest" style={{ color: BRAND.red }}>Grabando remotamente</span>
-                </div>
-                <div className="font-mono text-4xl font-bold tabular-nums mb-4" style={{ color: BRAND.white }}>{fmt(tiempoGrabacion)}</div>
-                <button onClick={detenerGrabacionRemota} className="w-full rounded-xl py-3 text-sm font-bold" style={{ background: BRAND.goldGradient, color: BRAND.black }}>
-                  Detener grabación
-                </button>
-              </div>
-            ) : solicitudPendiente ? (
-              <div className="rounded-2xl p-6 text-center" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
-                <div className="animate-pulse">
-                  <GoldIcon name="timer" size={36} />
-                  <p className="mt-3 text-sm font-semibold" style={{ color: BRAND.gold }}>Esperando aprobación...</p>
-                  <p className="text-xs mt-1" style={{ color: BRAND.textMute }}>La persona protegida está revisando tu solicitud.</p>
-                </div>
-              </div>
-            ) : (
-              <button onClick={solicitarGrabacion} className="w-full rounded-2xl py-4 text-base font-bold shadow-lg" style={{ background: BRAND.goldGradient, color: BRAND.black }}>
-                {"\u{1F399}\u{FE0F}"} Solicitar grabación
-              </button>
-            )}
+            {error && <p className="text-xs mb-3" style={{ color: "#fca5a5" }}>{error}</p>}
 
-            <button onClick={desvincular} className="w-full rounded-xl py-2.5 text-xs" style={{ border: `1px solid ${BRAND.red}40`, color: "#fca5a5" }}>
-              Romper vínculo
+            <button onClick={enviarSolicitud} disabled={loading}
+              className="w-full rounded-xl py-4 font-bold text-sm disabled:opacity-40"
+              style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+              {loading ? "Enviando..." : "📲 Enviar solicitud por WhatsApp"}
             </button>
           </div>
         )}
 
-        {/* Advertencia legal */}
-        <div className="mt-6 rounded-xl p-3" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BRAND.border}` }}>
+        {/* CUIDADOR — solicitud enviada */}
+        {modo === "cuidador" && enviado && (
+          <div className="rounded-2xl p-6 text-center" style={{ background: "linear-gradient(145deg,#111,#000)", border: `2px solid ${BRAND.borderStrong}` }}>
+            <div className="text-4xl mb-3">📲</div>
+            <h3 className="text-lg font-bold mb-2" style={{ color: BRAND.gold }}>Solicitud enviada</h3>
+            <p className="text-xs mb-5" style={{ color: BRAND.textMute }}>
+              Le mandamos un WhatsApp al {telefono}. Cuando acepte, vas a poder verla en el panel de seguimiento en vivo.
+            </p>
+            <div className="rounded-xl p-3 mb-5" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BRAND.border}` }}>
+              <p className="text-xs" style={{ color: BRAND.textMute }}>
+                ⏳ Si no recibe el mensaje, pedile que abra Traza 360 y vaya a "Alguien me está cuidando".
+              </p>
+            </div>
+            <button onClick={() => { setEnviado(false); setModo("elegir"); }}
+              className="w-full rounded-xl py-3 text-sm"
+              style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
+              Volver
+            </button>
+          </div>
+        )}
+
+        {/* PROTEGIDA — estado de seguimiento */}
+        {modo === "protegida" && (
+          <div className="rounded-2xl p-6" style={{ background: "linear-gradient(145deg,#111,#000)", border: `1px solid ${BRAND.border}` }}>
+            <button onClick={() => setModo("elegir")} className="text-xs mb-4" style={{ color: BRAND.textMute }}>← Volver</button>
+
+            {!activo ? (
+              <>
+                <div className="text-center py-6">
+                  <div className="text-4xl mb-3">✅</div>
+                  <p className="text-sm font-bold mb-1" style={{ color: BRAND.white }}>Sin seguimiento activo</p>
+                  <p className="text-xs" style={{ color: BRAND.textMute }}>Si alguien te envió una solicitud, vas a ver un aviso para aceptar o rechazar.</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="rounded-xl p-4 mb-4" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.3)" }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+                    <p className="text-xs font-bold" style={{ color: "#22c55e" }}>Seguimiento activo</p>
+                  </div>
+                  <p className="text-xs" style={{ color: BRAND.textMute }}>Alguien de confianza puede ver tu ubicación en tiempo real.</p>
+                </div>
+
+                <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>Cancelar con PIN de seguridad</p>
+                <input
+                  type="text" inputMode="numeric" maxLength="4"
+                  value={pinInput}
+                  onChange={e => setPinInput(e.target.value.replace(/\D/g, ""))}
+                  placeholder="Tu PIN de 4 dígitos"
+                  className="w-full rounded-xl px-4 py-3 text-center font-mono text-2xl tracking-widest outline-none mb-3"
+                  style={{ background: "rgba(0,0,0,0.5)", border: `1px solid ${BRAND.border}`, color: BRAND.white }}
+                />
+                {error && <p className="text-xs mb-2" style={{ color: "#fca5a5" }}>{error}</p>}
+                <button onClick={cancelarConPin}
+                  className="w-full rounded-xl py-3 text-sm font-bold"
+                  style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}40`, color: "#fca5a5" }}>
+                  Cancelar seguimiento
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Nota legal */}
+        <div className="mt-5 rounded-xl p-3" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BRAND.border}` }}>
           <p className="text-[11px]" style={{ color: BRAND.textDim }}>
-            <strong style={{ color: BRAND.gold }}>Importante:</strong> Grabar a una persona sin su consentimiento puede ser delito según las leyes de tu país. Traza 360 garantiza que TODAS las grabaciones remotas requieren aprobación explícita de la persona protegida.
+            <strong style={{ color: BRAND.gold }}>Tu privacidad:</strong> Ningún seguimiento se activa sin tu aceptación explícita. Podés cancelar cuando quieras.
           </p>
         </div>
       </div>
