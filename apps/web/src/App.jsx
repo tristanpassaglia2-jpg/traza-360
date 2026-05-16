@@ -3748,6 +3748,60 @@ function GpsExplainerModal({ onAceptar, onRechazar }) {
 // Es un atajo: usuario primero hace login con email,
 // después puede crear un PIN para entrar más rápido próximas veces.
 // ═══════════════════════════════════════════════
+// ── Componente inline para ofrecer biometría después del PIN ──
+function BiometriaSetupInline({ nombreUsuario, onDone }) {
+  const [estado,  setEstado]  = useState("idle"); // idle | loading | ok | error | nodisp
+  const [msg,     setMsg]     = useState("");
+
+  useEffect(() => {
+    PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+      .then(ok => { if (!ok) setEstado("nodisp"); })
+      .catch(() => setEstado("nodisp"));
+  }, []);
+
+  async function activar() {
+    setEstado("loading");
+    const r = await registrarBiometria(nombreUsuario);
+    if (r.ok) { setEstado("ok"); setTimeout(() => onDone(), 1500); }
+    else { setEstado("error"); setMsg(r.error); }
+  }
+
+  if (estado === "nodisp") return (
+    <button onClick={onDone} className="w-full text-xs py-2" style={{ color: BRAND.textDim }}>
+      Continuar →
+    </button>
+  );
+
+  if (estado === "ok") return (
+    <div className="text-center">
+      <p className="text-sm font-bold" style={{ color: "#22c55e" }}>✅ Biometría activada</p>
+      <p className="text-xs mt-1" style={{ color: BRAND.textMute }}>La próxima vez entrás con huella o Face ID.</p>
+    </div>
+  );
+
+  return (
+    <div className="rounded-xl p-4" style={{ background: "rgba(212,175,55,0.06)", border: `1px solid ${BRAND.borderStrong}` }}>
+      <p className="text-sm font-bold mb-1" style={{ color: BRAND.gold }}>
+        {/iPhone|iPad|Mac/.test(navigator.userAgent) ? "🔒 ¿Activar Face ID?" : "👆 ¿Activar huella?"}
+      </p>
+      <p className="text-xs mb-3" style={{ color: BRAND.textMute }}>
+        Entrá con un toque, igual que WhatsApp. Más rápido y más seguro.
+      </p>
+      {estado === "error" && (
+        <p className="text-xs mb-2" style={{ color: "#fca5a5" }}>{msg}</p>
+      )}
+      <button onClick={activar} disabled={estado === "loading"}
+        className="w-full rounded-xl py-3 text-sm font-bold mb-2 disabled:opacity-50"
+        style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+        {estado === "loading" ? "Activando..." : "Activar biometría"}
+      </button>
+      <button onClick={onDone} className="w-full text-xs py-1" style={{ color: BRAND.textDim }}>
+        Ahora no, usar solo PIN
+      </button>
+    </div>
+  );
+}
+
 function PinSetupScreen({ onBack, onComplete, modo = "crear" }) {
   // modo: "crear" | "cambiar" | "eliminar"
   const [paso, setPaso] = useState(1); // 1: ingresar | 2: confirmar | 3: hecho
@@ -3917,11 +3971,15 @@ function PinSetupScreen({ onBack, onComplete, modo = "crear" }) {
               <p className="text-base font-bold" style={{ color: BRAND.gold }}>
                 {modo === "eliminar" ? "PIN eliminado" : "PIN configurado"}
               </p>
-              <p className="text-xs mt-2" style={{ color: BRAND.textMute }}>
+              <p className="text-xs mt-2 mb-5" style={{ color: BRAND.textMute }}>
                 {modo === "eliminar"
                   ? "Próxima vez que entres vas a usar email y contraseña."
                   : "Próxima vez que entres podés usar este PIN."}
               </p>
+              {/* Ofrecer biometría si el PIN fue creado */}
+              {modo !== "eliminar" && (
+                <BiometriaSetupInline nombreUsuario="" onDone={onComplete} />
+              )}
             </>
           )}
 
@@ -3942,11 +4000,66 @@ function PinSetupScreen({ onBack, onComplete, modo = "crear" }) {
 // 3 intentos fallidos → vuelve a login email.
 // ═══════════════════════════════════════════════
 function PinAuthScreen({ onSuccess, onFallback, onLogout }) {
-  const [pin, setPin] = useState("");
-  const [error, setError] = useState("");
-  const [intentos, setIntentos] = useState(0);
+  const [pin,        setPin]        = useState("");
+  const [error,      setError]      = useState("");
+  const [intentos,   setIntentos]   = useState(0);
+  const [bioDisp,    setBioDisp]    = useState(false);  // ¿biometría disponible?
+  const [bioLoading, setBioLoading] = useState(false);
+  const [modo,       setModo]       = useState("bio");  // "bio" | "pin"
   const MAX_INTENTOS = 3;
 
+  // ── Detectar si el dispositivo soporta biometría ──────────
+  useEffect(() => {
+    async function detectar() {
+      try {
+        const credId = localStorage.getItem("traza360_webauthn_id");
+        if (!credId) { setModo("pin"); return; }
+        const ok = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        setBioDisp(ok);
+        setModo(ok ? "bio" : "pin");
+        if (ok) autenticarBio(); // intento automático al abrir
+      } catch(e) { setModo("pin"); }
+    }
+    detectar();
+  }, []);
+
+  // ── Autenticación biométrica ──────────────────────────────
+  async function autenticarBio() {
+    setBioLoading(true);
+    setError("");
+    try {
+      const credIdB64 = localStorage.getItem("traza360_webauthn_id");
+      if (!credIdB64) { setModo("pin"); setBioLoading(false); return; }
+
+      const credId = Uint8Array.from(atob(credIdB64), c => c.charCodeAt(0));
+      const challenge = crypto.getRandomValues(new Uint8Array(32));
+
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge,
+          timeout: 60000,
+          allowCredentials: [{ type: "public-key", id: credId, transports: ["internal"] }],
+          userVerification: "required",
+        }
+      });
+
+      if (assertion) {
+        setBioLoading(false);
+        onSuccess();
+      }
+    } catch(e) {
+      setBioLoading(false);
+      if (e.name === "NotAllowedError") {
+        setError("Biometría cancelada. Usá el PIN.");
+        setModo("pin");
+      } else {
+        setError("Error de biometría. Usá el PIN.");
+        setModo("pin");
+      }
+    }
+  }
+
+  // ── Autenticación por PIN ─────────────────────────────────
   function intentarAcceso(value) {
     setPin(value);
     if (value.length === 4) {
@@ -3957,7 +4070,7 @@ function PinAuthScreen({ onSuccess, onFallback, onLogout }) {
         const nuevoIntentos = intentos + 1;
         setIntentos(nuevoIntentos);
         if (nuevoIntentos >= MAX_INTENTOS) {
-          setError("Demasiados intentos fallidos. Volvé a ingresar con email y contraseña.");
+          setError("Demasiados intentos. Ingresá con email y contraseña.");
           setTimeout(() => onFallback(), 2000);
         } else {
           setError(`PIN incorrecto. Te quedan ${MAX_INTENTOS - nuevoIntentos} intento${MAX_INTENTOS - nuevoIntentos > 1 ? "s" : ""}.`);
@@ -3970,75 +4083,167 @@ function PinAuthScreen({ onSuccess, onFallback, onLogout }) {
   return (
     <div className="min-h-screen flex items-center justify-center px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
       <div className="w-full max-w-sm">
+        {/* Logo */}
         <div className="text-center mb-6">
           <PinEyeLogo size={70} showText={false} />
           <p className="text-[11px] uppercase tracking-[3px] mt-3 font-bold" style={{ color: BRAND.gold }}>{TAGLINE}</p>
         </div>
 
         <div className="rounded-3xl p-6" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.borderStrong}` }}>
-          <div className="text-center mb-4">
-            <h2 className="text-base font-bold" style={{ color: BRAND.white }}>Ingresá tu PIN</h2>
-            <p className="text-xs mt-1" style={{ color: BRAND.textMute }}>4 números para entrar rápido</p>
-          </div>
 
-          {/* Display de puntos */}
-          <div className="flex justify-center gap-3 mb-6">
-            {[0, 1, 2, 3].map(i => (
-              <div key={i} className="h-4 w-4 rounded-full transition-all"
-                style={{
-                  background: i < pin.length ? BRAND.gold : "transparent",
-                  border: `2px solid ${i < pin.length ? BRAND.gold : BRAND.border}`,
-                }} />
-            ))}
-          </div>
+          {/* ── MODO BIOMÉTRICO ── */}
+          {modo === "bio" && (
+            <div className="text-center">
+              <p className="text-base font-bold mb-1" style={{ color: BRAND.white }}>
+                Verificá tu identidad
+              </p>
+              <p className="text-xs mb-8" style={{ color: BRAND.textMute }}>
+                Usá tu huella o Face ID para entrar
+              </p>
 
-          {/* Teclado numérico */}
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            {[1,2,3,4,5,6,7,8,9].map(n => (
-              <button key={n} onClick={() => pin.length < 4 && intentarAcceso(pin + n)}
-                className="rounded-2xl py-4 text-2xl font-bold active:scale-95"
-                style={{ background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>
-                {n}
+              {/* Ícono biométrico animado */}
+              <button onClick={autenticarBio} disabled={bioLoading}
+                className="mx-auto flex items-center justify-center rounded-3xl mb-8 active:scale-95 disabled:opacity-60"
+                style={{ width: 96, height: 96, background: bioLoading ? "rgba(212,175,55,0.15)" : "rgba(212,175,55,0.1)", border: `2px solid ${bioLoading ? BRAND.gold : BRAND.borderStrong}`, boxShadow: bioLoading ? `0 0 30px rgba(212,175,55,0.3)` : "none", transition: "all 0.3s" }}>
+                {bioLoading
+                  ? <div className="h-8 w-8 rounded-full border-2 border-dashed animate-spin" style={{ borderColor: BRAND.gold }} />
+                  : <span style={{ fontSize: 44 }}>
+                      {/iPhone|iPad|Mac/.test(navigator.userAgent) ? "🔒" : "👆"}
+                    </span>
+                }
               </button>
-            ))}
-            <div />
-            <button onClick={() => pin.length < 4 && intentarAcceso(pin + "0")}
-              className="rounded-2xl py-4 text-2xl font-bold active:scale-95"
-              style={{ background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>
-              0
-            </button>
-            <button onClick={() => setPin(pin.slice(0, -1))}
-              className="rounded-2xl py-4 text-lg font-bold active:scale-95"
-              style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}30`, color: BRAND.red }}>
-              ⌫
-            </button>
-          </div>
 
-          {error && (
-            <div className="rounded-lg p-2.5 mb-3 text-center" style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}40` }}>
-              <p className="text-xs" style={{ color: "#fca5a5" }}>{error}</p>
+              <p className="text-xs mb-6" style={{ color: BRAND.textMute }}>
+                {bioLoading ? "Verificando..." : "Tocá para activar"}
+              </p>
+
+              {error && (
+                <div className="rounded-lg p-2.5 mb-4" style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}40` }}>
+                  <p className="text-xs" style={{ color: "#fca5a5" }}>{error}</p>
+                </div>
+              )}
+
+              <button onClick={() => { setModo("pin"); setError(""); }}
+                className="text-xs underline" style={{ color: BRAND.textDim }}>
+                Usar PIN en su lugar
+              </button>
             </div>
           )}
 
-          {/* Acciones secundarias */}
-          <div className="flex justify-between items-center text-xs mt-4">
-            <button onClick={onFallback} className="font-semibold underline" style={{ color: BRAND.gold }}>
-              ¿Olvidaste tu PIN?
-            </button>
-            <button onClick={onLogout} style={{ color: BRAND.textDim }}>
-              Cerrar sesión
-            </button>
-          </div>
+          {/* ── MODO PIN ── */}
+          {modo === "pin" && (
+            <>
+              <div className="text-center mb-4">
+                <h2 className="text-base font-bold" style={{ color: BRAND.white }}>Ingresá tu PIN</h2>
+                <p className="text-xs mt-1" style={{ color: BRAND.textMute }}>4 números para entrar rápido</p>
+              </div>
+
+              {/* Puntos */}
+              <div className="flex justify-center gap-3 mb-6">
+                {[0,1,2,3].map(i => (
+                  <div key={i} className="h-4 w-4 rounded-full transition-all"
+                    style={{ background: i < pin.length ? BRAND.gold : "transparent", border: `2px solid ${i < pin.length ? BRAND.gold : BRAND.border}` }} />
+                ))}
+              </div>
+
+              {/* Teclado */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                {[1,2,3,4,5,6,7,8,9].map(n => (
+                  <button key={n} onClick={() => pin.length < 4 && intentarAcceso(pin + n)}
+                    className="rounded-2xl py-4 text-2xl font-bold active:scale-95"
+                    style={{ background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>
+                    {n}
+                  </button>
+                ))}
+                <div />
+                <button onClick={() => pin.length < 4 && intentarAcceso(pin + "0")}
+                  className="rounded-2xl py-4 text-2xl font-bold active:scale-95"
+                  style={{ background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>
+                  0
+                </button>
+                <button onClick={() => setPin(pin.slice(0, -1))}
+                  className="rounded-2xl py-4 text-lg font-bold active:scale-95"
+                  style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}30`, color: BRAND.red }}>
+                  ⌫
+                </button>
+              </div>
+
+              {error && (
+                <div className="rounded-lg p-2.5 mb-3 text-center" style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}40` }}>
+                  <p className="text-xs" style={{ color: "#fca5a5" }}>{error}</p>
+                </div>
+              )}
+
+              {/* Opción biométrica si está disponible */}
+              {bioDisp && (
+                <button onClick={() => { setModo("bio"); setError(""); autenticarBio(); }}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold mb-3"
+                  style={{ background: "rgba(212,175,55,0.06)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>
+                  <span>{/iPhone|iPad|Mac/.test(navigator.userAgent) ? "🔒" : "👆"}</span>
+                  Usar huella / Face ID
+                </button>
+              )}
+            </>
+          )}
+
+          {/* Fallback login */}
+          <button onClick={onFallback} className="w-full text-center text-xs mt-2" style={{ color: BRAND.textDim }}>
+            Ingresar con email y contraseña
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
+// ── Registrar biometría (se llama desde PinSetupScreen) ──────
+async function registrarBiometria(nombreUsuario) {
+  try {
+    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    if (!available) return { ok: false, error: "Este dispositivo no soporta biometría." };
+
+    const userId = crypto.getRandomValues(new Uint8Array(16));
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+
+    const credential = await navigator.credentials.create({
+      publicKey: {
+        challenge,
+        rp: { name: "Traza 360", id: window.location.hostname },
+        user: {
+          id: userId,
+          name: nombreUsuario || "usuario",
+          displayName: nombreUsuario || "Usuario Traza 360",
+        },
+        pubKeyCredParams: [
+          { alg: -7,   type: "public-key" }, // ES256
+          { alg: -257, type: "public-key" }, // RS256
+        ],
+        authenticatorSelection: {
+          authenticatorAttachment: "platform",
+          userVerification: "required",
+          residentKey: "preferred",
+        },
+        timeout: 60000,
+      }
+    });
+
+    if (!credential) return { ok: false, error: "No se pudo registrar la biometría." };
+
+    // Guardar el ID de la credencial en localStorage
+    const credId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+    localStorage.setItem("traza360_webauthn_id", credId);
+    return { ok: true };
+  } catch(e) {
+    if (e.name === "NotAllowedError") return { ok: false, error: "Cancelaste el registro." };
+    if (e.name === "InvalidStateError") return { ok: false, error: "Ya hay una biometría registrada en este dispositivo." };
+    return { ok: false, error: "Error: " + e.message };
+  }
+}
+
 // ═══════════════════════════════════════════════
-// RUTA SEGURA EN VIVO (v19.9) — Timer + GPS + Link público
-// Inspirado en Glympse pero con alerta automática integrada
+// RUTA SEGURA EN VIVO (v19.9)
 // ═══════════════════════════════════════════════
+
 // ═══════════════════════════════════════════════════════════════
 // GEOCERCAS EMOCIONALES (v19.10)
 // Inspirado en Life360/Familo pero con contexto horario
