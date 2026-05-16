@@ -2081,7 +2081,7 @@ const MODULES = [
       { key: "panico", iconName: "panic", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación a tus contactos.", type: "alert_contacts", message: "ALERTA — Botón de pánico activado. Necesito ayuda urgente." },
       { key: "estoy_en", iconName: "pin", icon: "\u{1F4CD}", name: "Estoy en...", desc: "Avisa dónde estás + ubicación GPS.", type: "alert_contacts", message: "Estoy en [completar]." },
       { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Ingreso a este lugar", desc: "Activá tu tiempo de estadía. Si no desactivás, se envía tu ubicación en tiempo real.", type: "checkin", titulo: "Ingreso a este lugar — Violencia de Género" },
-      { key: "share", iconName: "eye", icon: "\u{1F4F2}", name: "Compartir ubicación en vivo", desc: "Envía link de seguimiento por WhatsApp, SMS o email. El contacto ve tu mapa en tiempo real.", type: "ruta_segura" },
+      { key: "share", iconName: "eye", icon: "\u{1F4F2}", name: "Compartir mi movimiento en vivo", desc: "El contacto ve tu mapa moviéndose en tiempo real. Sin instalar nada.", type: "ruta_segura" },
       { key: "grabar", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación audio silenciosa → nube.", type: "record_audio" },
       { key: "uber", iconName: "car", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber con destino.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
       { key: "taxi", iconName: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono de taxi.", type: "taxi" },
@@ -2096,7 +2096,7 @@ const MODULES = [
       { key: "cole", iconName: "school", icon: "\u{1F3EB}", name: "Buscame por el cole", desc: "Pide al padre que lo busque.", type: "alert_contacts", message: "URGENTE — Necesito que me busquen por el colegio." },
       { key: "voy_a", iconName: "home", icon: "\u{1F3E0}", name: "Voy a lo de...", desc: "Avisa a dónde va + nombre.", type: "alert_contacts", message: "Voy a lo de [completar]." },
       { key: "maps", iconName: "home", icon: "\u{1F3E1}", name: "Llegar a casa", desc: "Activa GPS hasta llegar a casa.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
-      { key: "share", iconName: "eye", icon: "\u{1F4CD}", name: "Compartir ubicación en vivo", desc: "Envía link de seguimiento por WhatsApp, SMS o email. El contacto ve tu mapa en tiempo real.", type: "ruta_segura" },
+      { key: "share", iconName: "eye", icon: "\u{1F4CD}", name: "Compartir mi movimiento en vivo", desc: "El contacto ve tu mapa moviéndose en tiempo real. Sin instalar nada.", type: "ruta_segura" },
       { key: "uber", iconName: "car", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
       { key: "taxi", iconName: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono taxi.", type: "taxi" },
       { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
@@ -2149,7 +2149,7 @@ const MODULES = [
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
       { key: "testigo",     iconName: "mic",   icon: "🔴", name: "Grabar Evidencias", desc: "Audio + foto frontal y trasera → nube y dispositivo.", type: "modo_testigo" },
-      { key: "ruta_segura", iconName: "eye",   icon: "\u{1F4CD}", name: "Compartir ubicación en vivo", desc: "Envía link de seguimiento por WhatsApp, SMS o email. El contacto ve tu mapa en tiempo real.", type: "ruta_segura" },
+      { key: "ruta_segura", iconName: "eye",   icon: "\u{1F4CD}", name: "Compartir mi movimiento en vivo", desc: "El contacto ve tu mapa moviéndose en tiempo real. Sin instalar nada.", type: "ruta_segura" },
       { key: "panico", iconName: "panic", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "SOS — Necesito ayuda urgente." },
       { key: "sospechoso_lugar", iconName: "alert", icon: "\u26A0\u{FE0F}", name: "Entro a lugar sospechoso", desc: "Guarda dirección + timer. Si no confirmás, alerta automática.", type: "checkin", titulo: "Lugar sospechoso — Noche Segura" },
       { key: "desconocido", iconName: "person", icon: "\u{1F6B6}", name: "Salgo con desconocido/a", desc: "Avisa contactos + nombre + ubicación.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
@@ -5059,34 +5059,127 @@ function RutaSeguraModal({ onClose, contactos, authUser, userProfile }) {
 
 // ─── LANDING SCREEN (v19 — rebrand dorado) ───
 function LandingScreen({ onScreen }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [featOpen, setFeatOpen] = useState(false);
+
   return (
     <div className="min-h-screen" style={{ background: BRAND.blackBg, color: BRAND.white }}>
-      <section className="px-5 pt-16 pb-10 text-center">
 
-        {/* Logo */}
+      {/* ── NAVBAR estilo Life360 ── */}
+      <nav style={{ background: "#000", borderBottom: `1px solid ${BRAND.border}`, position: "sticky", top: 0, zIndex: 100 }}>
+        <div className="flex items-center justify-between px-5 py-3 max-w-5xl mx-auto">
+          {/* Logo + nombre */}
+          <div className="flex items-center gap-2.5">
+            <PinEyeLogo size={32} showText={false} />
+            <span className="text-sm font-bold tracking-[2px] uppercase" style={{ color: BRAND.gold }}>Traza 360</span>
+          </div>
+
+          {/* Tabs desktop */}
+          <div className="hidden md:flex items-center gap-6">
+            {[
+              { label: "Funciones", action: () => setFeatOpen(!featOpen) },
+              { label: "Planes", action: () => onScreen("planes") },
+              { label: "Seguridad", action: () => onScreen("instrucciones_publico") },
+              { label: "Sobre nosotros", action: () => onScreen("sobre_nosotros") },
+            ].map((item, i) => (
+              <button key={i} onClick={item.action}
+                className="text-sm font-medium hover:opacity-80 flex items-center gap-1"
+                style={{ color: BRAND.textMute }}>
+                {item.label}
+                {item.label === "Funciones" && <span className="text-[10px]">{featOpen ? "▲" : "▼"}</span>}
+              </button>
+            ))}
+          </div>
+
+          {/* Derecha: Get started + iconos */}
+          <div className="flex items-center gap-3">
+            {/* Login */}
+            <button onClick={() => onScreen("login")}
+              className="hidden md:flex items-center justify-center h-8 w-8 rounded-full"
+              style={{ border: `1px solid ${BRAND.border}` }}
+              title="Ingresar">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill={BRAND.textMute}>
+                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+              </svg>
+            </button>
+            {/* Idioma / región */}
+            <button className="hidden md:flex items-center justify-center h-8 w-8 rounded-full"
+              style={{ border: `1px solid ${BRAND.border}` }}
+              title="Idioma">
+              <span style={{ fontSize: 16 }}>🌐</span>
+            </button>
+            {/* CTA principal */}
+            <button onClick={() => onScreen("register")}
+              className="rounded-xl px-4 py-2 text-sm font-bold"
+              style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+              Empezar gratis
+            </button>
+            {/* Hamburguesa mobile */}
+            <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}
+              style={{ color: BRAND.gold, fontSize: 22 }}>
+              {menuOpen ? "✕" : "☰"}
+            </button>
+          </div>
+        </div>
+
+        {/* Dropdown Funciones */}
+        {featOpen && (
+          <div className="border-t px-5 py-4 grid grid-cols-2 gap-3 max-w-5xl mx-auto" style={{ borderColor: BRAND.border }}>
+            {[
+              { icon: "🛡️", title: "Violencia de Género", desc: "Alerta silenciosa y red de apoyo" },
+              { icon: "👨‍👩‍👧", title: "Adolescente Seguro", desc: "Geocercas y alertas para padres" },
+              { icon: "🌙", title: "Noche Segura", desc: "Ruta en vivo para salidas nocturnas" },
+              { icon: "👁️", title: "Te Cuido a Distancia", desc: "Seguimiento con consentimiento" },
+            ].map((f, i) => (
+              <button key={i} onClick={() => { setFeatOpen(false); onScreen("instrucciones_publico"); }}
+                className="flex items-start gap-3 rounded-xl p-3 text-left hover:opacity-80"
+                style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
+                <span className="text-xl shrink-0">{f.icon}</span>
+                <div>
+                  <p className="text-sm font-bold" style={{ color: BRAND.white }}>{f.title}</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: BRAND.textMute }}>{f.desc}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Menú mobile */}
+        {menuOpen && (
+          <div className="border-t px-5 py-4 flex flex-col gap-3 md:hidden" style={{ borderColor: BRAND.border }}>
+            {[
+              { label: "Funciones", screen: "instrucciones_publico" },
+              { label: "Planes", screen: "planes" },
+              { label: "Sobre nosotros", screen: "sobre_nosotros" },
+              { label: "Ingresar", screen: "login" },
+            ].map((item, i) => (
+              <button key={i} onClick={() => { setMenuOpen(false); onScreen(item.screen); }}
+                className="text-left text-sm font-semibold py-2"
+                style={{ color: BRAND.textMute, borderBottom: `1px solid ${BRAND.border}` }}>
+                {item.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </nav>
+
+      {/* ── HERO ── */}
+      <section className="px-5 pt-16 pb-10 text-center">
         <div className="mb-6 flex justify-center">
           <PinEyeLogo size={110} showText={false} />
         </div>
-
-        {/* Nombre app */}
         <p className="text-[11px] font-semibold uppercase tracking-[5px] mb-4" style={{ color: BRAND.gold }}>
           Traza 360
         </p>
-
-        {/* Título principal — nuevo copy de Tristan */}
         <h1 className="text-3xl font-bold leading-tight md:text-5xl mx-auto max-w-sm" style={{ color: BRAND.white }}>
           Si algo pasa,<br/>
           <span style={{ background: BRAND.goldGradient, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             alguien ya sabe.
           </span>
         </h1>
-
-        {/* Subtítulo */}
         <p className="mt-4 text-sm leading-relaxed mx-auto max-w-xs" style={{ color: BRAND.textMute }}>
           Ubicación, audio y alerta en tiempo real<br/>para quienes más te importan.
         </p>
-
-        {/* Features rápidos */}
         <div className="mt-6 flex flex-col gap-2 items-center">
           {[
             "Un botón → alerta a tu gente de confianza",
@@ -5094,30 +5187,25 @@ function LandingScreen({ onScreen }) {
             "Gratis durante la beta",
           ].map((feat, i) => (
             <div key={i} className="flex items-center gap-2 text-xs" style={{ color: BRAND.textDim }}>
-              <span style={{ color: BRAND.gold }}>{"\u2713"}</span> {feat}
+              <span style={{ color: BRAND.gold }}>✓</span> {feat}
             </div>
           ))}
         </div>
       </section>
 
-      {/* CTAs */}
+      {/* ── CTAs ── */}
       <div className="px-5 pb-12">
         <div className="mx-auto flex w-full max-w-sm flex-col gap-3">
-          {/* Botón principal */}
           <button onClick={() => onScreen("register")}
             className="w-full rounded-2xl px-4 py-4 font-bold shadow-lg text-base"
             style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.35)" }}>
             Probala gratis →
           </button>
-
-          {/* Botón secundario — Ver cómo funciona */}
           <button onClick={() => onScreen("instrucciones_publico")}
             className="w-full rounded-2xl px-4 py-4 font-semibold text-sm"
             style={{ background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold }}>
             Ver cómo funciona
           </button>
-
-          {/* Ya tengo cuenta — más discreto */}
           <button onClick={() => onScreen("login")}
             className="w-full py-2 text-xs font-medium"
             style={{ color: BRAND.textDim }}>
@@ -5126,7 +5214,7 @@ function LandingScreen({ onScreen }) {
         </div>
       </div>
 
-      {/* Footer */}
+      {/* ── Footer ── */}
       <div className="px-5 pb-8 text-center">
         <div className="flex items-center justify-center gap-3 text-xs flex-wrap" style={{ color: BRAND.textDim }}>
           <button onClick={() => onScreen("sobre_nosotros")} className="hover:underline" style={{ color: BRAND.gold }}>Sobre nosotros</button>
