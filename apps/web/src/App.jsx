@@ -370,22 +370,33 @@ function SystemStatusPanel({ contactos, onGoToContactos, onClose }) {
           </span>
         </div>
         <div className="flex items-center gap-3">
-          {/* Íconos de estado rápido */}
-          <div className="flex gap-1.5">
-            {[
-              { label: "WA", ok: waOk },
-              { label: "GPS", ok: gpsOk },
-              { label: `${cantContactos}c`, ok: contactosOk },
-            ].map((item, i) => (
-              <span key={i} className="text-[10px] font-bold rounded-md px-1.5 py-0.5"
-                style={{
-                  background: item.ok === null ? "rgba(255,255,255,0.05)" : item.ok ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)",
-                  color: item.ok === null ? BRAND.textDim : item.ok ? "#22c55e" : "#ef4444",
-                  border: `1px solid ${item.ok === null ? BRAND.border : item.ok ? "rgba(34,197,94,0.25)" : "rgba(239,68,68,0.25)"}`,
-                }}>
-                {item.label}
+          {/* Íconos de estado premium */}
+          <div className="flex items-center gap-2">
+            {/* WhatsApp icon */}
+            <div className="flex items-center gap-1 rounded-lg px-2 py-1"
+              style={{ background: waOk === null ? "rgba(255,255,255,0.05)" : waOk ? "rgba(37,211,102,0.12)" : "rgba(239,68,68,0.12)", border: `1px solid ${waOk === null ? BRAND.border : waOk ? "rgba(37,211,102,0.35)" : "rgba(239,68,68,0.35)"}` }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill={waOk === null ? "#555" : waOk ? "#25D366" : "#ef4444"}>
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.121 1.533 5.848L.057 23.547a.75.75 0 00.919.916l5.699-1.476A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.694-.505-5.24-1.385l-.374-.217-3.88 1.005 1.022-3.762-.23-.386A10 10 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+              </svg>
+            </div>
+            {/* GPS / Maps icon */}
+            <div className="flex items-center gap-1 rounded-lg px-2 py-1"
+              style={{ background: gpsOk === null ? "rgba(255,255,255,0.05)" : gpsOk ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)", border: `1px solid ${gpsOk === null ? BRAND.border : gpsOk ? "rgba(34,197,94,0.35)" : "rgba(239,68,68,0.35)"}` }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill={gpsOk === null ? "#555" : gpsOk ? "#22c55e" : "#ef4444"}>
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+            </div>
+            {/* Contactos */}
+            <div className="flex items-center gap-1 rounded-lg px-2 py-1"
+              style={{ background: contactosOk ? "rgba(212,175,55,0.12)" : "rgba(239,68,68,0.12)", border: `1px solid ${contactosOk ? BRAND.borderStrong : "rgba(239,68,68,0.35)"}` }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill={contactosOk ? BRAND.gold : "#ef4444"}>
+                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+              </svg>
+              <span className="text-[10px] font-bold" style={{ color: contactosOk ? BRAND.gold : "#ef4444" }}>
+                {cantContactos} {cantContactos === 1 ? "contacto activo" : "contactos activos"}
               </span>
-            ))}
+            </div>
           </div>
           <span className="text-[11px]" style={{ color: BRAND.textDim }}>{expanded ? "▲" : "▼"}</span>
         </div>
@@ -442,11 +453,11 @@ function OnboardingScreen({ onComplete }) {
 
   const steps = [
     {
-      iconType: "logo", // Logo dorado en lugar de escudo azul
+      iconType: "logo",
       title: "Bienvenido/a a Traza 360",
       subtitle: "Alguien cuida de vos.",
       desc: "Esta app te protege a vos y a quienes querés. Con un solo botón podés alertar a tu gente de confianza, compartir tu ubicación y grabar evidencia.",
-      cta: "Entender cómo funciona →",
+      cta: "¿Empezamos a cuidarte? →",
     },
     {
       iconType: "icon",
@@ -465,7 +476,7 @@ function OnboardingScreen({ onComplete }) {
     {
       iconType: "icon",
       iconName: "contacts",
-      title: "Último paso: agregá un contacto",
+      title: "Agregá contactos de confianza",
       subtitle: "Sin contactos no podemos alertar a nadie",
       desc: "Necesitás al menos 1 contacto de confianza con WhatsApp. Podés hacerlo ahora o más tarde desde el panel.",
       cta: "Empezar a usar la app →",
@@ -503,35 +514,45 @@ function OnboardingScreen({ onComplete }) {
           <p className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: BRAND.gold }}>{current.subtitle}</p>
           {current.desc && <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>{current.desc}</p>}
 
-          {/* Step 2: selector de módulo (dorado) */}
+          {/* Step 2: selector de módulo — botones grandes */}
           {step === 1 && current.modules && (
-            <div className="mt-4 space-y-2 text-left">
+            <div className="mt-5 space-y-3 text-left">
               {current.modules.map(m => (
                 <button key={m.key} onClick={() => setSelectedModule(m.key)}
-                  className="w-full rounded-xl px-4 py-3 flex items-center gap-3 transition-all"
+                  className="w-full rounded-2xl px-5 py-4 flex items-center gap-4 transition-all active:scale-[0.98]"
                   style={{
-                    background: selectedModule === m.key ? "rgba(212,175,55,0.15)" : "rgba(255,255,255,0.04)",
-                    border: selectedModule === m.key ? `1px solid ${BRAND.borderStrong}` : `1px solid ${BRAND.border}`,
+                    background: selectedModule === m.key ? "rgba(212,175,55,0.15)" : "rgba(255,255,255,0.05)",
+                    border: selectedModule === m.key ? `2px solid ${BRAND.gold}` : `1px solid rgba(255,255,255,0.12)`,
                   }}>
-                  <div className="shrink-0"><GoldIcon name={m.iconName} size={22} /></div>
-                  <span className="text-sm font-semibold flex-1" style={{ color: selectedModule === m.key ? BRAND.gold : BRAND.textMute }}>{m.label}</span>
-                  {selectedModule === m.key && <span className="text-sm font-bold" style={{ color: BRAND.gold }}>{"\u2713"}</span>}
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+                    style={{ background: selectedModule === m.key ? "rgba(212,175,55,0.2)" : "rgba(255,255,255,0.06)" }}>
+                    <GoldIcon name={m.iconName} size={26} />
+                  </div>
+                  <span className="text-base font-bold flex-1 text-left" style={{ color: selectedModule === m.key ? BRAND.gold : BRAND.white }}>
+                    {m.label}
+                  </span>
+                  {selectedModule === m.key && (
+                    <span className="text-lg font-bold" style={{ color: BRAND.gold }}>✓</span>
+                  )}
                 </button>
               ))}
             </div>
           )}
 
-          {/* Step 3: tips de contacto (íconos dorados premium) */}
+          {/* Step 3: tips de contacto */}
           {step === 2 && (
-            <div className="mt-4 space-y-3 text-left">
+            <div className="mt-5 space-y-3 text-left">
               {[
-                { iconName: "contacts", text: "El número debe tener WhatsApp activo" },
                 { iconName: "shield", text: "El contacto recibe una verificación automática" },
-                { iconName: "eye", text: "Solo vos podés ver tus contactos" },
+                { iconName: "eye", text: "Tus contactos solo se enteran cuando los necesitás" },
               ].map((tip, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
-                  <div className="shrink-0"><GoldIcon name={tip.iconName} size={20} /></div>
-                  <span className="text-xs" style={{ color: BRAND.textMute }}>{tip.text}</span>
+                <div key={i} className="flex items-center gap-4 rounded-2xl px-4 py-3.5"
+                  style={{ background: "rgba(212,175,55,0.06)", border: `1px solid ${BRAND.borderStrong}` }}>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                    style={{ background: "rgba(212,175,55,0.12)" }}>
+                    <GoldIcon name={tip.iconName} size={22} />
+                  </div>
+                  <span className="text-sm font-semibold" style={{ color: BRAND.white }}>{tip.text}</span>
                 </div>
               ))}
             </div>
@@ -5254,26 +5275,18 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
           <p className="text-[11px] uppercase tracking-[4px] mt-2 font-semibold" style={{ color: BRAND.gold }}>{TAGLINE}</p>
         </div>
 
-        {/* Dashboard Estado del Sistema */}
+        {/* Dashboard Estado del Sistema — sin nombre de usuario */}
         <div className="mb-4 rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.border}` }}>
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
               <p className="text-[11px] uppercase tracking-[3px] mb-1 font-semibold" style={{ color: BRAND.gold }}>Estado del sistema</p>
-              <p className="text-sm font-semibold" style={{ color: BRAND.white }}>Hola, {nombreUsuario}</p>
-              <p className="text-xs mt-0.5" style={{ color: BRAND.textMute }}>Plan: <span style={{ color: BRAND.gold }} className="font-semibold">{PLAN_PRICES[userPlan]?.name}</span></p>
+              <p className="text-xs mt-0.5" style={{ color: BRAND.textMute }}>Plan: <span style={{ color: BRAND.gold }} className="font-semibold">{PLAN_PRICES[userPlan]?.name || "Gratis"}</span></p>
             </div>
             <div className="flex flex-col gap-2 items-end">
-              {/* v19.8: Panel de estado del sistema detallado */}
               <SystemStatusPanel
                 contactos={contactos}
                 onGoToContactos={() => setActiveScreen("contactos")}
               />
-              <div className="flex items-center gap-2">
-                <div className={`h-2 w-2 rounded-full ${contactos.length > 0 ? "bg-green-400" : "bg-red-400 animate-pulse"}`} />
-                <span className="text-xs font-semibold" style={{ color: contactos.length > 0 ? "#22c55e" : BRAND.red }}>
-                  {contactos.length > 0 ? `${contactos.length} contacto${contactos.length > 1 ? "s" : ""} activo${contactos.length > 1 ? "s" : ""}` : "Sin contactos — Configurar"}
-                </span>
-              </div>
             </div>
           </div>
 
@@ -5288,7 +5301,6 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
             <button onClick={handleLogout} disabled={loggingOut} className="rounded-xl px-3 py-1.5 text-xs disabled:opacity-50" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
               {loggingOut ? "Saliendo..." : "Cerrar sesión"}
             </button>
-            {/* v19.6: Borrar cuenta */}
             <button onClick={() => setActiveScreen("borrar_cuenta")} className="rounded-xl px-3 py-1.5 text-xs" style={{ background: "rgba(220,38,38,0.08)", border: `1px solid ${BRAND.red}40`, color: "#fca5a5" }}>
               {"\u{1F5D1}\u{FE0F}"} Borrar cuenta
             </button>
@@ -5302,22 +5314,17 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
           </div>
         ) : (
           <>
-            <h3 className="mb-3 text-sm font-bold uppercase tracking-[2px]" style={{ color: BRAND.gold }}>¿Qué necesitás hoy?</h3>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <h3 className="mb-4 text-base font-bold uppercase tracking-[2px]" style={{ color: BRAND.white }}>¿Qué necesitás hoy?</h3>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {quickCards.map(card => {
-                // Mapeo de emoji legacy a iconName premium
                 const iconMap = {
-                  "mi_escudo": "shield",
-                  "los_cuido": "teen",
-                  "turno_seguro": "night",
-                  "te_cuido": "eye",
-                  "contactos": "contacts",
-                  "instrucciones": "write",
+                  "mi_escudo": "shield", "los_cuido": "teen", "turno_seguro": "night",
+                  "te_cuido": "eye", "contactos": "contacts", "instrucciones": "write",
                 };
                 const iconName = iconMap[card.key];
                 return (
                   <button key={card.key} onClick={() => handleCard(card.key)}
-                    className="text-left rounded-2xl p-5 active:scale-[0.98] transition-all relative"
+                    className="text-left rounded-2xl p-6 active:scale-[0.98] transition-all relative"
                     style={{
                       background: card.key === "contactos" && contactos.length === 0
                         ? "linear-gradient(135deg, rgba(220,38,38,0.12), rgba(220,38,38,0.04))"
@@ -5325,47 +5332,34 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
                       border: card.key === "contactos" && contactos.length === 0
                         ? `1px solid ${BRAND.red}50`
                         : `1px solid ${BRAND.border}`,
-                      boxShadow: "5px 5px 14px rgba(0,0,0,0.6), 0 0 16px rgba(212,175,55,0.03)",
+                      boxShadow: "5px 5px 14px rgba(0,0,0,0.6)",
+                      minHeight: 130,
                     }}>
-                    <div className="mb-3">{iconName ? <GoldIcon name={iconName} size={32} /> : <span className="text-2xl">{card.emoji}</span>}</div>
-                    <div className="text-sm font-bold" style={{ color: BRAND.gold }}>{card.title}</div>
-                    <p className="mt-1 text-xs" style={{ color: BRAND.textMute }}>{card.text}</p>
-                    <div className="mt-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: BRAND.gold }}>Abrir {"\u2192"}</div>
+                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl"
+                      style={{ background: "rgba(212,175,55,0.1)", border: `1px solid ${BRAND.border}` }}>
+                      {iconName ? <GoldIcon name={iconName} size={28} /> : <span className="text-2xl">{card.emoji}</span>}
+                    </div>
+                    <div className="text-base font-bold" style={{ color: BRAND.white }}>{card.title}</div>
+                    <p className="mt-1 text-xs leading-relaxed" style={{ color: "#999" }}>{card.text}</p>
+                    <div className="mt-3 text-[11px] font-bold uppercase tracking-wider" style={{ color: BRAND.gold }}>Abrir {"\u2192"}</div>
                   </button>
                 );
               })}
             </div>
 
-            {/* v19.6: Disclaimer importante visible */}
+            {/* Disclaimer */}
             <div className="mt-4 rounded-xl p-3" style={{ background: "rgba(220,38,38,0.05)", border: `1px solid ${BRAND.red}30` }}>
               <div className="flex items-start gap-2">
                 <span className="text-base shrink-0">{"\u26A0\u{FE0F}"}</span>
                 <p className="text-[11px] leading-relaxed" style={{ color: BRAND.textMute }}>
-                  Traza 360 <strong style={{ color: BRAND.red }}>NO reemplaza</strong> al 911 ni a los servicios oficiales de emergencia. No garantizamos que los mensajes lleguen siempre en tiempo real. {" "}
+                  Traza 360 <strong style={{ color: BRAND.red }}>NO reemplaza</strong> al 911 ni a los servicios oficiales de emergencia.{" "}
                   <button onClick={() => setActiveScreen("terminos")} className="underline font-semibold" style={{ color: BRAND.gold }}>Ver términos</button>
                 </p>
               </div>
             </div>
 
-            {/* Banner beta gratis — v19.5 coherente con lista de espera */}
-            {userPlan === "gratis" && (
-              <button onClick={onViewPlans} className="mt-4 w-full rounded-2xl p-4 text-left active:scale-[0.98]" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.03))", border: `1px solid ${BRAND.borderStrong}` }}>
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{"\u{1F381}"}</span>
-                  <div className="flex-1">
-                    <div className="text-sm font-bold" style={{ color: BRAND.gold }}>Estás en la beta gratuita</div>
-                    <p className="text-xs mt-0.5" style={{ color: BRAND.textMute }}>Pronto habrá planes pagos con más funciones. Inscribite para 30% OFF de por vida.</p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <div className="text-sm font-bold" style={{ color: BRAND.gold }}>Ver →</div>
-                  </div>
-                </div>
-              </button>
-            )}
-
             {/* Footer privacidad y legal */}
             <div className="mt-6 text-center space-y-3">
-              {/* Acceso rápido a configuraciones */}
               <div className="flex items-center justify-center gap-2 text-xs flex-wrap">
                 <button onClick={() => setActiveScreen("pin_setup")}
                   className="rounded-lg px-3 py-1.5 font-semibold"
@@ -5397,16 +5391,8 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
                 <button onClick={() => setActiveScreen("terminos")} className="hover:underline" style={{ color: BRAND.gold }}>Términos</button>
               </div>
 
-              {/* Email soporte siempre visible */}
               <div className="text-[11px]" style={{ color: BRAND.textDim }}>
-                {"\u{1F4E7}"} Soporte: <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span>
-              </div>
-
-              <div className="text-[11px]" style={{ color: BRAND.textDim }}>
-                v{APP_VERSION} · Traza 360 por {RESPONSABLE_NAME} · {RESPONSABLE_LOCATION}
-              </div>
-              <div className="text-[11px] mt-1" style={{ color: BRAND.textDim }}>
-                Soporte: {SUPPORT_EMAIL}
+                v{APP_VERSION} · traza360.app
               </div>
             </div>
           </>
