@@ -5562,7 +5562,8 @@ export default function App() {
   const [pendingName, setPendingName] = useState(null);
   const [modoCalc, setModoCalc] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  // v19.7: Tour demo, GPS explainer, PIN acceso rápido
+  const [pinUnlocked, setPinUnlocked] = useState(false); // v19.12 fix
+  // v19.7: Tour demo, GPS explainer
   const [showTour, setShowTour] = useState(false);
   const [showGpsModal, setShowGpsModal] = useState(false);
 
