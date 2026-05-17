@@ -11,6 +11,7 @@
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/alerta/:id", "destination": "/index.html" },
     {
       "source": "/:path((?!_next|api|assets|privacidad|terminos).*)",
       "destination": "/index.html"
