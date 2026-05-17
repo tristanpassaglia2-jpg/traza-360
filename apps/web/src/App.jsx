@@ -5200,6 +5200,54 @@ function LandingScreen({ onScreen }) {
             style={{ color: BRAND.textDim }}>
             Ya tengo cuenta → Ingresar
           </button>
+
+          {/* ── Botones de instalación PWA ── */}
+          <div className="mt-2">
+            <p className="text-center text-[11px] mb-3 uppercase tracking-widest font-semibold" style={{ color: BRAND.textDim }}>
+              Instalá la app en tu celular
+            </p>
+            <div className="flex gap-3">
+              {/* Android — Google Play style */}
+              <button
+                onClick={() => {
+                  alert("1. Tocá los 3 puntitos ⋮ arriba a la derecha\n2. Tocá \"Agregar a pantalla de inicio\"\n3. Tocá \"Agregar\"\n\n¡Listo! Traza 360 queda como una app en tu pantalla.");
+                }}
+                className="flex-1 flex items-center gap-2.5 rounded-2xl px-3 py-3 active:scale-95 transition-all"
+                style={{ background: "#000", border: "1.5px solid rgba(255,255,255,0.2)" }}>
+                {/* Google Play icon SVG */}
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                  <path d="M3.18 23.5c.28.16.6.18.9.06L14.93 12 11.07 8.14 3.18 23.5z" fill="#EA4335"/>
+                  <path d="M20.5 10.26L17.55 8.6l-3.43 3.4 3.43 3.4 2.98-1.68a1.8 1.8 0 000-3.46z" fill="#FBBC04"/>
+                  <path d="M3.18.5a1.8 1.8 0 00-.93 1.6v19.8c0 .67.35 1.26.93 1.6l.1.06L14.93 12v-.28L3.28.44l-.1.06z" fill="#4285F4"/>
+                  <path d="M14.93 12l3.44-3.44-11.1-6.36a1.84 1.84 0 00-1.99.2L14.93 12z" fill="#34A853"/>
+                </svg>
+                <div className="text-left">
+                  <p className="text-[9px] leading-none" style={{ color: "rgba(255,255,255,0.6)" }}>Disponible en</p>
+                  <p className="text-sm font-bold leading-tight" style={{ color: "#fff" }}>Google Play</p>
+                </div>
+              </button>
+
+              {/* iOS — App Store style */}
+              <button
+                onClick={() => {
+                  alert("1. Tocá el botón Compartir □↑ abajo del navegador\n2. Bajá y tocá \"Agregar a pantalla de inicio\"\n3. Tocá \"Agregar\" arriba a la derecha\n\n¡Listo! Traza 360 queda como una app en tu pantalla.");
+                }}
+                className="flex-1 flex items-center gap-2.5 rounded-2xl px-3 py-3 active:scale-95 transition-all"
+                style={{ background: "#000", border: "1.5px solid rgba(255,255,255,0.2)" }}>
+                {/* Apple icon SVG */}
+                <svg width="24" height="26" viewBox="0 0 814 1000" fill="#fff">
+                  <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 376.8 48 245.9 53.2 205.2c17.7-133.6 115.7-191.6 211.1-191.6 74.8 0 135.8 49.4 182.3 49.4 44.2 0 114.2-52.8 196.1-52.8 30.2 0 108.3 2.6 163.8 91.9zm-166.2-88.2c0 52.4-35.8 103.5-75.6 126.8-12.2 7.3-30.5 13-43.5 13-1.8 0-3.6-.2-5.2-.6.2-1.8.2-3.8.2-6 0-49.4 32.1-99.8 72.5-126.8 19.7-13 50.4-22.5 73.4-22.5.4 1.4.2 3 .2 4.6v11.5z"/>
+                </svg>
+                <div className="text-left">
+                  <p className="text-[9px] leading-none" style={{ color: "rgba(255,255,255,0.6)" }}>Disponible en</p>
+                  <p className="text-sm font-bold leading-tight" style={{ color: "#fff" }}>App Store</p>
+                </div>
+              </button>
+            </div>
+            <p className="text-center text-[10px] mt-2" style={{ color: BRAND.textDim }}>
+              Sin descargar nada · Se instala desde el navegador
+            </p>
+          </div>
         </div>
       </div>
 
