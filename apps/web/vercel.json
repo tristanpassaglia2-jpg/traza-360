@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    {
+      "source": "/:path((?!_next|api|assets|privacidad|terminos).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
