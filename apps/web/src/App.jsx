@@ -4729,167 +4729,164 @@ function GeocercaMonitorScreen({ geocerca, onBack, contactos, authUser }) {
   );
 }
 
-function RutaSeguraModal({ onClose, contactos, authUser, userProfile }) {
-  const [paso, setPaso]           = useState(1); // 1: config | 2: activo | 3: cancelado
-  const [duracion, setDuracion]   = useState(60);
-  const [custom, setCustom]       = useState("");
-  const [selContacts, setSelContacts] = useState([]);
-  const [mensaje, setMensaje]     = useState("");
-  const [loading, setLoading]     = useState(false);
-  const [token, setToken]         = useState(null);
+function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userProfile }) {
+  const [paso, setPaso]       = useState(1);
+  const [duracion, setDuracion] = useState(60);
+  const [custom, setCustom]   = useState("");
+  const [mensaje, setMensaje] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [token, setToken]     = useState(null);
   const [expiresAt, setExpiresAt] = useState(null);
   const [countdown, setCountdown] = useState(null);
-  const [error, setError]         = useState("");
-  const gpsIntervalRef            = useRef(null);
-  const timerRef                  = useRef(null);
+  const [error, setError]     = useState("");
+  const [emailExtra, setEmailExtra] = useState("");
+  const [smsExtra, setSmsExtra]   = useState("");
+  // Contactos propios del módulo — persisten entre sesiones
+  const [contactosMod, setContactosMod] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem("traza360_ruta_contactos") || "[]"); } catch(e) { return []; }
+  });
+  const gpsIntervalRef = useRef(null);
+  const timerRef       = useRef(null);
 
   const duraciones = [
-    { label: "30 min", min: 30 },
-    { label: "1 hora", min: 60 },
-    { label: "2 horas", min: 120 },
-    { label: "3 horas", min: 180 },
+    { label: "30 min", min: 30 }, { label: "1 hora", min: 60 },
+    { label: "2 horas", min: 120 }, { label: "3 horas", min: 180 },
   ];
-
   const nombreUsuario = userProfile?.nombre || authUser?.email?.split("@")[0] || "Usuario";
   const liveUrl = token ? `${window.location.origin}/live/${token}` : "";
 
-  // Limpiar intervals al desmontar
   useEffect(() => () => {
     clearInterval(gpsIntervalRef.current);
     clearInterval(timerRef.current);
   }, []);
 
-  function toggleContacto(id) {
-    setSelContacts(prev =>
-      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
-    );
+  async function agregarDesdeAgenda() {
+    try {
+      if ("contacts" in navigator && "ContactsManager" in window) {
+        const contacts = await navigator.contacts.select(["name", "tel"], { multiple: true });
+        const nuevos = [...contactosMod];
+        for (const c of contacts) {
+          if (!c.tel?.[0]) continue;
+          nuevos.push({ id: Date.now().toString() + Math.random(), nombre: c.name?.[0] || "Sin nombre", telefono: c.tel[0].replace(/\D/g, "") });
+        }
+        setContactosMod(nuevos);
+        sessionStorage.setItem("traza360_ruta_contactos", JSON.stringify(nuevos));
+      } else {
+        const nombre = prompt("Nombre:");
+        if (!nombre) return;
+        const tel = prompt("Número de WhatsApp (con código país, ej: 5493511234567):");
+        if (!tel) return;
+        const nuevos = [...contactosMod, { id: Date.now().toString(), nombre, telefono: tel.replace(/\D/g, "") }];
+        setContactosMod(nuevos);
+        sessionStorage.setItem("traza360_ruta_contactos", JSON.stringify(nuevos));
+      }
+    } catch(e) {
+      const nombre = prompt("No se pudo acceder a la agenda.\nNombre del contacto:");
+      if (!nombre) return;
+      const tel = prompt("Número de WhatsApp:");
+      if (!tel) return;
+      const nuevos = [...contactosMod, { id: Date.now().toString(), nombre, telefono: tel.replace(/\D/g, "") }];
+      setContactosMod(nuevos);
+      sessionStorage.setItem("traza360_ruta_contactos", JSON.stringify(nuevos));
+    }
+  }
+
+  function eliminarContacto(id) {
+    const nuevos = contactosMod.filter(c => c.id !== id);
+    setContactosMod(nuevos);
+    sessionStorage.setItem("traza360_ruta_contactos", JSON.stringify(nuevos));
   }
 
   async function activar() {
     setError("");
-    if (selContacts.length === 0) { setError("Seleccioná al menos 1 contacto."); return; }
+    const tieneDestinatario = contactosMod.length > 0 || emailExtra.trim() || smsExtra.trim();
+    if (!tieneDestinatario) { setError("Agregá al menos 1 contacto, email o número SMS."); return; }
     setLoading(true);
-
     try {
-      // Generar token único
       const nuevoToken = Math.random().toString(36).substring(2, 9);
       const durMin = duracion === "custom" ? parseInt(custom) || 60 : duracion;
       const expira = new Date(Date.now() + durMin * 60 * 1000);
+      const hora = expira.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+      const urlPublica = `${window.location.origin}/live/${nuevoToken}`;
+      const msgBase = mensaje || `${nombreUsuario} compartió su movimiento en vivo. Si no cancela antes de las ${hora}, algo pasó.`;
 
-      // Guardar sesión en Supabase
-      const { error: dbError } = await supabase.from("live_sessions").insert({
-        token:          nuevoToken,
-        user_id:        authUser?.id,
-        nombre_usuario: nombreUsuario,
-        modulo:         "turno_seguro",
-        mensaje:        mensaje || `${nombreUsuario} activó Ruta Segura. Si no cancela antes de ${expira.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}, algo pasó.`,
-        started_at:     new Date().toISOString(),
-        expires_at:     expira.toISOString(),
-        cancelado_at:   null,
-        contactos_ids:  JSON.stringify(selContacts),
-      });
+      await supabase.from("live_sessions").insert({
+        token: nuevoToken, user_id: authUser?.id, nombre_usuario: nombreUsuario,
+        modulo: "turno_seguro", mensaje: msgBase,
+        started_at: new Date().toISOString(), expires_at: expira.toISOString(),
+        cancelado_at: null, contactos_ids: JSON.stringify(contactosMod.map(c => c.id)),
+      }).catch(e => console.warn("DB:", e));
 
-      if (dbError) throw new Error(dbError.message);
+      setToken(nuevoToken); setExpiresAt(expira);
 
-      setToken(nuevoToken);
-      setExpiresAt(expira);
-
-      // Obtener posición inicial y luego cada 15 seg
       function guardarGPS() {
         navigator.geolocation.getCurrentPosition(async pos => {
-          // Obtener batería si el navegador lo soporta
           let battery = null;
-          try {
-            const batt = await navigator.getBattery?.();
-            if (batt) battery = Math.round(batt.level * 100);
-          } catch(e) {}
-
+          try { const b = await navigator.getBattery?.(); if (b) battery = Math.round(b.level * 100); } catch(e) {}
           supabase.from("live_locations").upsert({
-            session_token: nuevoToken,
-            lat:      pos.coords.latitude,
-            lng:      pos.coords.longitude,
-            battery,
-            speed:    pos.coords.speed ?? null,
-            updated_at: new Date().toISOString(),
+            session_token: nuevoToken, lat: pos.coords.latitude, lng: pos.coords.longitude,
+            battery, speed: pos.coords.speed ?? null, updated_at: new Date().toISOString(),
           }, { onConflict: "session_token" }).catch(console.warn);
         }, () => {}, { enableHighAccuracy: true, timeout: 8000 });
       }
       guardarGPS();
       gpsIntervalRef.current = setInterval(guardarGPS, 15000);
-
-      // Countdown ticker
       timerRef.current = setInterval(() => {
         const ms = expira - new Date();
-        if (ms <= 0) {
-          clearInterval(timerRef.current);
-          clearInterval(gpsIntervalRef.current);
-          // La Edge Function de Supabase maneja la alerta automática
-          // Aquí solo actualizamos UI
-        }
+        if (ms <= 0) { clearInterval(timerRef.current); clearInterval(gpsIntervalRef.current); }
         setCountdown(Math.max(0, ms));
       }, 1000);
 
-      // Mandar WhatsApp a contactos seleccionados
-      const contactosSeleccionados = contactos.filter(c => selContacts.includes(c.id));
-      const urlPublica = `${window.location.origin}/live/${nuevoToken}`;
-      const hora = expira.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
-
-      for (const c of contactosSeleccionados) {
-        if (!c.telefono) continue;
-        const msgWA = `🛡️ *Traza 360 — Ruta Segura Activada*\n\n${nombreUsuario} activó seguimiento en vivo.\n\n📍 Seguí su ubicación en tiempo real:\n${urlPublica}\n\n⏱️ *Si no cancela antes de las ${hora}, necesita ayuda.*\n\n_Este link expira automáticamente a las ${hora}_`;
-        await sendWhatsAppAPI(c.telefono, msgWA).catch(console.warn);
+      const msgWA = `🛡️ *Traza 360 — Movimiento en Vivo*\n\n${nombreUsuario} compartió su ubicación en tiempo real.\n\n📍 *Ver mapa en vivo:*\n${urlPublica}\n\n⏱️ Si no cancela antes de las ${hora}, necesita ayuda.`;
+      for (const c of contactosMod) {
+        if (c.telefono) await sendWhatsAppAPI(c.telefono, msgWA).catch(console.warn);
       }
-
+      if (emailExtra.trim()) {
+        const asunto = encodeURIComponent(`Traza 360 — ${nombreUsuario} compartió su ubicación`);
+        const cuerpo = encodeURIComponent(`${nombreUsuario} activó seguimiento en vivo.\n\nVer mapa: ${urlPublica}\n\n${msgBase}`);
+        window.open(`mailto:${emailExtra.trim()}?subject=${asunto}&body=${cuerpo}`, "_blank");
+      }
+      if (smsExtra.trim()) {
+        const msgSMS = encodeURIComponent(`Traza 360: ${nombreUsuario} compartió su ubicación. Ver mapa: ${urlPublica}`);
+        window.open(`sms:${smsExtra.trim()}?body=${msgSMS}`, "_blank");
+      }
       setPaso(2);
-    } catch(e) {
-      setError("Error al activar: " + e.message);
-    }
+    } catch(e) { setError("Error al activar: " + e.message); }
     setLoading(false);
   }
 
   async function cancelar() {
-    clearInterval(gpsIntervalRef.current);
-    clearInterval(timerRef.current);
+    clearInterval(gpsIntervalRef.current); clearInterval(timerRef.current);
     if (token) {
       await supabase.from("live_sessions").update({ cancelado_at: new Date().toISOString() }).eq("token", token);
-      // Avisar a contactos que canceló
-      const contactosSeleccionados = contactos.filter(c => selContacts.includes(c.id));
-      for (const c of contactosSeleccionados) {
-        if (!c.telefono) continue;
-        await sendWhatsAppAPI(c.telefono, `✅ *Traza 360* — ${nombreUsuario} canceló el seguimiento. Todo bien.`).catch(console.warn);
+      for (const c of contactosMod) {
+        if (c.telefono) await sendWhatsAppAPI(c.telefono, `✅ *Traza 360* — ${nombreUsuario} llegó bien. Seguimiento cancelado.`).catch(console.warn);
       }
     }
     setPaso(3);
   }
 
   function copiarLink() {
-    navigator.clipboard?.writeText(liveUrl)
-      .then(() => alert("✅ Link copiado:\n" + liveUrl))
-      .catch(() => prompt("Copiá este link:", liveUrl));
+    navigator.clipboard?.writeText(liveUrl).then(() => alert("✅ Link copiado:\n" + liveUrl)).catch(() => prompt("Copiá este link:", liveUrl));
   }
 
-  function formatMs(ms) {
+  function fmt(ms) {
     if (!ms || ms <= 0) return "00:00:00";
     const s = Math.floor(ms / 1000);
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    const sec = s % 60;
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+    return `${String(Math.floor(s/3600)).padStart(2,"0")}:${String(Math.floor((s%3600)/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
   }
 
   return (
     <div className="fixed inset-0 z-[300] flex items-end justify-center bg-black/95 backdrop-blur-sm" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
       <div className="w-full max-w-md rounded-t-3xl overflow-hidden" style={{ background: "#000", border: `2px solid ${BRAND.borderStrong}`, maxHeight: "92vh", overflowY: "auto" }}>
-
-        {/* Handle */}
         <div className="flex justify-center pt-3 pb-1"><div className="h-1 w-12 rounded-full" style={{ background: BRAND.borderStrong }} /></div>
 
-        {/* ── PASO 1: Configuración ── */}
+        {/* PASO 1 — Configuración */}
         {paso === 1 && (
           <div className="px-5 pb-6 pt-2">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-lg font-bold" style={{ color: BRAND.white }}>Ruta Segura en Vivo</h2>
+                <h2 className="text-lg font-bold" style={{ color: BRAND.white }}>Compartir movimiento en vivo</h2>
                 <p className="text-xs mt-0.5" style={{ color: BRAND.textMute }}>Si no cancelás, alerta automática.</p>
               </div>
               <button onClick={onClose} className="text-2xl" style={{ color: BRAND.textDim }}>✕</button>
@@ -4901,154 +4898,146 @@ function RutaSeguraModal({ onClose, contactos, authUser, userProfile }) {
               {duraciones.map(d => (
                 <button key={d.min} onClick={() => { setDuracion(d.min); setCustom(""); }}
                   className="rounded-xl py-2.5 text-xs font-bold"
-                  style={{
-                    background: duracion === d.min ? BRAND.goldGradient : "rgba(255,255,255,0.04)",
-                    color: duracion === d.min ? BRAND.black : BRAND.textMute,
-                    border: `1px solid ${duracion === d.min ? BRAND.gold : BRAND.border}`,
-                  }}>
+                  style={{ background: duracion === d.min ? BRAND.goldGradient : "rgba(255,255,255,0.04)", color: duracion === d.min ? BRAND.black : BRAND.textMute, border: `1px solid ${duracion === d.min ? BRAND.gold : BRAND.border}` }}>
                   {d.label}
                 </button>
               ))}
             </div>
-            <div className="flex gap-2 mb-5">
-              <input
-                type="number" min="5" max="720"
-                value={custom}
-                onChange={e => { setCustom(e.target.value); setDuracion("custom"); }}
-                placeholder="Personalizado (minutos)"
-                className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${duracion === "custom" ? BRAND.gold : BRAND.border}`, color: BRAND.white }}
-              />
+            <input type="number" min="5" max="720" value={custom}
+              onChange={e => { setCustom(e.target.value); setDuracion("custom"); }}
+              placeholder="Personalizado (minutos)"
+              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none mb-5"
+              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${duracion === "custom" ? BRAND.gold : BRAND.border}`, color: BRAND.white }} />
+
+            {/* Contactos del módulo — desde agenda */}
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: BRAND.gold }}>¿Quién te sigue?</p>
+              <button onClick={agregarDesdeAgenda}
+                className="rounded-lg px-3 py-1.5 text-xs font-bold"
+                style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+                + Agregar contacto
+              </button>
             </div>
 
-            {/* Contactos */}
-            <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>¿Quién te sigue?</p>
-            {contactos.length === 0 ? (
-              <div className="rounded-xl p-3 mb-5" style={{ background: "rgba(220,38,38,0.06)", border: `1px solid ${BRAND.red}30` }}>
-                <p className="text-xs" style={{ color: "#fca5a5" }}>No tenés contactos. Agregá uno desde "Mis Contactos".</p>
+            {contactosMod.length === 0 ? (
+              <div className="rounded-xl p-4 mb-4 text-center" style={{ background: "rgba(212,175,55,0.05)", border: `1px dashed ${BRAND.border}` }}>
+                <p className="text-xs mb-3" style={{ color: BRAND.textMute }}>Elegí a quién le vas a compartir tu movimiento.</p>
+                <button onClick={agregarDesdeAgenda}
+                  className="rounded-xl px-4 py-2 text-sm font-bold"
+                  style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+                  📱 Elegir de mis contactos
+                </button>
               </div>
             ) : (
-              <div className="space-y-2 mb-5">
-                {contactos.map(c => (
-                  <button key={c.id} onClick={() => toggleContacto(c.id)}
-                    className="w-full flex items-center gap-3 rounded-xl p-3"
-                    style={{ background: selContacts.includes(c.id) ? "rgba(212,175,55,0.08)" : "rgba(255,255,255,0.02)", border: `1px solid ${selContacts.includes(c.id) ? BRAND.borderStrong : BRAND.border}` }}>
-                    <div className="flex h-5 w-5 items-center justify-center rounded shrink-0"
-                      style={{ background: selContacts.includes(c.id) ? BRAND.gold : "transparent", border: `2px solid ${selContacts.includes(c.id) ? BRAND.gold : "rgba(255,255,255,0.3)"}` }}>
-                      {selContacts.includes(c.id) && <span className="text-black text-[10px] font-bold">✓</span>}
+              <div className="space-y-2 mb-3">
+                {contactosMod.map(c => (
+                  <div key={c.id} className="flex items-center gap-3 rounded-xl p-3"
+                    style={{ background: "rgba(212,175,55,0.06)", border: `1px solid ${BRAND.borderStrong}` }}>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full shrink-0"
+                      style={{ background: "rgba(212,175,55,0.2)" }}>
+                      <span className="text-sm font-bold" style={{ color: BRAND.gold }}>{c.nombre[0]?.toUpperCase()}</span>
                     </div>
-                    <div className="flex-1 text-left">
-                      <p className="text-sm font-semibold" style={{ color: BRAND.white }}>{c.nombre}</p>
-                      <p className="text-[11px]" style={{ color: BRAND.textMute }}>{c.relacion || "Contacto"} · {c.telefono}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold" style={{ color: BRAND.white }}>{c.nombre}</p>
+                      <p className="text-[11px]" style={{ color: BRAND.textMute }}>WhatsApp: {c.telefono}</p>
                     </div>
-                  </button>
+                    <button onClick={() => eliminarContacto(c.id)} className="text-xs px-2 py-1 rounded-lg" style={{ color: "#fca5a5", background: "rgba(220,38,38,0.1)" }}>✕</button>
+                  </div>
                 ))}
+                <button onClick={agregarDesdeAgenda}
+                  className="w-full rounded-xl py-2.5 text-sm font-semibold"
+                  style={{ background: "transparent", border: `1px dashed ${BRAND.border}`, color: BRAND.gold }}>
+                  + Agregar otro
+                </button>
               </div>
             )}
 
-            {/* Mensaje personalizado */}
-            <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>Mensaje (opcional)</p>
-            <textarea
-              value={mensaje}
-              onChange={e => setMensaje(e.target.value)}
-              placeholder={`Ej: "Salí con alguien. Si no cancelo antes de las [hora], algo pasó."`}
-              rows={2}
-              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none mb-5"
-              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.white }}
-            />
+            {/* Email */}
+            <p className="text-[11px] uppercase tracking-widest font-bold mb-2 mt-4" style={{ color: BRAND.gold }}>También por email (opcional)</p>
+            <input type="email" value={emailExtra} onChange={e => setEmailExtra(e.target.value)}
+              placeholder="correo@ejemplo.com"
+              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none mb-3"
+              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${emailExtra ? BRAND.gold : BRAND.border}`, color: BRAND.white }} />
 
-            {/* Preview del WhatsApp que se va a mandar */}
-            <div className="rounded-xl p-3 mb-5" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
-              <p className="text-[11px] uppercase tracking-wider font-bold mb-2" style={{ color: BRAND.gold }}>📱 WhatsApp que recibirán:</p>
-              <p className="text-xs leading-relaxed" style={{ color: BRAND.textMute, fontFamily: "monospace" }}>
-                🛡️ Traza 360 — Ruta Segura Activada<br/><br/>
-                {nombreUsuario} activó seguimiento en vivo.<br/><br/>
-                📍 Seguí su ubicación en tiempo real:<br/>
-                <span style={{ color: BRAND.gold }}>traza360.app/live/abc1234</span><br/><br/>
-                ⏱️ <strong>Si no cancela antes de las [hora], necesita ayuda.</strong>
+            {/* SMS */}
+            <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>También por SMS (opcional)</p>
+            <input type="tel" value={smsExtra} onChange={e => setSmsExtra(e.target.value)}
+              placeholder="+54 9 351 000 0000"
+              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none mb-4"
+              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${smsExtra ? BRAND.gold : BRAND.border}`, color: BRAND.white }} />
+
+            {/* Mensaje */}
+            <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>Mensaje (opcional)</p>
+            <textarea value={mensaje} onChange={e => setMensaje(e.target.value)}
+              placeholder='Ej: "Salí con alguien. Si no cancelo antes de las [hora], algo pasó."'
+              rows={2} className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none mb-4"
+              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.white }} />
+
+            {/* Preview */}
+            <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
+              <p className="text-[11px] uppercase tracking-wider font-bold mb-2" style={{ color: BRAND.gold }}>📱 Van a recibir por WhatsApp:</p>
+              <p className="text-xs leading-relaxed font-mono" style={{ color: BRAND.textMute }}>
+                🛡️ Traza 360 — Movimiento en Vivo<br/><br/>
+                {nombreUsuario} compartió su ubicación.<br/>
+                📍 <span style={{ color: BRAND.gold }}>traza360.app/live/abc1234</span><br/>
+                ⏱️ Si no cancela antes de las [hora], necesita ayuda.
               </p>
             </div>
 
             {error && <p className="text-xs mb-3" style={{ color: "#fca5a5" }}>{error}</p>}
 
-            <button onClick={activar} disabled={loading || selContacts.length === 0}
+            <button onClick={activar} disabled={loading}
               className="w-full rounded-2xl py-4 font-bold text-base disabled:opacity-40"
               style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.3)" }}>
-              {loading ? "Activando..." : "🚀 Activar Ruta Segura"}
+              {loading ? "Activando..." : "🚀 Activar seguimiento en vivo"}
             </button>
           </div>
         )}
 
-        {/* ── PASO 2: Timer activo ── */}
+        {/* PASO 2 — Activo */}
         {paso === 2 && (
-          <div className="px-5 pb-8 pt-3">
-            <div className="text-center mb-6">
-              <div className="inline-block rounded-full px-3 py-1 mb-3 text-[10px] font-bold uppercase tracking-widest"
-                style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e" }}>
-                ● En vivo
-              </div>
-              <h2 className="text-2xl font-bold mb-1" style={{ color: BRAND.white }}>Ruta Segura activa</h2>
-              <p className="text-xs" style={{ color: BRAND.textMute }}>Tus contactos ya recibieron el link.</p>
+          <div className="px-5 pb-6 pt-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-5">
+              <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: BRAND.red }}>Seguimiento activo</span>
             </div>
-
-            {/* Countdown grande */}
-            <div className="rounded-2xl p-6 mb-4 text-center" style={{ background: "linear-gradient(145deg, #0d0d0d, #000)", border: `2px solid ${countdown === 0 ? BRAND.red : BRAND.borderStrong}` }}>
-              <p className="text-[11px] uppercase tracking-[3px] font-bold mb-2" style={{ color: BRAND.gold }}>Tiempo restante</p>
-              <p className="text-5xl font-black mb-1" style={{ color: countdown === 0 ? "#fca5a5" : BRAND.white, fontVariantNumeric: "tabular-nums", letterSpacing: "-2px" }}>
-                {formatMs(countdown)}
-              </p>
-              {expiresAt && (
-                <p className="text-xs" style={{ color: BRAND.textMute }}>
-                  Vence a las {expiresAt.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
-                </p>
-              )}
+            <div className="rounded-2xl p-6 mb-4" style={{ background: "linear-gradient(145deg,#0d0d0d,#000)", border: `2px solid ${BRAND.borderStrong}` }}>
+              <p className="text-[11px] uppercase tracking-[4px] mb-2" style={{ color: BRAND.gold }}>Tiempo restante</p>
+              <p className="text-5xl font-bold tabular-nums mb-1" style={{ color: BRAND.white }}>{fmt(countdown)}</p>
+              <p className="text-xs" style={{ color: BRAND.textMute }}>Vence a las {expiresAt?.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</p>
             </div>
-
-            {/* Link para compartir */}
-            <div className="rounded-xl p-4 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
-              <p className="text-[11px] uppercase tracking-wider font-bold mb-2" style={{ color: BRAND.gold }}>Tu link de seguimiento</p>
-              <p className="text-xs font-mono break-all mb-3" style={{ color: BRAND.white }}>{liveUrl}</p>
-              <div className="flex gap-2">
-                <button onClick={copiarLink} className="flex-1 rounded-lg py-2 text-xs font-bold"
-                  style={{ background: BRAND.goldGradient, color: BRAND.black }}>
-                  📋 Copiar link
-                </button>
-                <button onClick={() => window.open(`whatsapp://send?text=${encodeURIComponent(`Seguime en tiempo real: ${liveUrl}`)}`, "_blank")}
-                  className="flex-1 rounded-lg py-2 text-xs font-bold"
-                  style={{ background: "rgba(37,211,102,0.1)", border: "1px solid rgba(37,211,102,0.3)", color: "#25d366" }}>
-                  WhatsApp
-                </button>
-              </div>
+            <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
+              <p className="text-xs font-bold mb-1" style={{ color: BRAND.gold }}>Link de seguimiento activo</p>
+              <p className="text-[11px] break-all" style={{ color: BRAND.textMute }}>{liveUrl}</p>
             </div>
-
-            {/* Aviso pantalla encendida */}
-            <div className="rounded-xl p-3 mb-5" style={{ background: "rgba(212,175,55,0.04)", border: `1px solid ${BRAND.border}` }}>
-              <p className="text-xs" style={{ color: BRAND.textMute }}>
-                💡 <strong style={{ color: BRAND.gold }}>Mantené la pantalla encendida</strong> para que tus contactos te vean en tiempo real. Si bloqueás el celular, el GPS se pausa.
-              </p>
+            <div className="flex gap-2 mb-4">
+              <button onClick={copiarLink} className="flex-1 rounded-xl py-3 text-sm font-bold"
+                style={{ background: "rgba(212,175,55,0.1)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold }}>
+                📋 Copiar link
+              </button>
+              <button onClick={() => { const msg = encodeURIComponent(`📍 Seguí mi ubicación en vivo: ${liveUrl}`); window.open(`https://wa.me/?text=${msg}`, "_blank"); }}
+                className="flex-1 rounded-xl py-3 text-sm font-bold"
+                style={{ background: "rgba(37,211,102,0.1)", border: "1px solid rgba(37,211,102,0.3)", color: "#25D366" }}>
+                📲 Compartir
+              </button>
             </div>
-
-            {/* Botón cancelar */}
             <button onClick={cancelar}
               className="w-full rounded-2xl py-4 font-bold text-base"
-              style={{ background: "rgba(34,197,94,0.1)", border: "2px solid rgba(34,197,94,0.4)", color: "#22c55e" }}>
-              ✅ Estoy bien — Cancelar seguimiento
+              style={{ background: "rgba(220,38,38,0.1)", border: `2px solid ${BRAND.red}`, color: "#fca5a5" }}>
+              ✅ Llegué bien — Cancelar seguimiento
             </button>
           </div>
         )}
 
-        {/* ── PASO 3: Cancelado ── */}
+        {/* PASO 3 — Cancelado */}
         {paso === 3 && (
-          <div className="px-5 pb-8 pt-4 text-center">
+          <div className="px-5 pb-6 pt-4 text-center">
             <div className="text-5xl mb-4">✅</div>
-            <h2 className="text-xl font-bold mb-2" style={{ color: "#22c55e" }}>¡Llegaste bien!</h2>
-            <p className="text-sm mb-6" style={{ color: BRAND.textMute }}>
-              Tus contactos recibieron un WhatsApp confirmando que cancelaste. Todo bien.
-            </p>
-            <button onClick={onClose}
-              className="w-full rounded-2xl py-4 font-bold"
+            <h3 className="text-xl font-bold mb-2" style={{ color: BRAND.white }}>Seguimiento cancelado</h3>
+            <p className="text-sm mb-6" style={{ color: BRAND.textMute }}>Tus contactos recibieron la confirmación de que llegaste bien.</p>
+            <button onClick={onClose} className="w-full rounded-2xl py-4 font-bold"
               style={{ background: BRAND.goldGradient, color: BRAND.black }}>
-              Volver al panel
+              Cerrar
             </button>
           </div>
         )}
