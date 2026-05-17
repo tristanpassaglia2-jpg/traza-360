@@ -214,16 +214,17 @@ async function enviarWhatsApp(numero, text) {
 async function enviarWhatsAppSilencioso(numero, text) { return await sendWhatsAppAPI(numero, text); }
 function openWhatsAppDefault(text) { enviarWhatsApp(WHATSAPP_NUMBER_DEFAULT, text); }
 
-function buildMessageWithReply(baseMessage, loc) {
+function buildMessageWithReply(baseMessage, loc, alertaId) {
   let msg = baseMessage;
   if (loc) msg += "\n\n\u{1F4CD} Ubicacion: " + buildMapLink(loc);
-  msg += "\n\n\u{1F4F1} RESPONDER:\n\u2705 OK\n\u{1F44D} Recibi\n\u{1F3C3} Voy\n\u{1F697} Salgo ya\n\u23F0 5 min\n\u{1F3E0} En casa\n\u{1F44B} Llegue\n\u{1F6A8} Emergencia";
+  if (alertaId) msg += "\n\n\u{1F6A8} Ver alerta y responder:\nhttps://traza360.app/alerta/" + alertaId;
+  msg += "\n\n\u{1F4F1} RESPONDER:\n\u2705 OK\n\u{1F44D} Recibi\n\u{1F3C3} Voy\n\u{1F697} Salgo ya\n\u23F0 5 min\n\u{1F3E0} En casa\n\u{1F4A8} Llegue\n\u{1F6A8} Emergencia";
   return msg;
 }
 
-async function sendAlertToContact(contact, baseMessage) {
+async function sendAlertToContact(contact, baseMessage, alertaId) {
   const { location } = await getCurrentLocationWithFallback();
-  enviarWhatsApp(contact.telefono, buildMessageWithReply(baseMessage, location));
+  enviarWhatsApp(contact.telefono, buildMessageWithReply(baseMessage, location, alertaId));
 }
 
 function openMapsTo(d) { window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(d)}`, "_blank", "noopener,noreferrer"); }
