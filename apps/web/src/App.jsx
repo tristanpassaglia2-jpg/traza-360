@@ -34,22 +34,36 @@ const APP_VERSION = "19.7";
 // ─── PALETA DE MARCA TRAZA 360 (v19) ────────
 // Según logo oficial: pin dorado + ojo central rojo sobre negro
 const BRAND = {
-  gold:     "#D4AF37",       // Dorado premium (Confianza)
-  goldLite: "#F4D03F",       // Dorado brillante (highlight)
-  goldDark: "#9A7B0F",       // Dorado profundo (shadow)
-  red:      "#DC2626",       // Rojo alerta (Acción)
-  redDark:  "#991B1B",       // Rojo oscuro
-  black:    "#000000",       // Negro puro (Fuerza)
-  blackBg:  "#0A0A0A",       // Negro de fondo
-  blackCard:"#111111",       // Negro tarjeta
-  white:    "#FFFFFF",       // Blanco texto
-  textMute: "rgba(255,255,255,0.55)",  // Subtítulo legible
-  textDim:  "rgba(255,255,255,0.35)",  // Texto secundario
-  border:   "rgba(212,175,55,0.18)",   // Borde dorado sutil
-  borderStrong: "rgba(212,175,55,0.5)",// Borde dorado activo
-  goldGradient: "linear-gradient(135deg, #9A7B0F 0%, #D4AF37 35%, #F4D03F 50%, #D4AF37 65%, #9A7B0F 100%)",
+  // Paleta DGR-inspired — dorado envejecido, negro profundo, cálido
+  gold:        "#C9A84C",
+  goldLite:    "#E8C96A",
+  goldDark:    "#8B6914",
+  goldWarm:    "#D4A843",
+  red:         "#C0392B",
+  redDark:     "#922B21",
+  black:       "#000000",
+  blackBg:     "#080808",
+  blackCard:   "#0F0F0F",
+  blackWarm:   "#141210",
+  white:       "#F5F0E8",
+  cream:       "#E8DCC8",
+  textLight:   "rgba(245,240,232,0.88)",  // Blanco cálido legible — reemplaza textMute
+  textMute:    "rgba(232,220,200,0.65)",  // Muted cálido — reemplaza textDim
+  textDim:     "rgba(232,220,200,0.4)",   // Muy sutil
+  border:      "rgba(201,168,76,0.2)",
+  borderStrong:"rgba(201,168,76,0.55)",
+  goldGradient: "linear-gradient(135deg, #8B6914 0%, #C9A84C 30%, #E8C96A 50%, #C9A84C 70%, #8B6914 100%)",
+  cardBg:      "linear-gradient(145deg, #111008, #080808)",
+  // Colores por módulo
+  modViolencia:  { bg: "rgba(192,57,43,0.12)",  border: "rgba(192,57,43,0.4)",  accent: "#E74C3C", label: "Violencia de Género" },
+  modNoche:      { bg: "rgba(52,73,94,0.18)",   border: "rgba(93,173,226,0.3)", accent: "#5DADE2", label: "Noche Segura" },
+  modAdolescente:{ bg: "rgba(39,174,96,0.12)",  border: "rgba(39,174,96,0.35)", accent: "#2ECC71", label: "Adolescente Seguro" },
 };
 const TAGLINE = "Alguien cuida de vos.";
+
+// Fuente premium estilo DGR — serif para títulos, tracking amplio
+const FONT_DISPLAY = "'Georgia', 'Times New Roman', serif";
+const FONT_BODY    = "'system-ui', '-apple-system', sans-serif";
 
 const PLAN_LIMITS = {
   gratis: { contactos: 2, terceros: 0, zonas: 1, medicamentos: 0, audioMax: 0, storage: "0", modulos: 1 },
@@ -104,7 +118,7 @@ function PhoneInput({ value, onChange, prefix, onPrefixChange, placeholder }) {
       <div className="flex gap-2">
         <button type="button" onClick={() => setOpen(!open)}
           className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white whitespace-nowrap hover:bg-white/10 shrink-0">
-          <span>{pais.flag}</span><span className="text-slate-300">+{pais.prefix}</span><span className="text-slate-400 text-xs">{"\u25BC"}</span>
+          <span>{pais.flag}</span><span className="text-slate-300">+{pais.prefix}</span><span className="text-slate-400 text-sm">{"\u25BC"}</span>
         </button>
         <input type="tel" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder || "Número sin 0 ni 15"}
           className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-400 focus:border-cyan-400/50 min-w-0" />
@@ -293,7 +307,7 @@ function SystemStatusBadge({ status }) {
   return (
     <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}>
       <div className={`h-2 w-2 rounded-full ${cfg.dot} animate-pulse shrink-0`} />
-      <span className="text-xs font-semibold" style={{ color: cfg.color }}>{cfg.label}</span>
+      <span className="text-sm font-semibold" style={{ color: cfg.color }}>{cfg.label}</span>
     </div>
   );
 }
@@ -342,7 +356,7 @@ function SystemStatusPanel({ contactos, onGoToContactos, onClose }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold" style={{ color: ok === null ? BRAND.textDim : ok ? BRAND.white : "#fca5a5" }}>
+            <p className="text-sm font-semibold" style={{ color: ok === null ? BRAND.textDim : ok ? BRAND.white : "#fca5a5" }}>
               {label}
             </p>
             {!ok && !checking && accion && (
@@ -352,7 +366,7 @@ function SystemStatusPanel({ contactos, onGoToContactos, onClose }) {
             )}
           </div>
           {!ok && !checking && detalleFalla && (
-            <p className="text-[11px] mt-0.5 leading-relaxed" style={{ color: BRAND.textDim }}>{detalleFalla}</p>
+            <p className="text-[11px] mt-0.5 leading-relaxed" style={{ color: BRAND.textMute }}>{detalleFalla}</p>
           )}
         </div>
       </div>
@@ -365,7 +379,7 @@ function SystemStatusPanel({ contactos, onGoToContactos, onClose }) {
       <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2.5">
           <div className={`h-2.5 w-2.5 rounded-full shrink-0 ${hayProblema ? "bg-red-500" : todoOk ? "bg-green-400" : "bg-yellow-400"} animate-pulse`} />
-          <span className="text-xs font-bold" style={{ color: hayProblema ? "#fca5a5" : todoOk ? "#22c55e" : "#f59e0b" }}>
+          <span className="text-sm font-bold" style={{ color: hayProblema ? "#fca5a5" : todoOk ? "#22c55e" : "#f59e0b" }}>
             {hayProblema ? "Acción necesaria" : todoOk ? "Sistema listo para emergencias" : "Verificando sistema..."}
           </span>
         </div>
@@ -398,7 +412,7 @@ function SystemStatusPanel({ contactos, onGoToContactos, onClose }) {
               </span>
             </div>
           </div>
-          <span className="text-[11px]" style={{ color: BRAND.textDim }}>{expanded ? "▲" : "▼"}</span>
+          <span className="text-[11px]" style={{ color: BRAND.textMute }}>{expanded ? "▲" : "▼"}</span>
         </div>
       </button>
 
@@ -429,7 +443,7 @@ function SystemStatusPanel({ contactos, onGoToContactos, onClose }) {
           {/* Qué pasa si falla la app */}
           <div className="mt-3 rounded-xl p-3" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
             <p className="text-[11px] font-bold mb-2" style={{ color: BRAND.gold }}>⚡ Si la app falla en una emergencia</p>
-            <div className="space-y-1.5 text-[11px]" style={{ color: BRAND.textMute }}>
+            <div className="space-y-1.5 text-[11px]" style={{ color: BRAND.textLight }}>
               <p><strong style={{ color: BRAND.white }}>Sin internet:</strong> llamá directo al 911 desde Teléfono.</p>
               <p><strong style={{ color: BRAND.white }}>Sin GPS:</strong> la alerta se manda igual, sin ubicación.</p>
               <p><strong style={{ color: BRAND.white }}>WhatsApp caído:</strong> el mensaje se envía cuando se restablece.</p>
@@ -437,7 +451,7 @@ function SystemStatusPanel({ contactos, onGoToContactos, onClose }) {
             </div>
           </div>
 
-          <button onClick={() => setExpanded(false)} className="w-full text-center text-[11px] mt-3" style={{ color: BRAND.textDim }}>
+          <button onClick={() => setExpanded(false)} className="w-full text-center text-[11px] mt-3" style={{ color: BRAND.textMute }}>
             Cerrar ▲
           </button>
         </div>
@@ -511,8 +525,8 @@ function OnboardingScreen({ onComplete }) {
             )}
           </div>
           <h2 className="text-xl font-bold mb-1" style={{ color: BRAND.white }}>{current.title}</h2>
-          <p className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: BRAND.gold }}>{current.subtitle}</p>
-          {current.desc && <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>{current.desc}</p>}
+          <p className="text-sm font-semibold mb-3 uppercase tracking-wider" style={{ color: BRAND.gold }}>{current.subtitle}</p>
+          {current.desc && <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>{current.desc}</p>}
 
           {/* Step 2: selector de módulo — botones grandes */}
           {step === 1 && current.modules && (
@@ -835,15 +849,15 @@ function ModoTestigoModal({ onClose, contactos }) {
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h2 className="text-lg font-bold" style={{ color: BRAND.white }}>Modo Testigo</h2>
-                <p className="text-xs mt-0.5" style={{ color: BRAND.textMute }}>Audio + fotos + nube automática</p>
+                <p className="text-sm mt-0.5" style={{ color: BRAND.textLight }}>Audio + fotos + nube automática</p>
               </div>
-              <button onClick={onClose} style={{ color: BRAND.textDim, fontSize: 22 }}>✕</button>
+              <button onClick={onClose} style={{ color: BRAND.textMute, fontSize: 22 }}>✕</button>
             </div>
 
             {/* Qué va a pasar */}
             <div className="rounded-2xl p-4 mb-5 space-y-3"
               style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
-              <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: BRAND.gold }}>
+              <p className="text-sm font-bold uppercase tracking-widest mb-1" style={{ color: BRAND.gold }}>
                 Al activar, simultáneamente:
               </p>
               {[
@@ -856,7 +870,7 @@ function ModoTestigoModal({ onClose, contactos }) {
                   <span className="text-xl shrink-0">{ic}</span>
                   <div>
                     <p className="text-sm font-semibold" style={{ color: BRAND.white }}>{tit}</p>
-                    <p className="text-[11px]" style={{ color: BRAND.textMute }}>{sub}</p>
+                    <p className="text-[11px]" style={{ color: BRAND.textLight }}>{sub}</p>
                   </div>
                 </div>
               ))}
@@ -865,7 +879,7 @@ function ModoTestigoModal({ onClose, contactos }) {
             {/* Aviso legal */}
             <div className="rounded-xl p-3 mb-5"
               style={{ background: "rgba(220,38,38,0.05)", border: `1px solid ${BRAND.red}30` }}>
-              <p className="text-[11px] leading-relaxed" style={{ color: BRAND.textMute }}>
+              <p className="text-[11px] leading-relaxed" style={{ color: BRAND.textLight }}>
                 ⚖️ <strong style={{ color: BRAND.white }}>Uso responsable:</strong> grabás tu propio entorno. No uses esto para grabar a personas sin su consentimiento.
               </p>
             </div>
@@ -873,7 +887,7 @@ function ModoTestigoModal({ onClose, contactos }) {
             {/* El navegador va a pedir permisos */}
             <div className="rounded-xl p-3 mb-5"
               style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BRAND.border}` }}>
-              <p className="text-[11px]" style={{ color: BRAND.textMute }}>
+              <p className="text-[11px]" style={{ color: BRAND.textLight }}>
                 💡 El navegador te va a pedir permiso para <strong style={{ color: BRAND.white }}>micrófono y cámara</strong>. Tocá "Permitir" en ambos.
               </p>
             </div>
@@ -884,8 +898,8 @@ function ModoTestigoModal({ onClose, contactos }) {
               🔴 Activar Modo Testigo
             </button>
             <button onClick={onClose}
-              className="w-full py-3 text-xs mt-2"
-              style={{ color: BRAND.textDim }}>
+              className="w-full py-3 text-sm mt-2"
+              style={{ color: BRAND.textMute }}>
               Cancelar
             </button>
           </div>
@@ -914,7 +928,7 @@ function ModoTestigoModal({ onClose, contactos }) {
                   style={{ background: s.ok ? "rgba(34,197,94,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${s.ok ? "rgba(34,197,94,0.25)" : BRAND.border}` }}>
                   <div className="text-xl mb-1">{s.icon}</div>
                   <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: s.ok ? "#22c55e" : BRAND.textMute }}>{s.label}</p>
-                  <p className="text-[10px] mt-0.5" style={{ color: BRAND.textDim }}>{s.val}</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: BRAND.textMute }}>{s.val}</p>
                 </div>
               ))}
             </div>
@@ -930,14 +944,14 @@ function ModoTestigoModal({ onClose, contactos }) {
               </div>
               {eventos.length === 0 ? (
                 <div className="px-4 py-4 text-center">
-                  <p className="text-xs" style={{ color: BRAND.textMute }}>Iniciando...</p>
+                  <p className="text-sm" style={{ color: BRAND.textLight }}>Iniciando...</p>
                 </div>
               ) : eventos.map(ev => (
                 <div key={ev.id} className="flex items-start gap-2 px-3 py-2"
                   style={{ borderBottom: `1px solid ${BRAND.border}` }}>
                   <span className="text-sm shrink-0">{ev.icono}</span>
-                  <p className="flex-1 text-[11px] leading-relaxed" style={{ color: BRAND.textMute }}>{ev.texto}</p>
-                  <span className="text-[10px] shrink-0 font-mono" style={{ color: BRAND.textDim }}>{ev.hora}</span>
+                  <p className="flex-1 text-[11px] leading-relaxed" style={{ color: BRAND.textLight }}>{ev.texto}</p>
+                  <span className="text-[10px] shrink-0 font-mono" style={{ color: BRAND.textMute }}>{ev.hora}</span>
                 </div>
               ))}
             </div>
@@ -956,7 +970,7 @@ function ModoTestigoModal({ onClose, contactos }) {
             <div className="text-center mb-5">
               <div className="text-5xl mb-3">✅</div>
               <h2 className="text-xl font-bold mb-1" style={{ color: "#22c55e" }}>Evidencias guardadas</h2>
-              <p className="text-xs" style={{ color: BRAND.textMute }}>
+              <p className="text-sm" style={{ color: BRAND.textLight }}>
                 {fotosCount} foto{fotosCount !== 1 ? "s" : ""} · {fmt(tiempo)} de audio · todo en tu nube
               </p>
             </div>
@@ -968,8 +982,8 @@ function ModoTestigoModal({ onClose, contactos }) {
                 <div key={ev.id} className="flex items-start gap-2 px-3 py-2"
                   style={{ borderBottom: `1px solid ${BRAND.border}` }}>
                   <span className="text-sm shrink-0">{ev.icono}</span>
-                  <p className="flex-1 text-[11px]" style={{ color: BRAND.textMute }}>{ev.texto}</p>
-                  <span className="text-[10px] shrink-0 font-mono" style={{ color: BRAND.textDim }}>{ev.hora}</span>
+                  <p className="flex-1 text-[11px]" style={{ color: BRAND.textLight }}>{ev.texto}</p>
+                  <span className="text-[10px] shrink-0 font-mono" style={{ color: BRAND.textMute }}>{ev.hora}</span>
                 </div>
               ))}
             </div>
@@ -981,8 +995,8 @@ function ModoTestigoModal({ onClose, contactos }) {
                 Ver mis evidencias
               </button>
               <button onClick={onClose}
-                className="w-full rounded-2xl py-3 text-xs"
-                style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
+                className="w-full rounded-2xl py-3 text-sm"
+                style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textLight }}>
                 Volver al panel
               </button>
             </div>
@@ -1024,19 +1038,19 @@ function GrabacionModal({ onClose }) {
           <div className="mb-3 text-4xl">{guardado ? "\u2705" : "\u{1F399}\u{FE0F}"}</div>
           <div className="text-lg font-bold text-slate-100">{guardado ? "Evidencia guardada" : "Grabación silenciosa"}</div>
           {guardado ? (
-            <><p className="mt-2 text-xs text-slate-300">{guardado === "nube" ? "Guardado en la nube. Accedé desde Mis Evidencias." : "Descargado en tu dispositivo."}</p>
+            <><p className="mt-2 text-sm text-slate-300">{guardado === "nube" ? "Guardado en la nube. Accedé desde Mis Evidencias." : "Descargado en tu dispositivo."}</p>
             <button onClick={onClose} className="mt-4 w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white">Listo</button></>
           ) : grabando ? (
             <><div className="my-6 rounded-2xl border border-red-500/30 bg-red-500/10 py-6">
-              <div className="flex items-center justify-center gap-2 mb-2"><div className="h-3 w-3 rounded-full bg-red-500 animate-pulse"></div><span className="text-xs font-semibold text-red-300 uppercase tracking-widest">Grabando</span></div>
+              <div className="flex items-center justify-center gap-2 mb-2"><div className="h-3 w-3 rounded-full bg-red-500 animate-pulse"></div><span className="text-sm font-semibold text-red-300 uppercase tracking-widest">Grabando</span></div>
               <div className="font-mono text-4xl font-bold text-white tabular-nums">{fmt(tiempo)}</div>
             </div>
             <button onClick={detener} className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white shadow-lg">Detener y guardar</button></>
           ) : (
-            <><p className="mt-2 text-xs text-slate-300">Graba audio del entorno sin hacer ruido.</p>
-            {error && <p className="text-xs text-red-400 my-2">{error}</p>}
+            <><p className="mt-2 text-sm text-slate-300">Graba audio del entorno sin hacer ruido.</p>
+            {error && <p className="text-sm text-red-400 my-2">{error}</p>}
             <button onClick={iniciar} className="mt-4 w-full rounded-2xl bg-gradient-to-r from-sky-500 to-cyan-500 py-3 text-sm font-semibold text-white shadow-lg mb-2">Iniciar grabación silenciosa</button>
-            <button onClick={onClose} className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-xs text-slate-300">Cancelar</button></>
+            <button onClick={onClose} className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-sm text-slate-300">Cancelar</button></>
           )}
         </div>
       </div>
@@ -1127,14 +1141,14 @@ function CheckInModal({ onClose, contactos, titulo = "Botón de ingreso" }) {
             <>
               <div className="text-5xl mb-3">{"\u{1F6A8}"}</div>
               <div className="text-lg font-bold" style={{ color: BRAND.red }}>Alerta enviada automáticamente</div>
-              <p className="mt-2 text-xs" style={{ color: BRAND.textMute }}>Se alertó a tus contactos seleccionados porque no confirmaste.</p>
+              <p className="mt-2 text-sm" style={{ color: BRAND.textLight }}>Se alertó a tus contactos seleccionados porque no confirmaste.</p>
               <button onClick={onClose} className="mt-4 w-full rounded-2xl py-3 text-sm font-semibold" style={{ background: "rgba(212,175,55,0.1)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold }}>Cerrar</button>
             </>
           ) : activo ? (
             <>
               <div className="mb-2"><GoldIcon name="timer" size={36} /></div>
               <div className="text-base font-bold" style={{ color: BRAND.white }}>{titulo}</div>
-              <p className="mt-1 text-xs mb-4" style={{ color: BRAND.textMute }}>Si no tocás "Estoy bien" antes de que termine, se alerta a tus contactos.</p>
+              <p className="mt-1 text-sm mb-4" style={{ color: BRAND.textLight }}>Si no tocás "Estoy bien" antes de que termine, se alerta a tus contactos.</p>
               <div className="relative mx-auto mb-4" style={{ width: 120, height: 120 }}>
                 <svg viewBox="0 0 120 120" className="rotate-[-90deg]" width={120} height={120}>
                   <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
@@ -1148,13 +1162,13 @@ function CheckInModal({ onClose, contactos, titulo = "Botón de ingreso" }) {
                 </div>
               </div>
               <button onClick={estoyBien} className="w-full rounded-2xl py-3 text-sm font-bold shadow-lg mb-2" style={{ background: BRAND.goldGradient, color: BRAND.black }}>{"\u2705"} Estoy bien</button>
-              <button onClick={() => { clearInterval(timerRef.current); setActivo(false); }} className="w-full rounded-2xl py-2.5 text-xs" style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>Cancelar timer</button>
+              <button onClick={() => { clearInterval(timerRef.current); setActivo(false); }} className="w-full rounded-2xl py-2.5 text-sm" style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textLight }}>Cancelar timer</button>
             </>
           ) : (
             <>
               <div className="mb-2"><GoldIcon name="timer" size={36} /></div>
               <div className="text-base font-bold" style={{ color: BRAND.white }}>{titulo}</div>
-              <p className="mt-2 text-xs mb-4" style={{ color: BRAND.textMute }}>Elegí cuánto tiempo. Si no confirmás, se alerta automáticamente.</p>
+              <p className="mt-2 text-sm mb-4" style={{ color: BRAND.textLight }}>Elegí cuánto tiempo. Si no confirmás, se alerta automáticamente.</p>
 
               {/* Opciones rápidas */}
               <div className="grid grid-cols-4 gap-2 mb-3">
@@ -1173,7 +1187,7 @@ function CheckInModal({ onClose, contactos, titulo = "Botón de ingreso" }) {
 
               {/* v19: Tiempo personalizado */}
               <div className="mb-3">
-                <label className="text-[11px] uppercase tracking-wider block mb-1 text-left" style={{ color: BRAND.textMute }}>O personalizado (minutos)</label>
+                <label className="text-[11px] uppercase tracking-wider block mb-1 text-left" style={{ color: BRAND.textLight }}>O personalizado (minutos)</label>
                 <div className="flex gap-2">
                   <input
                     type="number"
@@ -1186,7 +1200,7 @@ function CheckInModal({ onClose, contactos, titulo = "Botón de ingreso" }) {
                     style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.white }}
                   />
                   <button onClick={aplicarCustom}
-                    className="rounded-xl px-4 text-xs font-semibold"
+                    className="rounded-xl px-4 text-sm font-semibold"
                     style={{ background: "rgba(212,175,55,0.1)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold }}>
                     Aplicar
                   </button>
@@ -1198,11 +1212,11 @@ function CheckInModal({ onClose, contactos, titulo = "Botón de ingreso" }) {
 
               {/* v19: Selector de contactos */}
               <div className="mb-3 text-left">
-                <label className="text-[11px] uppercase tracking-wider block mb-2" style={{ color: BRAND.textMute }}>
+                <label className="text-[11px] uppercase tracking-wider block mb-2" style={{ color: BRAND.textLight }}>
                   Avisar a ({seleccionados.length}/{contactos.length})
                 </label>
                 {contactos.length === 0 ? (
-                  <p className="text-xs rounded-xl px-3 py-2.5" style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}33`, color: "#fca5a5" }}>
+                  <p className="text-sm rounded-xl px-3 py-2.5" style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}33`, color: "#fca5a5" }}>
                     Sin contactos. Agregá uno primero desde el panel.
                   </p>
                 ) : (
@@ -1216,8 +1230,8 @@ function CheckInModal({ onClose, contactos, titulo = "Botón de ingreso" }) {
                         }}>
                         <span className="text-base shrink-0">{getRelEmoji(c.relacion)}</span>
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs font-semibold truncate" style={{ color: BRAND.white }}>{c.nombre}</div>
-                          <div className="text-[11px]" style={{ color: BRAND.textDim }}>{c.relacion}</div>
+                          <div className="text-sm font-semibold truncate" style={{ color: BRAND.white }}>{c.nombre}</div>
+                          <div className="text-[11px]" style={{ color: BRAND.textMute }}>{c.relacion}</div>
                         </div>
                         <div className="h-4 w-4 rounded-full shrink-0" style={{
                           background: seleccionados.includes(c.id) ? BRAND.gold : "transparent",
@@ -1232,14 +1246,14 @@ function CheckInModal({ onClose, contactos, titulo = "Botón de ingreso" }) {
               </div>
 
               <div className="rounded-xl p-3 mb-3" style={{ background: "rgba(220,38,38,0.08)", border: `1px solid ${BRAND.red}33` }}>
-                <p className="text-xs text-center" style={{ color: "#fca5a5" }}>⚠️ Si no desactivás el timer, se enviará tu ubicación y alerta automática a los contactos seleccionados.</p>
+                <p className="text-sm text-center" style={{ color: "#fca5a5" }}>⚠️ Si no desactivás el timer, se enviará tu ubicación y alerta automática a los contactos seleccionados.</p>
               </div>
               <button onClick={iniciar} disabled={contactos.length === 0 || seleccionados.length === 0}
                 className="w-full rounded-2xl py-3 text-sm font-bold shadow-lg mb-2 disabled:opacity-40"
                 style={{ background: BRAND.goldGradient, color: BRAND.black }}>
                 Activar ({minutos} min)
               </button>
-              <button onClick={onClose} className="w-full rounded-2xl py-2.5 text-xs" style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>Cancelar</button>
+              <button onClick={onClose} className="w-full rounded-2xl py-2.5 text-sm" style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textLight }}>Cancelar</button>
             </>
           )}
         </div>
@@ -1283,15 +1297,15 @@ function EvidenciasScreen({ onBack }) {
         <div className="mb-6 rounded-2xl p-6" style={{ background: "linear-gradient(145deg, #13131d, #0e0e16)", border: "1px solid rgba(224,224,224,0.1)" }}>
           <p className="text-[12px] uppercase tracking-[3px]" style={{ color: "#E0E0E0" }}>Mis archivos protegidos</p>
           <h2 className="mt-2 text-xl font-bold">Mis Evidencias</h2>
-          <p className="mt-2 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>Grabaciones guardadas en la nube con cifrado.</p>
+          <p className="mt-2 text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>Grabaciones guardadas en la nube con cifrado.</p>
         </div>
 
         {audioUrl && (
           <div className="mb-4 rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #101018, #08080c)", border: "1px solid rgba(224,224,224,0.15)" }}>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">{"\u{1F3B5}"}</span>
-              <span className="text-xs font-semibold" style={{ color: "#E0E0E0" }}>Reproduciendo: {audioName}</span>
-              <button onClick={() => { setAudioUrl(null); setAudioName(null); }} className="ml-auto text-xs text-slate-400">{"\u2715"}</button>
+              <span className="text-sm font-semibold" style={{ color: "#E0E0E0" }}>Reproduciendo: {audioName}</span>
+              <button onClick={() => { setAudioUrl(null); setAudioName(null); }} className="ml-auto text-sm text-slate-400">{"\u2715"}</button>
             </div>
             <audio controls autoPlay src={audioUrl} style={{ width: "100%", height: "40px", borderRadius: "8px" }} />
           </div>
@@ -1313,15 +1327,15 @@ function EvidenciasScreen({ onBack }) {
                     <span className="text-2xl">{"\u{1F399}\u{FE0F}"}</span>
                     <div className="min-w-0">
                       <div className="text-sm font-semibold text-white truncate">{f.name}</div>
-                      <div className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{f.metadata?.size ? (f.metadata.size / 1024).toFixed(0) + " KB" : ""}</div>
+                      <div className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>{f.metadata?.size ? (f.metadata.size / 1024).toFixed(0) + " KB" : ""}</div>
                     </div>
                   </div>
                   <div className="flex gap-2 shrink-0">
-                    <button onClick={() => reproducir(f)} className="rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ background: "rgba(224,224,224,0.08)", border: "1px solid rgba(224,224,224,0.2)", color: "#E0E0E0" }}>
+                    <button onClick={() => reproducir(f)} className="rounded-lg px-3 py-1.5 text-sm font-semibold" style={{ background: "rgba(224,224,224,0.08)", border: "1px solid rgba(224,224,224,0.2)", color: "#E0E0E0" }}>
                       {audioName === f.name ? "\u{1F50A} Escuchando" : "\u25B6\u{FE0F} Escuchar"}
                     </button>
-                    <button onClick={() => descargar(f)} className="rounded-lg px-2 py-1.5 text-xs" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)" }}>{"\u{2B07}\u{FE0F}"}</button>
-                    <button onClick={() => eliminar(f)} className="rounded-lg px-2 py-1.5 text-xs" style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.2)", color: "#f87171" }}>{"\u{1F5D1}\u{FE0F}"}</button>
+                    <button onClick={() => descargar(f)} className="rounded-lg px-2 py-1.5 text-sm" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)" }}>{"\u{2B07}\u{FE0F}"}</button>
+                    <button onClick={() => eliminar(f)} className="rounded-lg px-2 py-1.5 text-sm" style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.2)", color: "#f87171" }}>{"\u{1F5D1}\u{FE0F}"}</button>
                   </div>
                 </div>
               </div>
@@ -1455,7 +1469,7 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
         <button onClick={onBack} className="mb-4 text-sm text-cyan-300">← Volver al panel</button>
         <div className="mb-6 rounded-3xl border border-white/10 bg-white/5 p-6">
           <div className="flex items-start justify-between gap-4">
-            <div><p className="text-xs uppercase tracking-[0.18em] text-gray-300">Adulto Mayor — Pastillero</p>
+            <div><p className="text-sm uppercase tracking-[0.18em] text-gray-300">Adulto Mayor — Pastillero</p>
               <h2 className="mt-2 text-2xl font-bold">Mis Medicamentos</h2></div>
             <span className="text-3xl">{"\u{1F48A}"}</span>
           </div>
@@ -1503,13 +1517,13 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
                           <div className={`h-3 w-3 rounded-full shrink-0 ${t.tomado ? "bg-emerald-400" : pasado ? "bg-red-400 animate-pulse" : col.dot}`}></div>
                           <div className="min-w-0">
                             <div className="text-sm font-semibold text-slate-100">{t.medicamentos?.nombre}</div>
-                            <div className="text-xs text-slate-300">{t.medicamentos?.dosis} · {t.horario_programado}hs</div>
+                            <div className="text-sm text-slate-300">{t.medicamentos?.dosis} · {t.horario_programado}hs</div>
                           </div>
                         </div>
                         {t.tomado ? (
-                          <span className="text-xs text-emerald-300 font-semibold px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30">Tomado {t.tomado_en ? new Date(t.tomado_en).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }) : ""}</span>
+                          <span className="text-sm text-emerald-300 font-semibold px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30">Tomado {t.tomado_en ? new Date(t.tomado_en).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }) : ""}</span>
                         ) : (
-                          <button onClick={() => handleTome(t.id)} className="rounded-xl bg-gradient-to-r from-slate-300 to-gray-400 px-4 py-2 text-xs font-semibold text-white shadow-lg shrink-0">Tomé</button>
+                          <button onClick={() => handleTome(t.id)} className="rounded-xl bg-gradient-to-r from-slate-300 to-gray-400 px-4 py-2 text-sm font-semibold text-white shadow-lg shrink-0">Tomé</button>
                         )}
                       </div>
                     </div>
@@ -1529,11 +1543,11 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
                           <div className={`h-2.5 w-2.5 rounded-full ${col.dot}`}></div>
                           <div className="min-w-0">
                             <span className="text-sm font-semibold text-slate-100">{med.nombre}</span>
-                            <span className="text-xs text-slate-300 ml-2">{med.dosis}</span>
+                            <span className="text-sm text-slate-300 ml-2">{med.dosis}</span>
                             <div className="text-[11px] text-slate-400">{(med.horarios || []).join(" · ")}hs</div>
                           </div>
                         </div>
-                        <button onClick={() => handleEliminar(med.id)} className="text-xs text-red-300 border border-red-500/30 bg-red-500/10 rounded-lg px-3 py-1.5 shrink-0">Eliminar</button>
+                        <button onClick={() => handleEliminar(med.id)} className="text-sm text-red-300 border border-red-500/30 bg-red-500/10 rounded-lg px-3 py-1.5 shrink-0">Eliminar</button>
                       </div>
                     );
                   })}
@@ -1549,7 +1563,7 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
             <div className="grid grid-cols-7 gap-2 mb-6">
               {getCalendarioSemana().map(d => (
                 <div key={d.fecha} className={`rounded-xl border p-3 text-center ${d.hoy ? "border-white/30 bg-gray-400/10" : "border-white/10 bg-white/5"}`}>
-                  <div className="text-xs text-slate-300 mb-1">{d.dia}</div>
+                  <div className="text-sm text-slate-300 mb-1">{d.dia}</div>
                   <div className="text-lg mb-1">{d.total === 0 ? "\u2796" : d.tomadas === d.total ? "\u2705" : d.tomadas > 0 ? "\u26A0\u{FE0F}" : "\u274C"}</div>
                   <div className="text-[12px] text-slate-400">{d.total > 0 ? `${d.tomadas}/${d.total}` : "-"}</div>
                 </div>
@@ -1562,21 +1576,21 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
             <h3 className="text-lg font-bold mb-4">Agregar medicamento</h3>
             <div className="space-y-4">
-              <div><label className="text-xs text-slate-300 block mb-1">Nombre</label>
+              <div><label className="text-sm text-slate-300 block mb-1">Nombre</label>
                 <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Losartán"
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-400" /></div>
-              <div><label className="text-xs text-slate-300 block mb-1">Dosis</label>
+              <div><label className="text-sm text-slate-300 block mb-1">Dosis</label>
                 <input type="text" value={dosis} onChange={e => setDosis(e.target.value)} placeholder="Ej: 50mg"
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-400" /></div>
-              <div><label className="text-xs text-slate-300 block mb-2">Horarios</label>
+              <div><label className="text-sm text-slate-300 block mb-2">Horarios</label>
                 {horarios.map((h, i) => (
                   <div key={i} className="flex items-center gap-2 mb-2">
                     <input type="time" value={h} onChange={e => updateHorario(i, e.target.value)} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none" />
-                    {horarios.length > 1 && <button onClick={() => removeHorario(i)} className="text-red-400 text-xs">Quitar</button>}
+                    {horarios.length > 1 && <button onClick={() => removeHorario(i)} className="text-red-400 text-sm">Quitar</button>}
                   </div>
                 ))}
-                <button onClick={addHorario} className="text-xs text-gray-300 mt-1">+ Agregar horario</button></div>
-              <div><label className="text-xs text-slate-300 block mb-2">Días</label>
+                <button onClick={addHorario} className="text-sm text-gray-300 mt-1">+ Agregar horario</button></div>
+              <div><label className="text-sm text-slate-300 block mb-2">Días</label>
                 <div className="flex gap-2 flex-wrap">
                   {DIAS_SEMANA.map(d => (
                     <button key={d.num} onClick={() => toggleDia(d.num)}
@@ -1585,7 +1599,7 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
                     </button>
                   ))}
                 </div></div>
-              <div><label className="text-xs text-slate-300 block mb-2">Color</label>
+              <div><label className="text-sm text-slate-300 block mb-2">Color</label>
                 <div className="flex gap-2">
                   {COLORES_MED.map(c => (
                     <button key={c.key} onClick={() => setColorSel(c.key)}
@@ -1599,7 +1613,7 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
                 </button>
                 <span className="text-sm text-slate-300">Avisar a familiar si no confirmo en 10 min</span>
               </div>
-              {error && <p className="text-xs text-red-400">{error}</p>}
+              {error && <p className="text-sm text-red-400">{error}</p>}
               {maxMeds > 0 && meds.length >= maxMeds ? (
                 <UpgradeBanner feature="más medicamentos" />
               ) : (
@@ -1686,7 +1700,7 @@ function PlanesScreen({ onBack, currentPlan = "gratis" }) {
             <span className="text-2xl shrink-0">{"\u{1F6E0}\u{FE0F}"}</span>
             <div>
               <p className="text-sm font-bold mb-1" style={{ color: BRAND.gold }}>Estamos terminando la pasarela de pago</p>
-              <p className="text-xs" style={{ color: BRAND.textMute }}>
+              <p className="text-sm" style={{ color: BRAND.textLight }}>
                 Por ahora <strong style={{ color: BRAND.white }}>toda la app es gratis</strong>. Si te interesa alguno de estos planes, dejanos tu email y te avisamos en cuanto esté lista la suscripción.
               </p>
             </div>
@@ -1698,7 +1712,7 @@ function PlanesScreen({ onBack, currentPlan = "gratis" }) {
           <div className="flex items-center gap-2">
             <span className="text-lg">{"\u{1F513}"}</span>
             <div>
-              <div className="text-xs" style={{ color: BRAND.textMute }}>Tu plan actual</div>
+              <div className="text-sm" style={{ color: BRAND.textLight }}>Tu plan actual</div>
               <div className="text-sm font-bold" style={{ color: BRAND.gold }}>Gratis (acceso completo durante beta)</div>
             </div>
           </div>
@@ -1728,16 +1742,16 @@ function PlanesScreen({ onBack, currentPlan = "gratis" }) {
 
               <div className="flex items-baseline gap-2 mb-1 mt-1">
                 <span className="text-2xl font-bold" style={{ color: BRAND.gold }}>{plan.price}</span>
-                <span className="text-sm" style={{ color: BRAND.textMute }}>{plan.period}</span>
+                <span className="text-sm" style={{ color: BRAND.textLight }}>{plan.period}</span>
               </div>
-              <div className="text-xs mb-3" style={{ color: BRAND.textDim }}>{plan.priceARS}{plan.period}</div>
+              <div className="text-sm mb-3" style={{ color: BRAND.textMute }}>{plan.priceARS}{plan.period}</div>
               <div className="text-lg font-bold mb-3" style={{ color: BRAND.white }}>{plan.name}</div>
 
               <div className="space-y-2 mb-4">
                 {plan.features.map((f, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <span className="text-xs" style={{ color: BRAND.gold }}>{"\u2713"}</span>
-                    <span className="text-xs" style={{ color: BRAND.textMute }}>{f}</span>
+                    <span className="text-sm" style={{ color: BRAND.gold }}>{"\u2713"}</span>
+                    <span className="text-sm" style={{ color: BRAND.textLight }}>{f}</span>
                   </div>
                 ))}
               </div>
@@ -1748,7 +1762,7 @@ function PlanesScreen({ onBack, currentPlan = "gratis" }) {
                   <div className="rounded-xl p-4 text-center" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.3)" }}>
                     <div className="text-3xl mb-2">{"\u2705"}</div>
                     <p className="text-sm font-bold mb-1" style={{ color: "#22c55e" }}>¡Listo!</p>
-                    <p className="text-xs" style={{ color: BRAND.textMute }}>Te vamos a avisar a <strong style={{ color: BRAND.white }}>{emailWaitlist}</strong> apenas habilitemos el plan {plan.name}.</p>
+                    <p className="text-sm" style={{ color: BRAND.textLight }}>Te vamos a avisar a <strong style={{ color: BRAND.white }}>{emailWaitlist}</strong> apenas habilitemos el plan {plan.name}.</p>
                     <button onClick={() => setShowEmailForm(null)} className="mt-3 text-[11px] font-semibold" style={{ color: BRAND.gold }}>
                       Cerrar
                     </button>
@@ -1768,7 +1782,7 @@ function PlanesScreen({ onBack, currentPlan = "gratis" }) {
                       style={{ background: BRAND.goldGradient, color: BRAND.black }}>
                       {enviando ? "Guardando..." : "Avisame cuando esté listo"}
                     </button>
-                    <button onClick={() => setShowEmailForm(null)} className="w-full text-[11px] py-1" style={{ color: BRAND.textDim }}>
+                    <button onClick={() => setShowEmailForm(null)} className="w-full text-[11px] py-1" style={{ color: BRAND.textMute }}>
                       Cancelar
                     </button>
                   </div>
@@ -1791,7 +1805,7 @@ function PlanesScreen({ onBack, currentPlan = "gratis" }) {
         {/* Por qué pedimos email */}
         <div className="mt-6 rounded-xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BRAND.border}` }}>
           <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: BRAND.gold }}>¿Por qué pedimos tu email?</p>
-          <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+          <ul className="text-sm space-y-1.5" style={{ color: BRAND.textLight }}>
             <li>{"\u2713"} Te avisamos <strong style={{ color: BRAND.white }}>antes que a nadie</strong> cuando habilitemos los planes pagos</li>
             <li>{"\u2713"} <strong style={{ color: BRAND.white }}>30% de descuento</strong> para los primeros 100 inscriptos</li>
             <li>{"\u2713"} <strong style={{ color: BRAND.white }}>Cero spam.</strong> Solo te escribimos una vez, cuando esté listo</li>
@@ -1801,7 +1815,7 @@ function PlanesScreen({ onBack, currentPlan = "gratis" }) {
 
         {/* Garantía honesta */}
         <div className="mt-4 text-center">
-          <p className="text-[11px]" style={{ color: BRAND.textDim }}>
+          <p className="text-[11px]" style={{ color: BRAND.textMute }}>
             Cuando habilitemos los pagos usaremos <strong style={{ color: BRAND.gold }}>MercadoPago</strong> (Argentina y LATAM). Sin permanencia, cancelás cuando quieras.
           </p>
         </div>
@@ -1818,8 +1832,8 @@ function UpgradeBanner({ feature, onViewPlans }) {
         <span className="text-2xl">{"\u{1F451}"}</span>
         <div className="flex-1">
           <div className="text-sm font-bold text-white">Función Premium</div>
-          <p className="text-xs text-slate-300 mt-1">Desbloqueá {feature} desde <span className="text-white font-semibold">US$2.99/mes</span> con el plan Plus.</p>
-          <button onClick={onViewPlans} className="mt-2 rounded-xl px-4 py-2 text-xs font-bold text-black" style={{ background: "linear-gradient(135deg, #E0E0E0, #ffffff)" }}>Ver planes →</button>
+          <p className="text-sm text-slate-300 mt-1">Desbloqueá {feature} desde <span className="text-white font-semibold">US$2.99/mes</span> con el plan Plus.</p>
+          <button onClick={onViewPlans} className="mt-2 rounded-xl px-4 py-2 text-sm font-bold text-black" style={{ background: "linear-gradient(135deg, #E0E0E0, #ffffff)" }}>Ver planes →</button>
         </div>
       </div>
     </div>
@@ -1876,14 +1890,14 @@ function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "" }) {
         <button onClick={onBack} className="mb-4 text-sm text-cyan-300">← Volver al panel</button>
         <div className="mb-6 rounded-3xl border border-white/10 bg-white/5 p-6">
           <div className="flex items-start justify-between gap-4 mb-2">
-            <div><p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Mi red de contención</p>
+            <div><p className="text-sm uppercase tracking-[0.18em] text-cyan-300">Mi red de contención</p>
               <h2 className="mt-2 text-2xl font-bold">Mis Contactos de Confianza</h2></div>
             <span className="text-3xl">{"\u{1F465}"}</span>
           </div>
           <p className="mt-2 text-sm text-slate-300">Plan: <span className="text-cyan-300 font-semibold">{PLAN_PRICES[userPlan]?.name || "Gratis"}</span> · {contactos.length}/{maxContactos} contactos.</p>
           {contactos.length === 0 && (
             <div className="mt-3 rounded-xl p-3" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
-              <p className="text-xs text-red-300">{"\u26A0\u{FE0F}"} Sin contactos el botón de pánico no puede alertar a nadie.</p>
+              <p className="text-sm text-red-300">{"\u26A0\u{FE0F}"} Sin contactos el botón de pánico no puede alertar a nadie.</p>
             </div>
           )}
         </div>
@@ -1906,13 +1920,13 @@ function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "" }) {
                         <div className="text-3xl shrink-0">{getRelEmoji(c.relacion)}</div>
                         <div>
                           <div className="text-base font-semibold">{c.nombre}</div>
-                          <div className="text-xs text-cyan-300">{c.relacion}</div>
-                          <div className="text-xs text-slate-300 mt-1">+{c.telefono}</div>
+                          <div className="text-sm text-cyan-300">{c.relacion}</div>
+                          <div className="text-sm text-slate-300 mt-1">+{c.telefono}</div>
                         </div>
                       </div>
                       <div className="flex flex-col gap-2 shrink-0">
-                        <button onClick={() => reenviarVerificacion(c)} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300">Verificar</button>
-                        <button onClick={() => handleEliminar(c.id)} className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-300">Eliminar</button>
+                        <button onClick={() => reenviarVerificacion(c)} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-sm text-emerald-300">Verificar</button>
+                        <button onClick={() => handleEliminar(c.id)} className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-sm text-red-300">Eliminar</button>
                       </div>
                     </div>
                   </div>
@@ -1929,13 +1943,13 @@ function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "" }) {
 
         {vista === "agregar" && (
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <button onClick={() => { setVista("lista"); setError(""); }} className="text-xs text-slate-300 mb-4">← Volver</button>
+            <button onClick={() => { setVista("lista"); setError(""); }} className="text-sm text-slate-300 mb-4">← Volver</button>
             <h3 className="text-lg font-bold mb-4">Agregar contacto</h3>
             <div className="space-y-4">
-              <div><label className="text-xs text-slate-300 block mb-1">Nombre</label>
+              <div><label className="text-sm text-slate-300 block mb-1">Nombre</label>
                 <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: María"
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-400 focus:border-cyan-400/50" /></div>
-              <div><label className="text-xs text-slate-300 block mb-2">Relación</label>
+              <div><label className="text-sm text-slate-300 block mb-2">Relación</label>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {RELACIONES.map(r => (
                     <button key={r} onClick={() => setRelacion(r)}
@@ -1943,16 +1957,16 @@ function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "" }) {
                       {getRelEmoji(r)} {r}
                     </button>))}
                 </div></div>
-              <div><label className="text-xs text-slate-300 block mb-1">Teléfono (con WhatsApp)</label>
+              <div><label className="text-sm text-slate-300 block mb-1">Teléfono (con WhatsApp)</label>
                 <PhoneInput value={telefono} onChange={setTelefono} prefix={prefijo} onPrefixChange={setPrefijo} /></div>
 
               {/* Aviso Safety Check */}
               <div className="rounded-xl p-3" style={{ background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.15)" }}>
-                <p className="text-xs text-emerald-300">{"\u2705"} Al guardar, le enviamos un WhatsApp de verificación automático para confirmar que el número funciona.</p>
+                <p className="text-sm text-emerald-300">{"\u2705"} Al guardar, le enviamos un WhatsApp de verificación automático para confirmar que el número funciona.</p>
               </div>
 
-              {error && <p className="text-xs text-red-400">{error}</p>}
-              {verificando && <p className="text-xs text-emerald-300 animate-pulse">{"\u{1F4F1}"} Enviando verificación por WhatsApp...</p>}
+              {error && <p className="text-sm text-red-400">{error}</p>}
+              {verificando && <p className="text-sm text-emerald-300 animate-pulse">{"\u{1F4F1}"} Enviando verificación por WhatsApp...</p>}
               <button onClick={handleAgregar} disabled={saving || verificando}
                 className="w-full rounded-xl bg-gradient-to-r from-cyan-400 to-sky-500 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-50">
                 {saving ? "Guardando..." : verificando ? "Verificando..." : "Guardar y verificar"}</button>
@@ -1999,14 +2013,14 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
             <div className="py-4">
               <div className="text-5xl mb-3 animate-bounce">{sentOk ? "\u2705" : "\u{1F4F1}"}</div>
               <h3 className="text-lg font-bold" style={{ color: "#E0E0E0" }}>{sentOk ? "Alerta enviada" : "Abriendo WhatsApp..."}</h3>
-              <p className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+              <p className="mt-1 text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
                 {sentOk ? "Tu contacto recibió el WhatsApp automáticamente." : "Enviando manualmente por WhatsApp."}
               </p>
             </div>
 
             <div className="rounded-xl p-4" style={{ background: "rgba(224,224,224,0.05)", border: "1px solid rgba(224,224,224,0.1)" }}>
               <div className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: "rgba(224,224,224,0.8)" }}>Tu contacto recibió</div>
-              <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>Tu contacto recibió el WhatsApp con tu ubicación y puede responderte con:</p>
+              <p className="text-sm mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>Tu contacto recibió el WhatsApp con tu ubicación y puede responderte con:</p>
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { emoji: "\u{1F697}", text: "Salgo" },
@@ -2031,7 +2045,7 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
             </div>
             {tieneCompletar && (
               <div className="mb-4">
-                <label className="text-xs text-slate-300 block mb-1">Completá el detalle</label>
+                <label className="text-sm text-slate-300 block mb-1">Completá el detalle</label>
                 <input type="text" value={detalle} onChange={e => setDetalle(e.target.value)} placeholder="Nombre de la persona o lugar"
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-400" />
               </div>
@@ -2049,7 +2063,7 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
                         <div className="text-2xl shrink-0">{getRelEmoji(c.relacion)}</div>
                         <div className="flex-1 min-w-0"><div className="text-sm font-semibold">{c.nombre}</div><div className="text-[11px] text-slate-300">{c.relacion} · +{c.telefono}</div></div>
                         <div className={`h-5 w-5 rounded-full border-2 shrink-0 ${seleccionados.includes(c.id) ? "border-cyan-400 bg-cyan-400" : "border-slate-500"}`}>
-                          {seleccionados.includes(c.id) && <div className="text-slate-950 text-xs text-center leading-4">{"\u2713"}</div>}
+                          {seleccionados.includes(c.id) && <div className="text-slate-950 text-sm text-center leading-4">{"\u2713"}</div>}
                         </div>
                       </div>
                     </button>
@@ -2219,35 +2233,44 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
     }
   }
 
+  // Color accent por módulo
+  const modColor = {
+    mi_escudo:    { accent: "#E74C3C", bg: "rgba(231,76,60,0.1)",   border: "rgba(231,76,60,0.35)" },
+    turno_seguro: { accent: "#5DADE2", bg: "rgba(93,173,226,0.1)",  border: "rgba(93,173,226,0.3)" },
+    los_cuido:    { accent: "#2ECC71", bg: "rgba(46,204,113,0.1)",  border: "rgba(46,204,113,0.3)" },
+  }[m.key] || { accent: BRAND.gold, bg: "rgba(201,168,76,0.1)", border: BRAND.borderStrong };
+
   return (
     <>
-      <div className="rounded-2xl p-5 flex flex-col" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.border}`, boxShadow: "6px 6px 18px rgba(0,0,0,0.7), 0 0 20px rgba(212,175,55,0.04)" }}>
-        <div className="mb-3 flex items-center gap-3">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.18), rgba(154,123,15,0.08))", border: `1px solid ${BRAND.borderStrong}` }}>
-            <PinEyeLogo size={38} showText={false} />
+      <div className="rounded-2xl p-5 flex flex-col" style={{ background: BRAND.cardBg, border: `1px solid ${modColor.border}`, boxShadow: `6px 6px 18px rgba(0,0,0,0.7), 0 0 24px ${modColor.bg}` }}>
+        <div className="mb-4 flex items-center gap-4">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl" style={{ background: modColor.bg, border: `1.5px solid ${modColor.border}` }}>
+            <PinEyeLogo size={40} showText={false} />
           </div>
           <div>
-            <h4 className="text-lg font-bold" style={{ color: BRAND.white }}>{m.title}</h4>
-            <p className="text-xs mt-0.5" style={{ color: BRAND.gold }}>{m.desc}</p>
+            <h4 style={{ fontSize: 20, fontWeight: 800, color: BRAND.white, fontFamily: FONT_DISPLAY, lineHeight: 1.2 }}>{m.title}</h4>
+            <p style={{ fontSize: 13, marginTop: 4, color: modColor.accent, fontWeight: 600 }}>{m.desc}</p>
           </div>
         </div>
         <button onClick={() => setExpanded(!expanded)}
-          className="w-full rounded-2xl px-4 py-3 text-sm font-semibold flex items-center justify-between"
-          style={{ background: "rgba(212,175,55,0.08)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold }}>
-          <span>{expanded ? "Ocultar opciones" : "Ver opciones"}</span><span className={`text-xs transition-transform ${expanded ? "rotate-180" : ""}`}>{"\u25BC"}</span>
+          className="w-full rounded-2xl px-4 py-3 font-bold flex items-center justify-between"
+          style={{ background: modColor.bg, border: `1px solid ${modColor.border}`, color: modColor.accent, fontSize: 14 }}>
+          <span>{expanded ? "Ocultar opciones" : "Ver opciones"}</span>
+          <span className={`text-xs transition-transform ${expanded ? "rotate-180" : ""}`}>▼</span>
         </button>
         {expanded && (
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 space-y-3">
             {m.actions.map(a => (
               <button key={a.key} onClick={() => handleAction(a)}
-                className="w-full rounded-xl px-4 py-3.5 text-left active:scale-[0.98] transition-all" style={{ background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.border}`, boxShadow: "3px 3px 8px rgba(0,0,0,0.5)" }}>
-                <div className="flex items-start gap-3">
-                  <div className="shrink-0 mt-0.5">
-                    {a.iconName ? <GoldIcon name={a.iconName} size={24} /> : <span className="text-xl">{a.icon}</span>}
+                className="w-full rounded-2xl px-4 py-4 text-left active:scale-[0.98] transition-all"
+                style={{ background: "linear-gradient(145deg, #1a1a1a, #0d0d0d)", border: `1px solid rgba(255,255,255,0.08)`, boxShadow: "3px 3px 10px rgba(0,0,0,0.6)" }}>
+                <div className="flex items-start gap-4">
+                  <div className="shrink-0 mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: modColor.bg }}>
+                    {a.iconName ? <GoldIcon name={a.iconName} size={22} /> : <span style={{ fontSize: 20 }}>{a.icon}</span>}
                   </div>
                   <div>
-                    <div className="text-sm font-bold" style={{ color: BRAND.white }}>{a.name}</div>
-                    <div className="mt-1 text-xs leading-relaxed" style={{ color: "#aaaaaa" }}>{a.desc}</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: BRAND.white, lineHeight: 1.3 }}>{a.name}</div>
+                    <div style={{ marginTop: 4, fontSize: 13, lineHeight: 1.5, color: BRAND.textLight }}>{a.desc}</div>
                   </div>
                 </div>
               </button>
@@ -2271,7 +2294,7 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
 
 // ─── AUTH SCREENS ────────────────────────────
 function Field({ label, type = "text", placeholder, value, onChange }) {
-  return (<label className="block space-y-2 text-left"><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(224,224,224,0.6)" }}>{label}</span>
+  return (<label className="block space-y-2 text-left"><span className="text-sm font-semibold uppercase tracking-wider" style={{ color: "rgba(224,224,224,0.6)" }}>{label}</span>
     <input type={type} value={value} onChange={onChange} placeholder={placeholder}
       className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-slate-400" style={{ background: "linear-gradient(145deg, #121218, #0a0a0e)", border: "1px solid rgba(224,224,224,0.1)", boxShadow: "inset 3px 3px 6px rgba(0,0,0,0.4)" }} /></label>);
 }
@@ -2298,16 +2321,16 @@ function LoginScreen({ onBack, onSuccess, onRecuperar }) {
         <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
         Continuar con Google
       </button>
-      <div className="flex items-center gap-3"><div className="flex-1 h-px" style={{ background: BRAND.border }}></div><span className="text-xs" style={{ color: BRAND.textDim }}>o con email</span><div className="flex-1 h-px" style={{ background: BRAND.border }}></div></div>
+      <div className="flex items-center gap-3"><div className="flex-1 h-px" style={{ background: BRAND.border }}></div><span className="text-sm" style={{ color: BRAND.textMute }}>o con email</span><div className="flex-1 h-px" style={{ background: BRAND.border }}></div></div>
       <Field label="Email" type="email" placeholder="tu@email.com" value={email} onChange={e => setEmail(e.target.value)} />
       <Field label="Contraseña" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
       {/* v19.6: Link recuperar contraseña */}
       <div className="text-right">
-        <button type="button" onClick={onRecuperar} className="text-xs font-semibold underline" style={{ color: BRAND.gold }}>
+        <button type="button" onClick={onRecuperar} className="text-sm font-semibold underline" style={{ color: BRAND.gold }}>
           ¿Olvidaste tu contraseña?
         </button>
       </div>
-      {error && <p className="text-xs text-center" style={{ color: "#fca5a5" }}>{error}</p>}
+      {error && <p className="text-sm text-center" style={{ color: "#fca5a5" }}>{error}</p>}
       <button onClick={handle} disabled={loading} className="w-full rounded-xl py-3.5 font-bold shadow-lg disabled:opacity-50" style={{ background: BRAND.goldGradient, color: BRAND.black }}>{loading ? "Ingresando..." : "Ingresar"}</button>
     </div></AccessCard></div>);
 }
@@ -2348,9 +2371,9 @@ function RegisterScreen({ onBack, onSuccess, setPendingName, onScreen }) {
               background: aceptaTerminos ? BRAND.gold : "transparent",
               border: `2px solid ${aceptaTerminos ? BRAND.gold : "rgba(255,255,255,0.3)"}`,
             }}>
-            {aceptaTerminos && <span className="text-black text-xs font-bold">{"\u2713"}</span>}
+            {aceptaTerminos && <span className="text-black text-sm font-bold">{"\u2713"}</span>}
           </button>
-          <div className="flex-1 text-xs leading-relaxed" style={{ color: BRAND.textMute }} onClick={() => setAceptaTerminos(!aceptaTerminos)}>
+          <div className="flex-1 text-sm leading-relaxed" style={{ color: BRAND.textLight }} onClick={() => setAceptaTerminos(!aceptaTerminos)}>
             Acepto los{" "}
             <button type="button" onClick={(e) => { e.stopPropagation(); onScreen && onScreen("terminos"); }} className="underline font-semibold" style={{ color: BRAND.gold }}>
               Términos y Condiciones
@@ -2359,7 +2382,7 @@ function RegisterScreen({ onBack, onSuccess, setPendingName, onScreen }) {
             <button type="button" onClick={(e) => { e.stopPropagation(); onScreen && onScreen("privacidad"); }} className="underline font-semibold" style={{ color: BRAND.gold }}>
               Política de Privacidad
             </button>.
-            <p className="mt-1.5 text-[11px]" style={{ color: BRAND.textDim }}>Importante: Traza 360 no reemplaza al 911 ni a servicios oficiales de emergencia.</p>
+            <p className="mt-1.5 text-[11px]" style={{ color: BRAND.textMute }}>Importante: Traza 360 no reemplaza al 911 ni a servicios oficiales de emergencia.</p>
           </div>
         </label>
       </div>
@@ -2370,7 +2393,7 @@ function RegisterScreen({ onBack, onSuccess, setPendingName, onScreen }) {
         {loading ? "Creando..." : "Crear cuenta"}
       </button>
 
-      <div className="flex items-center gap-3"><div className="flex-1 h-px" style={{ background: BRAND.border }}></div><span className="text-xs" style={{ color: BRAND.textDim }}>o</span><div className="flex-1 h-px" style={{ background: BRAND.border }}></div></div>
+      <div className="flex items-center gap-3"><div className="flex-1 h-px" style={{ background: BRAND.border }}></div><span className="text-sm" style={{ color: BRAND.textMute }}>o</span><div className="flex-1 h-px" style={{ background: BRAND.border }}></div></div>
 
       <button onClick={handleGoogle} disabled={loading || !aceptaTerminos}
         className="w-full flex items-center justify-center gap-3 rounded-xl py-3.5 font-semibold text-white active:scale-95 disabled:opacity-40"
@@ -2379,7 +2402,7 @@ function RegisterScreen({ onBack, onSuccess, setPendingName, onScreen }) {
         Continuar con Google
       </button>
 
-      {error && <p className="text-xs text-center" style={{ color: "#fca5a5" }}>{error}</p>}
+      {error && <p className="text-sm text-center" style={{ color: "#fca5a5" }}>{error}</p>}
     </div></AccessCard></div>);
 }
 
@@ -2536,7 +2559,7 @@ function TeCuidoScreen({ onBack, contactos = [] }) {
         <div className="text-center mb-6">
           <GoldIcon name="eye" size={48} />
           <h2 className="text-xl font-bold mt-3" style={{ color: BRAND.white }}>Te Cuido a Distancia</h2>
-          <p className="text-xs mt-2" style={{ color: BRAND.textMute }}>La persona protegida siempre tiene el control.</p>
+          <p className="text-sm mt-2" style={{ color: BRAND.textLight }}>La persona protegida siempre tiene el control.</p>
         </div>
 
         {/* ELEGIR ROL */}
@@ -2549,7 +2572,7 @@ function TeCuidoScreen({ onBack, contactos = [] }) {
                 <GoldIcon name="contacts" size={28} />
                 <h3 className="text-base font-bold" style={{ color: BRAND.gold }}>Quiero cuidar a alguien</h3>
               </div>
-              <p className="text-xs" style={{ color: BRAND.textMute }}>
+              <p className="text-sm" style={{ color: BRAND.textLight }}>
                 Enviás una solicitud por WhatsApp. La persona la acepta o rechaza. Si acepta, ves su ubicación en tiempo real.
               </p>
             </button>
@@ -2561,7 +2584,7 @@ function TeCuidoScreen({ onBack, contactos = [] }) {
                 <GoldIcon name="shield" size={28} />
                 <h3 className="text-base font-bold" style={{ color: BRAND.gold }}>Alguien me está cuidando</h3>
               </div>
-              <p className="text-xs" style={{ color: BRAND.textMute }}>
+              <p className="text-sm" style={{ color: BRAND.textLight }}>
                 Ver el estado de tu seguimiento activo. Podés cancelar cuando quieras con tu PIN de seguridad.
               </p>
             </button>
@@ -2571,9 +2594,9 @@ function TeCuidoScreen({ onBack, contactos = [] }) {
         {/* CUIDADOR — enviar solicitud */}
         {modo === "cuidador" && !enviado && (
           <div className="rounded-2xl p-6" style={{ background: "linear-gradient(145deg,#111,#000)", border: `1px solid ${BRAND.borderStrong}` }}>
-            <button onClick={() => setModo("elegir")} className="text-xs mb-4" style={{ color: BRAND.textMute }}>← Volver</button>
+            <button onClick={() => setModo("elegir")} className="text-sm mb-4" style={{ color: BRAND.textLight }}>← Volver</button>
             <h3 className="text-base font-bold mb-2" style={{ color: BRAND.gold }}>Enviar solicitud de cuidado</h3>
-            <p className="text-xs mb-5" style={{ color: BRAND.textMute }}>
+            <p className="text-sm mb-5" style={{ color: BRAND.textLight }}>
               La persona recibe un WhatsApp con un link para aceptar o rechazar. Si acepta, podés ver su ubicación en tiempo real.
             </p>
 
@@ -2588,12 +2611,12 @@ function TeCuidoScreen({ onBack, contactos = [] }) {
             />
 
             <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
-              <p className="text-xs" style={{ color: BRAND.textMute }}>
+              <p className="text-sm" style={{ color: BRAND.textLight }}>
                 📱 <strong style={{ color: BRAND.white }}>Van a recibir:</strong> un mensaje con tu nombre y un link para aceptar o rechazar. Si no aceptan, no pasa nada.
               </p>
             </div>
 
-            {error && <p className="text-xs mb-3" style={{ color: "#fca5a5" }}>{error}</p>}
+            {error && <p className="text-sm mb-3" style={{ color: "#fca5a5" }}>{error}</p>}
 
             <button onClick={enviarSolicitud} disabled={loading}
               className="w-full rounded-xl py-4 font-bold text-sm disabled:opacity-40"
@@ -2608,17 +2631,17 @@ function TeCuidoScreen({ onBack, contactos = [] }) {
           <div className="rounded-2xl p-6 text-center" style={{ background: "linear-gradient(145deg,#111,#000)", border: `2px solid ${BRAND.borderStrong}` }}>
             <div className="text-4xl mb-3">📲</div>
             <h3 className="text-lg font-bold mb-2" style={{ color: BRAND.gold }}>Solicitud enviada</h3>
-            <p className="text-xs mb-5" style={{ color: BRAND.textMute }}>
+            <p className="text-sm mb-5" style={{ color: BRAND.textLight }}>
               Le mandamos un WhatsApp al {telefono}. Cuando acepte, vas a poder verla en el panel de seguimiento en vivo.
             </p>
             <div className="rounded-xl p-3 mb-5" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BRAND.border}` }}>
-              <p className="text-xs" style={{ color: BRAND.textMute }}>
+              <p className="text-sm" style={{ color: BRAND.textLight }}>
                 ⏳ Si no recibe el mensaje, pedile que abra Traza 360 y vaya a "Alguien me está cuidando".
               </p>
             </div>
             <button onClick={() => { setEnviado(false); setModo("elegir"); }}
               className="w-full rounded-xl py-3 text-sm"
-              style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
+              style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textLight }}>
               Volver
             </button>
           </div>
@@ -2627,14 +2650,14 @@ function TeCuidoScreen({ onBack, contactos = [] }) {
         {/* PROTEGIDA — estado de seguimiento */}
         {modo === "protegida" && (
           <div className="rounded-2xl p-6" style={{ background: "linear-gradient(145deg,#111,#000)", border: `1px solid ${BRAND.border}` }}>
-            <button onClick={() => setModo("elegir")} className="text-xs mb-4" style={{ color: BRAND.textMute }}>← Volver</button>
+            <button onClick={() => setModo("elegir")} className="text-sm mb-4" style={{ color: BRAND.textLight }}>← Volver</button>
 
             {!activo ? (
               <>
                 <div className="text-center py-6">
                   <div className="text-4xl mb-3">✅</div>
                   <p className="text-sm font-bold mb-1" style={{ color: BRAND.white }}>Sin seguimiento activo</p>
-                  <p className="text-xs" style={{ color: BRAND.textMute }}>Si alguien te envió una solicitud, vas a ver un aviso para aceptar o rechazar.</p>
+                  <p className="text-sm" style={{ color: BRAND.textLight }}>Si alguien te envió una solicitud, vas a ver un aviso para aceptar o rechazar.</p>
                 </div>
               </>
             ) : (
@@ -2642,9 +2665,9 @@ function TeCuidoScreen({ onBack, contactos = [] }) {
                 <div className="rounded-xl p-4 mb-4" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.3)" }}>
                   <div className="flex items-center gap-2 mb-2">
                     <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-                    <p className="text-xs font-bold" style={{ color: "#22c55e" }}>Seguimiento activo</p>
+                    <p className="text-sm font-bold" style={{ color: "#22c55e" }}>Seguimiento activo</p>
                   </div>
-                  <p className="text-xs" style={{ color: BRAND.textMute }}>Alguien de confianza puede ver tu ubicación en tiempo real.</p>
+                  <p className="text-sm" style={{ color: BRAND.textLight }}>Alguien de confianza puede ver tu ubicación en tiempo real.</p>
                 </div>
 
                 <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>Cancelar con PIN de seguridad</p>
@@ -2656,7 +2679,7 @@ function TeCuidoScreen({ onBack, contactos = [] }) {
                   className="w-full rounded-xl px-4 py-3 text-center font-mono text-2xl tracking-widest outline-none mb-3"
                   style={{ background: "rgba(0,0,0,0.5)", border: `1px solid ${BRAND.border}`, color: BRAND.white }}
                 />
-                {error && <p className="text-xs mb-2" style={{ color: "#fca5a5" }}>{error}</p>}
+                {error && <p className="text-sm mb-2" style={{ color: "#fca5a5" }}>{error}</p>}
                 <button onClick={cancelarConPin}
                   className="w-full rounded-xl py-3 text-sm font-bold"
                   style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}40`, color: "#fca5a5" }}>
@@ -2669,7 +2692,7 @@ function TeCuidoScreen({ onBack, contactos = [] }) {
 
         {/* Nota legal */}
         <div className="mt-5 rounded-xl p-3" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BRAND.border}` }}>
-          <p className="text-[11px]" style={{ color: BRAND.textDim }}>
+          <p className="text-[11px]" style={{ color: BRAND.textMute }}>
             <strong style={{ color: BRAND.gold }}>Tu privacidad:</strong> Ningún seguimiento se activa sin tu aceptación explícita. Podés cancelar cuando quieras.
           </p>
         </div>
@@ -2747,7 +2770,7 @@ function InstruccionesScreen({ onBack }) {
             { k: "privacidad", l: "Privacidad" },
           ].map(t => (
             <button key={t.k} onClick={() => setSeccion(t.k)}
-              className="rounded-xl px-4 py-2 text-xs font-semibold whitespace-nowrap shrink-0"
+              className="rounded-xl px-4 py-2 text-sm font-semibold whitespace-nowrap shrink-0"
               style={{
                 background: seccion === t.k ? "rgba(212,175,55,0.15)" : "rgba(255,255,255,0.04)",
                 border: seccion === t.k ? `1px solid ${BRAND.borderStrong}` : `1px solid ${BRAND.border}`,
@@ -2773,7 +2796,7 @@ function InstruccionesScreen({ onBack }) {
                   <div className="shrink-0 mt-0.5"><GoldIcon name={m.icon} size={24} /></div>
                   <div>
                     <p className="text-sm font-semibold" style={{ color: BRAND.gold }}>{m.titulo}</p>
-                    <p className="text-xs mt-1" style={{ color: BRAND.textMute }}>{m.desc}</p>
+                    <p className="text-sm mt-1" style={{ color: BRAND.textLight }}>{m.desc}</p>
                   </div>
                 </div>
               ))}
@@ -2783,7 +2806,7 @@ function InstruccionesScreen({ onBack }) {
           {seccion === "contactos" && (
             <>
               <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>Contactos de confianza</h3>
-              <p className="text-sm" style={{ color: BRAND.textMute }}>Sin contactos, la app no puede alertar a nadie. Agregá al menos 1 persona con WhatsApp activo.</p>
+              <p className="text-sm" style={{ color: BRAND.textLight }}>Sin contactos, la app no puede alertar a nadie. Agregá al menos 1 persona con WhatsApp activo.</p>
               <div className="space-y-2 mt-3">
                 {[
                   "El número debe tener WhatsApp activo (sin WhatsApp no funciona).",
@@ -2791,7 +2814,7 @@ function InstruccionesScreen({ onBack }) {
                   "El contacto recibe alertas con tu ubicación GPS y un menú de respuestas rápidas.",
                   "Plan Gratis: hasta 2 contactos. Plan Plus: 5. Premium: 10.",
                 ].map((t, i) => (
-                  <div key={i} className="flex gap-2 text-xs" style={{ color: BRAND.textMute }}>
+                  <div key={i} className="flex gap-2 text-sm" style={{ color: BRAND.textLight }}>
                     <span style={{ color: BRAND.gold }}>{"\u2713"}</span>
                     <span>{t}</span>
                   </div>
@@ -2803,17 +2826,17 @@ function InstruccionesScreen({ onBack }) {
           {seccion === "acceso" && (
             <>
               <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>Acceso rápido y oculto</h3>
-              <p className="text-sm mb-4" style={{ color: BRAND.textMute }}>Tres formas de tener Traza 360 a mano sin que se note.</p>
+              <p className="text-sm mb-4" style={{ color: BRAND.textLight }}>Tres formas de tener Traza 360 a mano sin que se note.</p>
 
               {/* OPCIÓN 1: Agregar al inicio del celular (sin la palabra PWA) */}
               <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BRAND.border}` }}>
                 <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F4F2}"} 1. Agregar Traza 360 al inicio de tu celular</p>
-                <p className="text-xs mb-3" style={{ color: BRAND.textMute }}>Para abrir la app de un toque, como una app descargada (pero sin descargarla).</p>
+                <p className="text-sm mb-3" style={{ color: BRAND.textLight }}>Para abrir la app de un toque, como una app descargada (pero sin descargarla).</p>
 
                 <div className="space-y-2.5">
                   <div className="rounded-lg p-3" style={{ background: "rgba(0,0,0,0.4)" }}>
                     <p className="text-[11px] font-bold mb-1.5" style={{ color: BRAND.gold }}>📱 Si tenés Android (Chrome):</p>
-                    <ol className="text-xs space-y-1" style={{ color: BRAND.textMute }}>
+                    <ol className="text-sm space-y-1" style={{ color: BRAND.textLight }}>
                       <li>1. Tocá los <strong style={{ color: BRAND.white }}>3 puntitos</strong> arriba a la derecha del navegador</li>
                       <li>2. Tocá <strong style={{ color: BRAND.white }}>"Agregar a pantalla principal"</strong></li>
                       <li>3. Tocá <strong style={{ color: BRAND.white }}>"Agregar"</strong> para confirmar</li>
@@ -2822,7 +2845,7 @@ function InstruccionesScreen({ onBack }) {
 
                   <div className="rounded-lg p-3" style={{ background: "rgba(0,0,0,0.4)" }}>
                     <p className="text-[11px] font-bold mb-1.5" style={{ color: BRAND.gold }}>🍎 Si tenés iPhone (Safari):</p>
-                    <ol className="text-xs space-y-1" style={{ color: BRAND.textMute }}>
+                    <ol className="text-sm space-y-1" style={{ color: BRAND.textLight }}>
                       <li>1. Tocá el <strong style={{ color: BRAND.white }}>ícono de compartir</strong> (cuadrado con flecha hacia arriba)</li>
                       <li>2. Bajá y tocá <strong style={{ color: BRAND.white }}>"Agregar al inicio"</strong></li>
                       <li>3. Tocá <strong style={{ color: BRAND.white }}>"Agregar"</strong> arriba a la derecha</li>
@@ -2836,12 +2859,12 @@ function InstruccionesScreen({ onBack }) {
               {/* OPCIÓN 2: Modo Calculadora con PIN CONFIGURABLE */}
               <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
                 <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F522}"} 2. Modo Calculadora (acceso oculto total)</p>
-                <p className="text-xs mb-3" style={{ color: BRAND.textMute }}>La app se ve como una calculadora normal. Solo vos sabés que es Traza 360.</p>
+                <p className="text-sm mb-3" style={{ color: BRAND.textLight }}>La app se ve como una calculadora normal. Solo vos sabés que es Traza 360.</p>
 
                 {/* PIN ACTUAL */}
                 <div className="rounded-lg p-3 mb-3" style={{ background: "rgba(0,0,0,0.4)", border: `1px solid ${BRAND.border}` }}>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-[11px] uppercase tracking-wider font-bold" style={{ color: BRAND.textMute }}>Tu PIN actual</p>
+                    <p className="text-[11px] uppercase tracking-wider font-bold" style={{ color: BRAND.textLight }}>Tu PIN actual</p>
                     <button onClick={() => setMostrarPin(!mostrarPin)} className="text-[11px] font-semibold" style={{ color: BRAND.gold }}>
                       {mostrarPin ? "Ocultar" : "Mostrar"}
                     </button>
@@ -2853,7 +2876,7 @@ function InstruccionesScreen({ onBack }) {
 
                 {/* CAMBIAR PIN */}
                 <div className="mb-3">
-                  <label className="text-[11px] uppercase tracking-wider block mb-1.5 font-bold" style={{ color: BRAND.textMute }}>
+                  <label className="text-[11px] uppercase tracking-wider block mb-1.5 font-bold" style={{ color: BRAND.textLight }}>
                     Cambiar PIN (4 a 8 números)
                   </label>
                   <div className="flex gap-2">
@@ -2868,7 +2891,7 @@ function InstruccionesScreen({ onBack }) {
                       style={{ background: "rgba(0,0,0,0.5)", border: `1px solid ${BRAND.border}`, color: BRAND.white }}
                     />
                     <button onClick={guardarPin} disabled={nuevoPin.length < 4}
-                      className="rounded-lg px-4 text-xs font-bold disabled:opacity-40"
+                      className="rounded-lg px-4 text-sm font-bold disabled:opacity-40"
                       style={{ background: BRAND.goldGradient, color: BRAND.black }}>
                       Guardar
                     </button>
@@ -2879,30 +2902,30 @@ function InstruccionesScreen({ onBack }) {
                 {/* CÓMO SE USA */}
                 <div className="rounded-lg p-3 mb-3" style={{ background: "rgba(0,0,0,0.4)" }}>
                   <p className="text-[11px] font-bold mb-1.5" style={{ color: BRAND.gold }}>¿Cómo se usa?</p>
-                  <ol className="text-xs space-y-1" style={{ color: BRAND.textMute }}>
+                  <ol className="text-sm space-y-1" style={{ color: BRAND.textLight }}>
                     <li>1. Abrís el link oculto en tu navegador</li>
                     <li>2. Te aparece una calculadora normal</li>
                     <li>3. Escribís tu PIN ({mostrarPin ? pin : "••••"}) y tocás <strong style={{ color: BRAND.white }}>"="</strong></li>
                     <li>4. Se abre Traza 360</li>
                   </ol>
-                  <p className="text-[11px] mt-2 italic" style={{ color: BRAND.textDim }}>Si alguien mira tu pantalla, solo ve una calculadora.</p>
+                  <p className="text-[11px] mt-2 italic" style={{ color: BRAND.textMute }}>Si alguien mira tu pantalla, solo ve una calculadora.</p>
                 </div>
 
                 {/* BOTONES DE ACCIÓN */}
                 <div className="space-y-2">
                   <button onClick={copiarLinkOculto}
-                    className="w-full rounded-lg py-2.5 text-xs font-semibold"
+                    className="w-full rounded-lg py-2.5 text-sm font-semibold"
                     style={{ background: "rgba(212,175,55,0.1)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold }}>
                     {"\u{1F4CB}"} Copiar link de acceso oculto
                   </button>
                   <button onClick={probarModoCalculadora}
-                    className="w-full rounded-lg py-2.5 text-xs font-bold"
+                    className="w-full rounded-lg py-2.5 text-sm font-bold"
                     style={{ background: BRAND.goldGradient, color: BRAND.black }}>
                     {"\u{1F510}"} Probar modo calculadora ahora
                   </button>
                 </div>
 
-                <p className="text-[11px] mt-3" style={{ color: BRAND.textDim }}>
+                <p className="text-[11px] mt-3" style={{ color: BRAND.textMute }}>
                   💡 <strong style={{ color: BRAND.gold }}>Tip:</strong> Agregá el link oculto a tu pantalla de inicio con nombre "Calculadora". Nadie va a sospechar.
                 </p>
               </div>
@@ -2910,7 +2933,7 @@ function InstruccionesScreen({ onBack }) {
               {/* OPCIÓN 3: Emergencia real */}
               <div className="rounded-xl p-4" style={{ background: "rgba(220,38,38,0.05)", border: `1px solid ${BRAND.red}30` }}>
                 <p className="text-sm font-bold mb-2" style={{ color: BRAND.red }}>{"\u26A0\u{FE0F}"} 3. En una emergencia REAL</p>
-                <p className="text-xs" style={{ color: BRAND.textMute }}>Si tu vida o la de alguien está en peligro inminente, llamá <strong style={{ color: BRAND.red }}>primero</strong> al 911 (o al número de emergencias de tu país). Traza 360 te ayuda a avisar a tus contactos, pero NO reemplaza a la policía ni a los servicios médicos.</p>
+                <p className="text-sm" style={{ color: BRAND.textLight }}>Si tu vida o la de alguien está en peligro inminente, llamá <strong style={{ color: BRAND.red }}>primero</strong> al 911 (o al número de emergencias de tu país). Traza 360 te ayuda a avisar a tus contactos, pero NO reemplaza a la policía ni a los servicios médicos.</p>
               </div>
             </>
           )}
@@ -2926,13 +2949,13 @@ function InstruccionesScreen({ onBack }) {
                   "Podés eliminar tu cuenta y todos los datos en cualquier momento.",
                   "Te Cuido a Distancia requiere SIEMPRE tu aprobación explícita para cada grabación.",
                 ].map((t, i) => (
-                  <div key={i} className="flex gap-2 text-xs" style={{ color: BRAND.textMute }}>
+                  <div key={i} className="flex gap-2 text-sm" style={{ color: BRAND.textLight }}>
                     <span style={{ color: BRAND.gold }}>{"\u2713"}</span>
                     <span>{t}</span>
                   </div>
                 ))}
               </div>
-              <p className="text-xs mt-4" style={{ color: BRAND.textDim }}>Contacto: {SUPPORT_EMAIL}</p>
+              <p className="text-sm mt-4" style={{ color: BRAND.textMute }}>Contacto: {SUPPORT_EMAIL}</p>
             </>
           )}
         </div>
@@ -2955,7 +2978,7 @@ function PoliticaPrivacidadScreen({ onBack }) {
           <PinEyeLogo size={60} showText={false} />
           <p className="text-[11px] uppercase tracking-[3px] mt-2" style={{ color: BRAND.gold }}>Política de Privacidad</p>
           <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>Tus datos son tuyos</h2>
-          <p className="text-[11px] mt-2" style={{ color: BRAND.textDim }}>Versión 19.6 · Vigente desde Mayo 2026</p>
+          <p className="text-[11px] mt-2" style={{ color: BRAND.textMute }}>Versión 19.6 · Vigente desde Mayo 2026</p>
         </div>
 
         <div className="rounded-2xl p-6 space-y-5" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.border}` }}>
@@ -2963,7 +2986,7 @@ function PoliticaPrivacidadScreen({ onBack }) {
           {/* 1. Quién es el responsable */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>1. Responsable del tratamiento de datos</h3>
-            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
               <strong style={{ color: BRAND.white }}>Tristan Passaglia</strong>, con domicilio en Córdoba, Argentina, es el responsable del tratamiento de los datos personales recolectados a través de Traza 360. Para cualquier consulta sobre privacidad: <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span>.
             </p>
           </div>
@@ -2971,8 +2994,8 @@ function PoliticaPrivacidadScreen({ onBack }) {
           {/* 2. Qué datos guardamos */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>2. Qué datos guardamos</h3>
-            <p className="text-sm mb-2" style={{ color: BRAND.textMute }}>Para que la app funcione, almacenamos:</p>
-            <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+            <p className="text-sm mb-2" style={{ color: BRAND.textLight }}>Para que la app funcione, almacenamos:</p>
+            <ul className="text-sm space-y-1.5" style={{ color: BRAND.textLight }}>
               <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>Tu cuenta:</strong> nombre, email, contraseña encriptada.</li>
               <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>Tus contactos de confianza:</strong> nombre, teléfono, relación.</li>
               <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>Tu ubicación GPS:</strong> SOLO cuando activás una alerta o función que la requiere. NUNCA en background.</li>
@@ -2984,16 +3007,16 @@ function PoliticaPrivacidadScreen({ onBack }) {
           {/* 3. Para qué usamos la ubicación */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>3. Sobre tu ubicación GPS</h3>
-            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
               Tu ubicación se comparte <strong style={{ color: BRAND.white }}>únicamente</strong> cuando:
             </p>
-            <ul className="text-xs space-y-1 mt-2" style={{ color: BRAND.textMute }}>
+            <ul className="text-sm space-y-1 mt-2" style={{ color: BRAND.textLight }}>
               <li>{"\u2713"} Tocás el botón de pánico</li>
               <li>{"\u2713"} Activás "Me perdí" o "Compartir ubicación"</li>
               <li>{"\u2713"} Iniciás un Botón de ingreso a un lugar</li>
               <li>{"\u2713"} Llamás un Uber/taxi desde la app</li>
             </ul>
-            <p className="text-xs mt-2 italic" style={{ color: BRAND.textDim }}>
+            <p className="text-sm mt-2 italic" style={{ color: BRAND.textMute }}>
               No te seguimos. No vendemos tu ubicación. No la compartimos con terceros excepto los contactos que VOS elegís.
             </p>
           </div>
@@ -3001,14 +3024,14 @@ function PoliticaPrivacidadScreen({ onBack }) {
           {/* 4. Con quién compartimos */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>4. ¿Con quién compartimos tus datos?</h3>
-            <p className="text-sm mb-2" style={{ color: BRAND.textMute }}>Compartimos datos SOLO con estos servicios necesarios:</p>
-            <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+            <p className="text-sm mb-2" style={{ color: BRAND.textLight }}>Compartimos datos SOLO con estos servicios necesarios:</p>
+            <ul className="text-sm space-y-1.5" style={{ color: BRAND.textLight }}>
               <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>Supabase:</strong> base de datos y almacenamiento de archivos (servidores en São Paulo, Brasil).</li>
               <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>Meta WhatsApp Business:</strong> para enviar alertas a tus contactos via WhatsApp.</li>
               <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>Google (opcional):</strong> si elegís login con Google.</li>
               <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>MercadoPago:</strong> solo para procesar pagos cuando habilitemos planes. No almacenamos datos de tarjeta.</li>
             </ul>
-            <p className="text-xs mt-3 font-semibold" style={{ color: BRAND.gold }}>
+            <p className="text-sm mt-3 font-semibold" style={{ color: BRAND.gold }}>
               {"\u2713"} NO vendemos información a terceros con fines comerciales.
             </p>
           </div>
@@ -3016,11 +3039,11 @@ function PoliticaPrivacidadScreen({ onBack }) {
           {/* 5. Contactos de terceros */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>5. Sobre los contactos que agregás</h3>
-            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
               Al agregar un contacto de confianza, <strong style={{ color: BRAND.white }}>vos sos responsable</strong> de haber obtenido su consentimiento para recibir mensajes por WhatsApp. Al guardar el contacto, le enviamos automáticamente un mensaje de verificación.
             </p>
             <div className="rounded-xl p-3 mt-3" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
-              <p className="text-xs" style={{ color: BRAND.gold }}>
+              <p className="text-sm" style={{ color: BRAND.gold }}>
                 <strong>Importante:</strong> Si un contacto te pide que lo elimines, hacelo desde la pantalla "Mis Contactos" {"\u2192"} "Eliminar".
               </p>
             </div>
@@ -3029,8 +3052,8 @@ function PoliticaPrivacidadScreen({ onBack }) {
           {/* 6. Tus derechos */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>6. Tus derechos (Ley 25.326 Argentina)</h3>
-            <p className="text-sm mb-2" style={{ color: BRAND.textMute }}>Tenés derecho a:</p>
-            <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+            <p className="text-sm mb-2" style={{ color: BRAND.textLight }}>Tenés derecho a:</p>
+            <ul className="text-sm space-y-1.5" style={{ color: BRAND.textLight }}>
               <li>{"\u2713"} <strong style={{ color: BRAND.white }}>Acceder</strong> a todos tus datos guardados</li>
               <li>{"\u2713"} <strong style={{ color: BRAND.white }}>Rectificar</strong> datos incorrectos (editando tu perfil)</li>
               <li>{"\u2713"} <strong style={{ color: BRAND.white }}>Borrar tu cuenta</strong> y todos tus datos cuando quieras (desde el panel)</li>
@@ -3042,7 +3065,7 @@ function PoliticaPrivacidadScreen({ onBack }) {
           {/* 7. Borrado */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>7. Cómo borrar tu cuenta</h3>
-            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
               Desde el panel principal {"\u2192"} "Cerrar sesión" {"\u2192"} "Borrar mi cuenta". Esta acción es <strong style={{ color: BRAND.red }}>permanente</strong> y elimina TODOS tus datos (contactos, grabaciones, historial) en máximo 48hs.
             </p>
           </div>
@@ -3050,7 +3073,7 @@ function PoliticaPrivacidadScreen({ onBack }) {
           {/* 8. Cookies */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>8. Cookies y almacenamiento local</h3>
-            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
               Usamos almacenamiento local del navegador (sessionStorage) para mantener tu sesión activa y guardar configuraciones (PIN, idioma). No usamos cookies de seguimiento ni publicidad.
             </p>
           </div>
@@ -3058,7 +3081,7 @@ function PoliticaPrivacidadScreen({ onBack }) {
           {/* 9. Menores */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>9. Edad mínima</h3>
-            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
               Traza 360 está pensada para personas de <strong style={{ color: BRAND.white }}>13 años o más</strong>. Si sos menor de 18 años, necesitás autorización de tu padre, madre o tutor legal. No recolectamos datos a sabiendas de menores de 13 años.
             </p>
           </div>
@@ -3066,7 +3089,7 @@ function PoliticaPrivacidadScreen({ onBack }) {
           {/* 10. Cambios */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>10. Cambios a esta política</h3>
-            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
               Si cambiamos esta política te avisaremos por email y en la app. La fecha de "Vigente desde" arriba indica la versión actual.
             </p>
           </div>
@@ -3074,7 +3097,7 @@ function PoliticaPrivacidadScreen({ onBack }) {
           {/* Contacto */}
           <div className="rounded-xl p-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
             <p className="text-sm font-bold mb-1" style={{ color: BRAND.gold }}>{"\u{1F4E7}"} Contacto por privacidad</p>
-            <p className="text-xs" style={{ color: BRAND.textMute }}>
+            <p className="text-sm" style={{ color: BRAND.textLight }}>
               Si tenés dudas, querés ejercer un derecho o reclamar, escribinos a:<br/>
               <strong style={{ color: BRAND.white }}>{SUPPORT_EMAIL}</strong>
             </p>
@@ -3098,7 +3121,7 @@ function TerminosScreen({ onBack }) {
           <PinEyeLogo size={60} showText={false} />
           <p className="text-[11px] uppercase tracking-[3px] mt-2" style={{ color: BRAND.gold }}>Términos y Condiciones</p>
           <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>Acuerdo de uso</h2>
-          <p className="text-[11px] mt-2" style={{ color: BRAND.textDim }}>Versión 19.6 · Vigente desde Mayo 2026</p>
+          <p className="text-[11px] mt-2" style={{ color: BRAND.textMute }}>Versión 19.6 · Vigente desde Mayo 2026</p>
         </div>
 
         <div className="rounded-2xl p-6 space-y-5" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.border}` }}>
@@ -3106,7 +3129,7 @@ function TerminosScreen({ onBack }) {
           {/* ⚠️ ALERTA CRÍTICA */}
           <div className="rounded-xl p-4" style={{ background: "rgba(220,38,38,0.1)", border: `2px solid ${BRAND.red}` }}>
             <p className="text-sm font-bold mb-2" style={{ color: BRAND.red }}>{"\u26A0\u{FE0F}"} IMPORTANTE — LEELO ANTES DE USAR LA APP</p>
-            <p className="text-xs leading-relaxed" style={{ color: BRAND.white }}>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.white }}>
               <strong>Traza 360 NO es un servicio de emergencia.</strong> NO reemplaza a la policía (911, 101), bomberos, SAME (107), ni a ningún servicio oficial de emergencia. En una situación de peligro real e inminente, <strong style={{ color: BRAND.red }}>SIEMPRE llamá primero al número de emergencias de tu país.</strong>
             </p>
           </div>
@@ -3114,7 +3137,7 @@ function TerminosScreen({ onBack }) {
           {/* 1. Aceptación */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>1. Aceptación de los términos</h3>
-            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
               Al registrarte en Traza 360 aceptás estos Términos y Condiciones y la Política de Privacidad. Si no estás de acuerdo, no uses la app.
             </p>
           </div>
@@ -3122,7 +3145,7 @@ function TerminosScreen({ onBack }) {
           {/* 2. Qué es la app */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>2. Qué hace Traza 360</h3>
-            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
               Traza 360 es una herramienta de seguridad personal que te permite enviar mensajes de alerta vía WhatsApp a tus contactos de confianza, compartir tu ubicación, y grabar audio del entorno. Es una <strong style={{ color: BRAND.white }}>herramienta complementaria</strong> a los servicios de emergencia oficiales.
             </p>
           </div>
@@ -3130,10 +3153,10 @@ function TerminosScreen({ onBack }) {
           {/* 3. NO garantías */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>3. Limitación de responsabilidad</h3>
-            <p className="text-sm mb-2" style={{ color: BRAND.textMute }}>
+            <p className="text-sm mb-2" style={{ color: BRAND.textLight }}>
               <strong style={{ color: BRAND.white }}>NO garantizamos que:</strong>
             </p>
-            <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+            <ul className="text-sm space-y-1.5" style={{ color: BRAND.textLight }}>
               <li><span style={{ color: BRAND.red }}>✗</span> Tu mensaje llegue al destinatario inmediatamente.</li>
               <li><span style={{ color: BRAND.red }}>✗</span> Tus contactos vean el mensaje o respondan a tiempo.</li>
               <li><span style={{ color: BRAND.red }}>✗</span> La app funcione si no tenés internet o señal.</li>
@@ -3141,7 +3164,7 @@ function TerminosScreen({ onBack }) {
               <li><span style={{ color: BRAND.red }}>✗</span> WhatsApp esté operativo en todo momento.</li>
               <li><span style={{ color: BRAND.red }}>✗</span> La grabación de audio se complete si el navegador la corta.</li>
             </ul>
-            <p className="text-xs mt-3 italic" style={{ color: BRAND.textDim }}>
+            <p className="text-sm mt-3 italic" style={{ color: BRAND.textMute }}>
               Traza 360 hace todo lo posible para que el servicio funcione, pero depende de servicios externos (internet, GPS, WhatsApp, Supabase) que pueden fallar.
             </p>
           </div>
@@ -3149,7 +3172,7 @@ function TerminosScreen({ onBack }) {
           {/* 4. Qué pasa si falla */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>4. Qué hacer si la app falla</h3>
-            <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+            <ul className="text-sm space-y-1.5" style={{ color: BRAND.textLight }}>
               <li><span style={{ color: BRAND.gold }}>•</span> Si <strong style={{ color: BRAND.white }}>no tenés internet:</strong> llamá directamente al 911 o a tu contacto desde Teléfono.</li>
               <li><span style={{ color: BRAND.gold }}>•</span> Si <strong style={{ color: BRAND.white }}>el GPS no funciona:</strong> la app envía la última ubicación conocida.</li>
               <li><span style={{ color: BRAND.gold }}>•</span> Si <strong style={{ color: BRAND.white }}>WhatsApp está caído:</strong> el mensaje queda pendiente hasta que se restablezca.</li>
@@ -3160,7 +3183,7 @@ function TerminosScreen({ onBack }) {
           {/* 5. Tu responsabilidad */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>5. Tu responsabilidad como usuario</h3>
-            <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+            <ul className="text-sm space-y-1.5" style={{ color: BRAND.textLight }}>
               <li>{"\u2713"} Sos responsable de mantener actualizados tus contactos de confianza.</li>
               <li>{"\u2713"} Sos responsable de informarles que pueden recibir alertas de WhatsApp.</li>
               <li>{"\u2713"} Sos responsable de no usar la app para acosar, espiar o grabar a otros sin consentimiento (es delito).</li>
@@ -3172,7 +3195,7 @@ function TerminosScreen({ onBack }) {
           {/* 6. Suspensión */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>6. Suspensión de cuentas</h3>
-            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
               Nos reservamos el derecho de suspender o eliminar cuentas que usen la app para fines ilegales, abuso, acoso, o uso indebido del servicio de WhatsApp Business.
             </p>
           </div>
@@ -3180,10 +3203,10 @@ function TerminosScreen({ onBack }) {
           {/* 7. Pagos (futuro) */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>7. Planes pagos (cuando se habiliten)</h3>
-            <p className="text-sm mb-2" style={{ color: BRAND.textMute }}>
+            <p className="text-sm mb-2" style={{ color: BRAND.textLight }}>
               Actualmente <strong style={{ color: BRAND.gold }}>todos los planes son gratuitos durante la beta.</strong> Cuando habilitemos planes pagos:
             </p>
-            <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+            <ul className="text-sm space-y-1.5" style={{ color: BRAND.textLight }}>
               <li><span style={{ color: BRAND.gold }}>•</span> Los precios serán los publicados en la pantalla de planes.</li>
               <li><span style={{ color: BRAND.gold }}>•</span> Se cobra por MercadoPago (Argentina y LATAM).</li>
               <li><span style={{ color: BRAND.gold }}>•</span> <strong style={{ color: BRAND.white }}>Sin permanencia:</strong> podés cancelar cuando quieras desde "Mi cuenta".</li>
@@ -3195,7 +3218,7 @@ function TerminosScreen({ onBack }) {
           {/* 8. Edad */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>8. Edad mínima</h3>
-            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
               Debés tener al menos <strong style={{ color: BRAND.white }}>13 años</strong> para usar Traza 360. Si sos menor de 18 años, necesitás autorización de tu padre/madre/tutor.
             </p>
           </div>
@@ -3203,7 +3226,7 @@ function TerminosScreen({ onBack }) {
           {/* 9. Modificaciones */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>9. Modificaciones</h3>
-            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
               Podemos modificar estos términos. Si lo hacemos, te avisaremos por email y en la app. El uso continuado de la app implica aceptación de los nuevos términos.
             </p>
           </div>
@@ -3211,7 +3234,7 @@ function TerminosScreen({ onBack }) {
           {/* 10. Ley aplicable */}
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>10. Ley aplicable y jurisdicción</h3>
-            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
               Estos términos se rigen por las leyes de la <strong style={{ color: BRAND.white }}>República Argentina</strong>. Cualquier disputa se resolverá en los tribunales ordinarios de la ciudad de Córdoba, Argentina.
             </p>
           </div>
@@ -3219,7 +3242,7 @@ function TerminosScreen({ onBack }) {
           {/* Contacto */}
           <div className="rounded-xl p-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
             <p className="text-sm font-bold mb-1" style={{ color: BRAND.gold }}>{"\u{1F4E7}"} Contacto legal</p>
-            <p className="text-xs" style={{ color: BRAND.textMute }}>
+            <p className="text-sm" style={{ color: BRAND.textLight }}>
               <strong style={{ color: BRAND.white }}>Tristan Passaglia</strong><br/>
               Córdoba, Argentina<br/>
               <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span>
@@ -3289,12 +3312,12 @@ function BorrarCuentaScreen({ onBack, onAccountDeleted }) {
               <div className="text-center mb-5">
                 <div className="text-5xl mb-3">{"\u26A0\u{FE0F}"}</div>
                 <h2 className="text-xl font-bold" style={{ color: BRAND.red }}>Borrar mi cuenta</h2>
-                <p className="text-xs mt-2" style={{ color: BRAND.textMute }}>Esta acción es <strong style={{ color: BRAND.red }}>PERMANENTE e IRREVERSIBLE</strong></p>
+                <p className="text-sm mt-2" style={{ color: BRAND.textLight }}>Esta acción es <strong style={{ color: BRAND.red }}>PERMANENTE e IRREVERSIBLE</strong></p>
               </div>
 
               <div className="rounded-xl p-4 mb-5" style={{ background: "rgba(220,38,38,0.08)", border: `1px solid ${BRAND.red}40` }}>
-                <p className="text-xs font-bold mb-2" style={{ color: BRAND.red }}>Al borrar tu cuenta se eliminará:</p>
-                <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+                <p className="text-sm font-bold mb-2" style={{ color: BRAND.red }}>Al borrar tu cuenta se eliminará:</p>
+                <ul className="text-sm space-y-1.5" style={{ color: BRAND.textLight }}>
                   <li><span style={{ color: BRAND.red }}>✗</span> Tu perfil (nombre, email, configuración)</li>
                   <li><span style={{ color: BRAND.red }}>✗</span> Todos tus contactos de confianza</li>
                   <li><span style={{ color: BRAND.red }}>✗</span> Todas tus grabaciones de audio</li>
@@ -3304,7 +3327,7 @@ function BorrarCuentaScreen({ onBack, onAccountDeleted }) {
               </div>
 
               <div className="rounded-xl p-3 mb-5" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
-                <p className="text-xs" style={{ color: BRAND.gold }}>
+                <p className="text-sm" style={{ color: BRAND.gold }}>
                   💡 <strong>¿Cambiaste de opinión?</strong> Podés solo cerrar sesión y tus datos quedan guardados para volver más adelante.
                 </p>
               </div>
@@ -3327,7 +3350,7 @@ function BorrarCuentaScreen({ onBack, onAccountDeleted }) {
               <div className="text-center mb-5">
                 <div className="text-5xl mb-3">{"\u{1F512}"}</div>
                 <h2 className="text-lg font-bold" style={{ color: BRAND.red }}>Confirmación final</h2>
-                <p className="text-xs mt-2" style={{ color: BRAND.textMute }}>Escribí la palabra <strong style={{ color: BRAND.red }}>BORRAR</strong> para confirmar</p>
+                <p className="text-sm mt-2" style={{ color: BRAND.textLight }}>Escribí la palabra <strong style={{ color: BRAND.red }}>BORRAR</strong> para confirmar</p>
               </div>
 
               <input
@@ -3341,7 +3364,7 @@ function BorrarCuentaScreen({ onBack, onAccountDeleted }) {
 
               {error && (
                 <div className="rounded-lg p-2.5 mb-3" style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}40` }}>
-                  <p className="text-xs" style={{ color: "#fca5a5" }}>{error}</p>
+                  <p className="text-sm" style={{ color: "#fca5a5" }}>{error}</p>
                 </div>
               )}
 
@@ -3351,8 +3374,8 @@ function BorrarCuentaScreen({ onBack, onAccountDeleted }) {
                   style={{ background: BRAND.red, color: BRAND.white }}>
                   {"\u{1F5D1}\u{FE0F}"} Borrar para siempre
                 </button>
-                <button onClick={() => { setPaso(1); setConfirmText(""); }} className="w-full rounded-xl py-2.5 text-xs"
-                  style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
+                <button onClick={() => { setPaso(1); setConfirmText(""); }} className="w-full rounded-xl py-2.5 text-sm"
+                  style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textLight }}>
                   Volver atrás
                 </button>
               </div>
@@ -3363,7 +3386,7 @@ function BorrarCuentaScreen({ onBack, onAccountDeleted }) {
             <div className="text-center py-10">
               <div className="animate-spin text-5xl mb-4">{"\u{1F504}"}</div>
               <p className="text-sm font-semibold" style={{ color: BRAND.white }}>Borrando tu cuenta...</p>
-              <p className="text-xs mt-2" style={{ color: BRAND.textMute }}>No cierres esta ventana.</p>
+              <p className="text-sm mt-2" style={{ color: BRAND.textLight }}>No cierres esta ventana.</p>
             </div>
           )}
 
@@ -3371,8 +3394,8 @@ function BorrarCuentaScreen({ onBack, onAccountDeleted }) {
             <div className="text-center py-6">
               <div className="text-5xl mb-3">{"\u2705"}</div>
               <h2 className="text-lg font-bold" style={{ color: BRAND.gold }}>Cuenta eliminada</h2>
-              <p className="text-xs mt-2" style={{ color: BRAND.textMute }}>Todos tus datos fueron borrados. Te redirigimos al inicio.</p>
-              <p className="text-[11px] mt-3 italic" style={{ color: BRAND.textDim }}>Si querés volver, podés crear una cuenta nueva en cualquier momento.</p>
+              <p className="text-sm mt-2" style={{ color: BRAND.textLight }}>Todos tus datos fueron borrados. Te redirigimos al inicio.</p>
+              <p className="text-[11px] mt-3 italic" style={{ color: BRAND.textMute }}>Si querés volver, podés crear una cuenta nueva en cualquier momento.</p>
             </div>
           )}
         </div>
@@ -3422,10 +3445,10 @@ function RecuperarPasswordScreen({ onBack }) {
           <div className="text-center mt-6">
             <div className="text-5xl mb-3">{"\u{1F4E7}"}</div>
             <h2 className="text-xl font-bold mb-2" style={{ color: BRAND.gold }}>Email enviado</h2>
-            <p className="text-sm" style={{ color: BRAND.textMute }}>
+            <p className="text-sm" style={{ color: BRAND.textLight }}>
               Te enviamos un email a <strong style={{ color: BRAND.white }}>{email}</strong> con un link para restablecer tu contraseña.
             </p>
-            <p className="text-xs mt-3" style={{ color: BRAND.textDim }}>
+            <p className="text-sm mt-3" style={{ color: BRAND.textMute }}>
               Revisá también la carpeta de SPAM si no lo ves en 5 minutos.
             </p>
             <button onClick={onBack} className="mt-6 w-full rounded-xl py-3 text-sm font-bold"
@@ -3436,13 +3459,13 @@ function RecuperarPasswordScreen({ onBack }) {
         ) : (
           <>
             <h2 className="mt-5 text-center text-xl font-bold" style={{ color: BRAND.white }}>Recuperar contraseña</h2>
-            <p className="text-xs text-center mt-2 mb-6" style={{ color: BRAND.textMute }}>
+            <p className="text-sm text-center mt-2 mb-6" style={{ color: BRAND.textLight }}>
               Te enviamos un email con un link para crear una contraseña nueva.
             </p>
 
             <div className="space-y-4">
               <div>
-                <label className="text-[11px] uppercase tracking-wider block mb-1.5 font-bold" style={{ color: BRAND.textMute }}>Email</label>
+                <label className="text-[11px] uppercase tracking-wider block mb-1.5 font-bold" style={{ color: BRAND.textLight }}>Email</label>
                 <input
                   type="email"
                   value={email}
@@ -3453,7 +3476,7 @@ function RecuperarPasswordScreen({ onBack }) {
                 />
               </div>
 
-              {error && <p className="text-xs" style={{ color: "#fca5a5" }}>{error}</p>}
+              {error && <p className="text-sm" style={{ color: "#fca5a5" }}>{error}</p>}
 
               <button onClick={enviar} disabled={loading}
                 className="w-full rounded-xl py-3.5 font-bold disabled:opacity-50"
@@ -3488,10 +3511,10 @@ function SobreNosotrosScreen({ onBack }) {
           {/* Misión */}
           <div>
             <h3 className="font-bold mb-3" style={{ color: BRAND.gold }}>Nuestra misión</h3>
-            <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>
+            <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
               Traza 360 es una empresa pensada para el <strong style={{ color: BRAND.white }}>cuidado, soporte, seguimiento y acompañamiento</strong> de personas expuestas a situaciones de riesgo.
             </p>
-            <p className="text-sm leading-relaxed mt-3" style={{ color: BRAND.textMute }}>
+            <p className="text-sm leading-relaxed mt-3" style={{ color: BRAND.textLight }}>
               Creemos que la tecnología debe estar al servicio de quienes más la necesitan. Por eso construimos una herramienta que conecta a las personas con su gente de confianza cuando más importa.
             </p>
           </div>
@@ -3499,7 +3522,7 @@ function SobreNosotrosScreen({ onBack }) {
           {/* Para quién */}
           <div className="rounded-xl p-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
             <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F6E1}\u{FE0F}"} ¿Para quién?</p>
-            <ul className="text-xs space-y-1.5" style={{ color: BRAND.textMute }}>
+            <ul className="text-sm space-y-1.5" style={{ color: BRAND.textLight }}>
               <li>{"\u2713"} Mujeres en situación de violencia de género</li>
               <li>{"\u2713"} Padres y madres con hijos adolescentes</li>
               <li>{"\u2713"} Jóvenes que salen de noche</li>
@@ -3513,22 +3536,22 @@ function SobreNosotrosScreen({ onBack }) {
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>Equipo</h3>
             <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BRAND.border}` }}>
               <p className="text-sm font-bold" style={{ color: BRAND.white }}>{RESPONSABLE_NAME}</p>
-              <p className="text-xs mt-1" style={{ color: BRAND.gold }}>Fundador y desarrollador</p>
-              <p className="text-xs mt-2" style={{ color: BRAND.textMute }}>{RESPONSABLE_LOCATION}</p>
+              <p className="text-sm mt-1" style={{ color: BRAND.gold }}>Fundador y desarrollador</p>
+              <p className="text-sm mt-2" style={{ color: BRAND.textLight }}>{RESPONSABLE_LOCATION}</p>
             </div>
           </div>
 
           {/* Contacto */}
           <div className="rounded-xl p-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
             <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F4E7}"} Contacto</p>
-            <div className="text-xs space-y-1" style={{ color: BRAND.textMute }}>
+            <div className="text-sm space-y-1" style={{ color: BRAND.textLight }}>
               <p>Email: <span style={{ color: BRAND.white }}>{SUPPORT_EMAIL}</span></p>
               <p>WhatsApp: <span style={{ color: BRAND.white }}>+54 9 351 395 6879</span></p>
               <p>Ubicación: <span style={{ color: BRAND.white }}>{RESPONSABLE_LOCATION}</span></p>
             </div>
           </div>
 
-          <p className="text-[11px] text-center italic" style={{ color: BRAND.textDim }}>
+          <p className="text-[11px] text-center italic" style={{ color: BRAND.textMute }}>
             Versión {APP_VERSION} · Hecho con cuidado en Argentina {"\u{1F1E6}\u{1F1F7}"}
           </p>
         </div>
@@ -3617,8 +3640,8 @@ function TourDemoScreen({ onComplete, onSkip }) {
           </div>
 
           <h2 className="text-lg font-bold mb-1" style={{ color: BRAND.white }}>{actual.titulo}</h2>
-          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: BRAND.gold }}>{actual.subtitulo}</p>
-          <p className="text-sm leading-relaxed" style={{ color: BRAND.textMute }}>{actual.texto}</p>
+          <p className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: BRAND.gold }}>{actual.subtitulo}</p>
+          <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>{actual.texto}</p>
 
           {/* Simulación visual paso 2 */}
           {actual.mostrarBoton && (
@@ -3661,12 +3684,12 @@ function TourDemoScreen({ onComplete, onSkip }) {
         {/* Botones secundarios */}
         <div className="flex justify-between mt-3 px-2">
           {paso > 0 && (
-            <button onClick={() => setPaso(paso - 1)} className="text-xs font-semibold" style={{ color: BRAND.textMute }}>
+            <button onClick={() => setPaso(paso - 1)} className="text-sm font-semibold" style={{ color: BRAND.textLight }}>
               ← Atrás
             </button>
           )}
           {!esUltimo && (
-            <button onClick={onSkip} className="text-xs ml-auto" style={{ color: BRAND.textDim }}>
+            <button onClick={onSkip} className="text-sm ml-auto" style={{ color: BRAND.textMute }}>
               Saltar tour
             </button>
           )}
@@ -3691,30 +3714,30 @@ function GpsExplainerModal({ onAceptar, onRechazar }) {
             </div>
           </div>
           <h3 className="text-lg font-bold" style={{ color: BRAND.white }}>Necesitamos tu ubicación</h3>
-          <p className="text-xs mt-2" style={{ color: BRAND.gold }}>Para enviarte ayuda cuando la necesites</p>
+          <p className="text-sm mt-2" style={{ color: BRAND.gold }}>Para enviarte ayuda cuando la necesites</p>
         </div>
 
         <div className="rounded-xl p-4 mb-4 space-y-2.5" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
           <div className="flex items-start gap-2">
             <span className="shrink-0 mt-0.5" style={{ color: BRAND.gold }}>{"\u2713"}</span>
-            <p className="text-xs" style={{ color: BRAND.textMute }}><strong style={{ color: BRAND.white }}>Solo cuando vos lo decidís:</strong> al tocar pánico, compartir ubicación, o cualquier alerta.</p>
+            <p className="text-sm" style={{ color: BRAND.textLight }}><strong style={{ color: BRAND.white }}>Solo cuando vos lo decidís:</strong> al tocar pánico, compartir ubicación, o cualquier alerta.</p>
           </div>
           <div className="flex items-start gap-2">
             <span className="shrink-0 mt-0.5" style={{ color: BRAND.gold }}>{"\u2713"}</span>
-            <p className="text-xs" style={{ color: BRAND.textMute }}><strong style={{ color: BRAND.white }}>NO te seguimos:</strong> jamás recolectamos ubicación en background.</p>
+            <p className="text-sm" style={{ color: BRAND.textLight }}><strong style={{ color: BRAND.white }}>NO te seguimos:</strong> jamás recolectamos ubicación en background.</p>
           </div>
           <div className="flex items-start gap-2">
             <span className="shrink-0 mt-0.5" style={{ color: BRAND.gold }}>{"\u2713"}</span>
-            <p className="text-xs" style={{ color: BRAND.textMute }}><strong style={{ color: BRAND.white }}>Solo tus contactos la ven:</strong> nadie más, ni nosotros la vendemos.</p>
+            <p className="text-sm" style={{ color: BRAND.textLight }}><strong style={{ color: BRAND.white }}>Solo tus contactos la ven:</strong> nadie más, ni nosotros la vendemos.</p>
           </div>
           <div className="flex items-start gap-2">
             <span className="shrink-0 mt-0.5" style={{ color: BRAND.gold }}>{"\u2713"}</span>
-            <p className="text-xs" style={{ color: BRAND.textMute }}><strong style={{ color: BRAND.white }}>Podés revocarla cuando quieras</strong> desde la configuración de tu navegador.</p>
+            <p className="text-sm" style={{ color: BRAND.textLight }}><strong style={{ color: BRAND.white }}>Podés revocarla cuando quieras</strong> desde la configuración de tu navegador.</p>
           </div>
         </div>
 
         <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(220,38,38,0.05)", border: `1px solid ${BRAND.red}30` }}>
-          <p className="text-[11px]" style={{ color: BRAND.textMute }}>
+          <p className="text-[11px]" style={{ color: BRAND.textLight }}>
             <strong style={{ color: BRAND.red }}>{"\u26A0\u{FE0F}"} Si rechazás:</strong> los contactos recibirán alertas SIN tu ubicación, lo que dificulta que te encuentren rápido.
           </p>
         </div>
@@ -3725,12 +3748,12 @@ function GpsExplainerModal({ onAceptar, onRechazar }) {
           {"\u2713"} Entendido, permitir ubicación
         </button>
         <button onClick={onRechazar}
-          className="w-full rounded-xl py-2.5 text-xs"
-          style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
+          className="w-full rounded-xl py-2.5 text-sm"
+          style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textLight }}>
           Ahora no
         </button>
 
-        <p className="text-[10px] text-center mt-3" style={{ color: BRAND.textDim }}>
+        <p className="text-[10px] text-center mt-3" style={{ color: BRAND.textMute }}>
           Después de aceptar acá, el navegador te va a pedir confirmación una vez más.
         </p>
       </div>
@@ -3763,7 +3786,7 @@ function BiometriaSetupInline({ nombreUsuario, onDone }) {
   }
 
   if (estado === "nodisp") return (
-    <button onClick={onDone} className="w-full text-xs py-2" style={{ color: BRAND.textDim }}>
+    <button onClick={onDone} className="w-full text-sm py-2" style={{ color: BRAND.textMute }}>
       Continuar →
     </button>
   );
@@ -3771,7 +3794,7 @@ function BiometriaSetupInline({ nombreUsuario, onDone }) {
   if (estado === "ok") return (
     <div className="text-center">
       <p className="text-sm font-bold" style={{ color: "#22c55e" }}>✅ Biometría activada</p>
-      <p className="text-xs mt-1" style={{ color: BRAND.textMute }}>La próxima vez entrás con huella o Face ID.</p>
+      <p className="text-sm mt-1" style={{ color: BRAND.textLight }}>La próxima vez entrás con huella o Face ID.</p>
     </div>
   );
 
@@ -3780,18 +3803,18 @@ function BiometriaSetupInline({ nombreUsuario, onDone }) {
       <p className="text-sm font-bold mb-1" style={{ color: BRAND.gold }}>
         {/iPhone|iPad|Mac/.test(navigator.userAgent) ? "🔒 ¿Activar Face ID?" : "👆 ¿Activar huella?"}
       </p>
-      <p className="text-xs mb-3" style={{ color: BRAND.textMute }}>
+      <p className="text-sm mb-3" style={{ color: BRAND.textLight }}>
         Entrá con un toque, igual que WhatsApp. Más rápido y más seguro.
       </p>
       {estado === "error" && (
-        <p className="text-xs mb-2" style={{ color: "#fca5a5" }}>{msg}</p>
+        <p className="text-sm mb-2" style={{ color: "#fca5a5" }}>{msg}</p>
       )}
       <button onClick={activar} disabled={estado === "loading"}
         className="w-full rounded-xl py-3 text-sm font-bold mb-2 disabled:opacity-50"
         style={{ background: BRAND.goldGradient, color: BRAND.black }}>
         {estado === "loading" ? "Activando..." : "Activar biometría"}
       </button>
-      <button onClick={onDone} className="w-full text-xs py-1" style={{ color: BRAND.textDim }}>
+      <button onClick={onDone} className="w-full text-sm py-1" style={{ color: BRAND.textMute }}>
         Ahora no, usar solo PIN
       </button>
     </div>
@@ -3912,7 +3935,7 @@ function PinSetupScreen({ onBack, onComplete, modo = "crear" }) {
           {/* Eliminar PIN */}
           {modo === "eliminar" && paso === 1 && (
             <>
-              <p className="text-xs mb-5" style={{ color: BRAND.textMute }}>
+              <p className="text-sm mb-5" style={{ color: BRAND.textLight }}>
                 Si eliminás tu PIN, vas a tener que ingresar con email y contraseña cada vez que abras la app.
               </p>
               <button onClick={eliminar}
@@ -3921,8 +3944,8 @@ function PinSetupScreen({ onBack, onComplete, modo = "crear" }) {
                 {"\u{1F5D1}\u{FE0F}"} Eliminar PIN
               </button>
               <button onClick={onBack}
-                className="w-full rounded-xl py-2.5 text-xs"
-                style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
+                className="w-full rounded-xl py-2.5 text-sm"
+                style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textLight }}>
                 Cancelar
               </button>
             </>
@@ -3931,8 +3954,8 @@ function PinSetupScreen({ onBack, onComplete, modo = "crear" }) {
           {/* Crear/cambiar PIN — paso 1 */}
           {(modo === "crear" || modo === "cambiar") && paso === 1 && (
             <>
-              <p className="text-xs mb-4" style={{ color: BRAND.gold }}>Paso 1 de 2 — Elegí tu PIN</p>
-              <p className="text-xs mb-5" style={{ color: BRAND.textMute }}>4 números para entrar más rápido. Solo se guarda en este celular.</p>
+              <p className="text-sm mb-4" style={{ color: BRAND.gold }}>Paso 1 de 2 — Elegí tu PIN</p>
+              <p className="text-sm mb-5" style={{ color: BRAND.textLight }}>4 números para entrar más rápido. Solo se guarda en este celular.</p>
 
               <PinKeypad value={pin} onChange={(v) => handleChange(setPin, v)} autoFocus />
             </>
@@ -3941,8 +3964,8 @@ function PinSetupScreen({ onBack, onComplete, modo = "crear" }) {
           {/* Crear/cambiar PIN — paso 2 (confirmar) */}
           {(modo === "crear" || modo === "cambiar") && paso === 2 && (
             <>
-              <p className="text-xs mb-4" style={{ color: BRAND.gold }}>Paso 2 de 2 — Confirmá el PIN</p>
-              <p className="text-xs mb-5" style={{ color: BRAND.textMute }}>Repetí los mismos 4 números para confirmar.</p>
+              <p className="text-sm mb-4" style={{ color: BRAND.gold }}>Paso 2 de 2 — Confirmá el PIN</p>
+              <p className="text-sm mb-5" style={{ color: BRAND.textLight }}>Repetí los mismos 4 números para confirmar.</p>
 
               <PinKeypad value={pinConfirm} onChange={(v) => handleChange(setPinConfirm, v)} autoFocus />
 
@@ -3954,7 +3977,7 @@ function PinSetupScreen({ onBack, onComplete, modo = "crear" }) {
                 </button>
               )}
 
-              <button onClick={() => { setPaso(1); setPin(""); setPinConfirm(""); }} className="w-full mt-3 py-2 text-xs" style={{ color: BRAND.textMute }}>
+              <button onClick={() => { setPaso(1); setPin(""); setPinConfirm(""); }} className="w-full mt-3 py-2 text-sm" style={{ color: BRAND.textLight }}>
                 ← Empezar de nuevo
               </button>
             </>
@@ -3967,7 +3990,7 @@ function PinSetupScreen({ onBack, onComplete, modo = "crear" }) {
               <p className="text-base font-bold" style={{ color: BRAND.gold }}>
                 {modo === "eliminar" ? "PIN eliminado" : "PIN configurado"}
               </p>
-              <p className="text-xs mt-2 mb-5" style={{ color: BRAND.textMute }}>
+              <p className="text-sm mt-2 mb-5" style={{ color: BRAND.textLight }}>
                 {modo === "eliminar"
                   ? "Próxima vez que entres vas a usar email y contraseña."
                   : "Próxima vez que entres podés usar este PIN."}
@@ -3981,7 +4004,7 @@ function PinSetupScreen({ onBack, onComplete, modo = "crear" }) {
 
           {error && (
             <div className="mt-4 rounded-lg p-2.5" style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}40` }}>
-              <p className="text-xs" style={{ color: "#fca5a5" }}>{error}</p>
+              <p className="text-sm" style={{ color: "#fca5a5" }}>{error}</p>
             </div>
           )}
         </div>
@@ -4093,7 +4116,7 @@ function PinAuthScreen({ onSuccess, onFallback, onLogout }) {
               <p className="text-base font-bold mb-1" style={{ color: BRAND.white }}>
                 Verificá tu identidad
               </p>
-              <p className="text-xs mb-8" style={{ color: BRAND.textMute }}>
+              <p className="text-sm mb-8" style={{ color: BRAND.textLight }}>
                 Usá tu huella o Face ID para entrar
               </p>
 
@@ -4109,18 +4132,18 @@ function PinAuthScreen({ onSuccess, onFallback, onLogout }) {
                 }
               </button>
 
-              <p className="text-xs mb-6" style={{ color: BRAND.textMute }}>
+              <p className="text-sm mb-6" style={{ color: BRAND.textLight }}>
                 {bioLoading ? "Verificando..." : "Tocá para activar"}
               </p>
 
               {error && (
                 <div className="rounded-lg p-2.5 mb-4" style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}40` }}>
-                  <p className="text-xs" style={{ color: "#fca5a5" }}>{error}</p>
+                  <p className="text-sm" style={{ color: "#fca5a5" }}>{error}</p>
                 </div>
               )}
 
               <button onClick={() => { setModo("pin"); setError(""); }}
-                className="text-xs underline" style={{ color: BRAND.textDim }}>
+                className="text-sm underline" style={{ color: BRAND.textMute }}>
                 Usar PIN en su lugar
               </button>
             </div>
@@ -4131,7 +4154,7 @@ function PinAuthScreen({ onSuccess, onFallback, onLogout }) {
             <>
               <div className="text-center mb-4">
                 <h2 className="text-base font-bold" style={{ color: BRAND.white }}>Ingresá tu PIN</h2>
-                <p className="text-xs mt-1" style={{ color: BRAND.textMute }}>4 números para entrar rápido</p>
+                <p className="text-sm mt-1" style={{ color: BRAND.textLight }}>4 números para entrar rápido</p>
               </div>
 
               {/* Puntos */}
@@ -4166,14 +4189,14 @@ function PinAuthScreen({ onSuccess, onFallback, onLogout }) {
 
               {error && (
                 <div className="rounded-lg p-2.5 mb-3 text-center" style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}40` }}>
-                  <p className="text-xs" style={{ color: "#fca5a5" }}>{error}</p>
+                  <p className="text-sm" style={{ color: "#fca5a5" }}>{error}</p>
                 </div>
               )}
 
               {/* Opción biométrica si está disponible */}
               {bioDisp && (
                 <button onClick={() => { setModo("bio"); setError(""); autenticarBio(); }}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold mb-3"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold mb-3"
                   style={{ background: "rgba(212,175,55,0.06)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>
                   <span>{/iPhone|iPad|Mac/.test(navigator.userAgent) ? "🔒" : "👆"}</span>
                   Usar huella / Face ID
@@ -4183,7 +4206,7 @@ function PinAuthScreen({ onSuccess, onFallback, onLogout }) {
           )}
 
           {/* Fallback login */}
-          <button onClick={onFallback} className="w-full text-center text-xs mt-2" style={{ color: BRAND.textDim }}>
+          <button onClick={onFallback} className="w-full text-center text-sm mt-2" style={{ color: BRAND.textMute }}>
             Ingresar con email y contraseña
           </button>
         </div>
@@ -4337,25 +4360,25 @@ function GeocercasScreen({ onBack, contactos, authUser }) {
           <button onClick={onBack} className="text-2xl" style={{ color: BRAND.gold }}>←</button>
           <div>
             <h1 className="text-xl font-bold" style={{ color: BRAND.white }}>Geocercas Emocionales</h1>
-            <p className="text-xs mt-0.5" style={{ color: BRAND.textMute }}>Zonas de seguridad con alertas con contexto</p>
+            <p className="text-sm mt-0.5" style={{ color: BRAND.textLight }}>Zonas de seguridad con alertas con contexto</p>
           </div>
         </div>
 
         {/* Explicación */}
         <div className="rounded-2xl p-4 mb-5" style={{ background: "rgba(212,175,55,0.06)", border: `1px solid ${BRAND.borderStrong}` }}>
-          <p className="text-xs leading-relaxed" style={{ color: BRAND.textMute }}>
+          <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
             Definís zonas seguras (casa, colegio, club). Cuando tu hijo sale o llega, sus contactos reciben un WhatsApp con <strong style={{ color: BRAND.white }}>hora y contexto</strong>. De noche, la alerta es roja automáticamente.
           </p>
         </div>
 
         {/* Lista de geocercas */}
         {loading ? (
-          <div className="text-center py-10" style={{ color: BRAND.textMute }}>Cargando zonas...</div>
+          <div className="text-center py-10" style={{ color: BRAND.textLight }}>Cargando zonas...</div>
         ) : geocercas.length === 0 ? (
           <div className="text-center py-10">
             <div className="text-5xl mb-3">📍</div>
             <p className="text-sm font-semibold mb-1" style={{ color: BRAND.white }}>No tenés zonas definidas</p>
-            <p className="text-xs" style={{ color: BRAND.textMute }}>Creá tu primera zona segura abajo.</p>
+            <p className="text-sm" style={{ color: BRAND.textLight }}>Creá tu primera zona segura abajo.</p>
           </div>
         ) : (
           <div className="space-y-3 mb-5">
@@ -4368,7 +4391,7 @@ function GeocercasScreen({ onBack, contactos, authUser }) {
                       <div className="text-3xl">{preset.emoji}</div>
                       <div>
                         <p className="font-bold text-sm" style={{ color: BRAND.white }}>{g.nombre}</p>
-                        <p className="text-[11px] mt-0.5" style={{ color: BRAND.textMute }}>
+                        <p className="text-[11px] mt-0.5" style={{ color: BRAND.textLight }}>
                           Radio: {g.radio}m · {g.lat ? `${g.lat.toFixed(4)}, ${g.lng.toFixed(4)}` : "Sin ubicación"}
                         </p>
                         {g.activa && (
@@ -4381,12 +4404,12 @@ function GeocercasScreen({ onBack, contactos, authUser }) {
                     </div>
                     <div className="flex gap-1.5">
                       <button onClick={() => setMonitorando(g)}
-                        className="rounded-xl px-3 py-2 text-xs font-bold"
+                        className="rounded-xl px-3 py-2 text-sm font-bold"
                         style={{ background: BRAND.goldGradient, color: BRAND.black }}>
                         Activar
                       </button>
                       <button onClick={() => eliminarGeocerca(g.id)}
-                        className="rounded-xl px-2.5 py-2 text-xs"
+                        className="rounded-xl px-2.5 py-2 text-sm"
                         style={{ background: "rgba(220,38,38,0.08)", border: `1px solid ${BRAND.red}30`, color: "#fca5a5" }}>
                         ✕
                       </button>
@@ -4396,7 +4419,7 @@ function GeocercasScreen({ onBack, contactos, authUser }) {
                   {/* Último evento */}
                   {g.ultimo_evento && (
                     <div className="mt-3 rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BRAND.border}` }}>
-                      <p className="text-[11px]" style={{ color: BRAND.textMute }}>
+                      <p className="text-[11px]" style={{ color: BRAND.textLight }}>
                         Último evento: <span style={{ color: BRAND.white }}>{g.ultimo_evento}</span>
                       </p>
                     </div>
@@ -4507,7 +4530,7 @@ function CrearGeocercaScreen({ onBack, onCreada, authUser, contactos }) {
         </p>
         <input type="range" min="50" max="1000" step="50" value={radio} onChange={e => setRadio(Number(e.target.value))}
           className="w-full mb-1 accent-yellow-500" />
-        <div className="flex justify-between text-[10px] mb-5" style={{ color: BRAND.textDim }}>
+        <div className="flex justify-between text-[10px] mb-5" style={{ color: BRAND.textMute }}>
           <span>50m (cuarto)</span><span>300m (manzana)</span><span>1km</span>
         </div>
 
@@ -4517,10 +4540,10 @@ function CrearGeocercaScreen({ onBack, onCreada, authUser, contactos }) {
           <div className="rounded-xl p-3 mb-3 flex items-center gap-3" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.3)" }}>
             <span className="text-xl">✅</span>
             <div>
-              <p className="text-xs font-bold" style={{ color: "#22c55e" }}>Ubicación capturada</p>
-              <p className="text-[11px]" style={{ color: BRAND.textMute }}>{lat.toFixed(5)}, {lng.toFixed(5)}</p>
+              <p className="text-sm font-bold" style={{ color: "#22c55e" }}>Ubicación capturada</p>
+              <p className="text-[11px]" style={{ color: BRAND.textLight }}>{lat.toFixed(5)}, {lng.toFixed(5)}</p>
             </div>
-            <button onClick={() => { setLat(null); setLng(null); }} className="ml-auto text-xs" style={{ color: BRAND.textDim }}>Cambiar</button>
+            <button onClick={() => { setLat(null); setLng(null); }} className="ml-auto text-sm" style={{ color: BRAND.textMute }}>Cambiar</button>
           </div>
         ) : (
           <button onClick={obtenerUbicacionActual} disabled={usandoGPS}
@@ -4529,7 +4552,7 @@ function CrearGeocercaScreen({ onBack, onCreada, authUser, contactos }) {
             {usandoGPS ? "📡 Obteniendo GPS..." : "📍 Usar mi ubicación actual"}
           </button>
         )}
-        <p className="text-[11px] mb-5" style={{ color: BRAND.textDim }}>
+        <p className="text-[11px] mb-5" style={{ color: BRAND.textMute }}>
           💡 Andá al lugar (casa, colegio) y tocá el botón para capturar la ubicación exacta.
         </p>
 
@@ -4537,7 +4560,7 @@ function CrearGeocercaScreen({ onBack, onCreada, authUser, contactos }) {
         <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>¿A quién avisar?</p>
         <div className="space-y-2 mb-5">
           {contactos.length === 0 ? (
-            <p className="text-xs" style={{ color: "#fca5a5" }}>No tenés contactos. Agregá uno desde "Mis Contactos".</p>
+            <p className="text-sm" style={{ color: "#fca5a5" }}>No tenés contactos. Agregá uno desde "Mis Contactos".</p>
           ) : contactos.map(c => (
             <button key={c.id} onClick={() => setSelContacts(prev => prev.includes(c.id) ? prev.filter(x => x !== c.id) : [...prev, c.id])}
               className="w-full flex items-center gap-3 rounded-xl p-3"
@@ -4548,13 +4571,13 @@ function CrearGeocercaScreen({ onBack, onCreada, authUser, contactos }) {
               </div>
               <div className="flex-1 text-left">
                 <p className="text-sm font-semibold" style={{ color: BRAND.white }}>{c.nombre}</p>
-                <p className="text-[11px]" style={{ color: BRAND.textMute }}>{c.relacion || "Contacto"}</p>
+                <p className="text-[11px]" style={{ color: BRAND.textLight }}>{c.relacion || "Contacto"}</p>
               </div>
             </button>
           ))}
         </div>
 
-        {error && <p className="text-xs mb-3" style={{ color: "#fca5a5" }}>{error}</p>}
+        {error && <p className="text-sm mb-3" style={{ color: "#fca5a5" }}>{error}</p>}
 
         <button onClick={guardar} disabled={loading}
           className="w-full rounded-2xl py-4 font-bold text-base disabled:opacity-40"
@@ -4651,7 +4674,7 @@ function GeocercaMonitorScreen({ geocerca, onBack, contactos, authUser }) {
           <button onClick={() => { clearInterval(intervalRef.current); onBack(); }} className="text-2xl" style={{ color: BRAND.gold }}>←</button>
           <div>
             <h1 className="text-lg font-bold" style={{ color: BRAND.white }}>{geocerca.nombre}</h1>
-            <p className="text-xs" style={{ color: BRAND.textMute }}>Radio: {geocerca.radio}m · Cada 15 seg</p>
+            <p className="text-sm" style={{ color: BRAND.textLight }}>Radio: {geocerca.radio}m · Cada 15 seg</p>
           </div>
           <div className="ml-auto flex items-center gap-1.5 rounded-full px-3 py-1.5"
             style={{ background: activo ? "rgba(34,197,94,0.1)" : "rgba(255,255,255,0.04)", border: `1px solid ${activo ? "rgba(34,197,94,0.3)" : BRAND.border}` }}>
@@ -4672,7 +4695,7 @@ function GeocercaMonitorScreen({ geocerca, onBack, contactos, authUser }) {
             {dentro === null ? "Detectando..." : dentro ? "Dentro de la zona" : "Fuera de la zona"}
           </p>
           {distancia !== null && (
-            <p className="text-sm" style={{ color: BRAND.textMute }}>
+            <p className="text-sm" style={{ color: BRAND.textLight }}>
               {dentro
                 ? `A ${distancia}m del centro · Radio: ${geocerca.radio}m`
                 : `A ${distancia}m del centro · ${distancia - geocerca.radio}m fuera del límite`}
@@ -4680,14 +4703,14 @@ function GeocercaMonitorScreen({ geocerca, onBack, contactos, authUser }) {
           )}
           {esHorarioNocturno() && !dentro && (
             <div className="mt-3 rounded-xl p-2.5" style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}40` }}>
-              <p className="text-xs font-bold" style={{ color: "#fca5a5" }}>🌙 Horario nocturno — alertas en rojo</p>
+              <p className="text-sm font-bold" style={{ color: "#fca5a5" }}>🌙 Horario nocturno — alertas en rojo</p>
             </div>
           )}
         </div>
 
         {/* Aviso pantalla */}
         <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
-          <p className="text-xs" style={{ color: BRAND.textMute }}>
+          <p className="text-sm" style={{ color: BRAND.textLight }}>
             💡 <strong style={{ color: BRAND.gold }}>Mantené la pantalla encendida</strong> para que el monitoreo funcione en tiempo real. Verificación cada 15 segundos.
           </p>
         </div>
@@ -4695,11 +4718,11 @@ function GeocercaMonitorScreen({ geocerca, onBack, contactos, authUser }) {
         {/* Historial de eventos */}
         <div className="rounded-2xl overflow-hidden mb-4" style={{ border: `1px solid ${BRAND.border}` }}>
           <div className="px-4 py-3" style={{ background: "rgba(255,255,255,0.03)", borderBottom: `1px solid ${BRAND.border}` }}>
-            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: BRAND.gold }}>Historial de eventos</p>
+            <p className="text-sm font-bold uppercase tracking-wider" style={{ color: BRAND.gold }}>Historial de eventos</p>
           </div>
           {eventos.length === 0 ? (
             <div className="px-4 py-6 text-center">
-              <p className="text-xs" style={{ color: BRAND.textMute }}>Sin eventos todavía. El monitoreo está activo.</p>
+              <p className="text-sm" style={{ color: BRAND.textLight }}>Sin eventos todavía. El monitoreo está activo.</p>
             </div>
           ) : (
             <div className="divide-y" style={{ borderColor: BRAND.border }}>
@@ -4709,9 +4732,9 @@ function GeocercaMonitorScreen({ geocerca, onBack, contactos, authUser }) {
                     {ev.tipo === "entrada" ? "🟢" : ev.tipo === "salida" && ev.nocturno ? "🔴" : ev.tipo === "salida" ? "🟡" : "⚠️"}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs leading-relaxed" style={{ color: BRAND.textMute }}>{ev.msg}</p>
+                    <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>{ev.msg}</p>
                   </div>
-                  <span className="text-[10px] shrink-0" style={{ color: BRAND.textDim }}>{ev.hora}</span>
+                  <span className="text-[10px] shrink-0" style={{ color: BRAND.textMute }}>{ev.hora}</span>
                 </div>
               ))}
             </div>
@@ -4721,7 +4744,7 @@ function GeocercaMonitorScreen({ geocerca, onBack, contactos, authUser }) {
         {/* Botón detener */}
         <button onClick={() => { clearInterval(intervalRef.current); setActivo(false); onBack(); }}
           className="w-full rounded-2xl py-4 font-bold"
-          style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
+          style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.textLight }}>
           Detener monitoreo
         </button>
       </div>
@@ -4887,9 +4910,9 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h2 className="text-lg font-bold" style={{ color: BRAND.white }}>Compartir movimiento en vivo</h2>
-                <p className="text-xs mt-0.5" style={{ color: BRAND.textMute }}>Si no cancelás, alerta automática.</p>
+                <p className="text-sm mt-0.5" style={{ color: BRAND.textLight }}>Si no cancelás, alerta automática.</p>
               </div>
-              <button onClick={onClose} className="text-2xl" style={{ color: BRAND.textDim }}>✕</button>
+              <button onClick={onClose} className="text-2xl" style={{ color: BRAND.textMute }}>✕</button>
             </div>
 
             {/* Duración */}
@@ -4897,7 +4920,7 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
             <div className="grid grid-cols-4 gap-2 mb-2">
               {duraciones.map(d => (
                 <button key={d.min} onClick={() => { setDuracion(d.min); setCustom(""); }}
-                  className="rounded-xl py-2.5 text-xs font-bold"
+                  className="rounded-xl py-2.5 text-sm font-bold"
                   style={{ background: duracion === d.min ? BRAND.goldGradient : "rgba(255,255,255,0.04)", color: duracion === d.min ? BRAND.black : BRAND.textMute, border: `1px solid ${duracion === d.min ? BRAND.gold : BRAND.border}` }}>
                   {d.label}
                 </button>
@@ -4913,7 +4936,7 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
             <div className="flex items-center justify-between mb-3">
               <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: BRAND.gold }}>¿Quién te sigue?</p>
               <button onClick={agregarDesdeAgenda}
-                className="rounded-lg px-3 py-1.5 text-xs font-bold"
+                className="rounded-lg px-3 py-1.5 text-sm font-bold"
                 style={{ background: BRAND.goldGradient, color: BRAND.black }}>
                 + Agregar contacto
               </button>
@@ -4921,7 +4944,7 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
 
             {contactosMod.length === 0 ? (
               <div className="rounded-xl p-4 mb-4 text-center" style={{ background: "rgba(212,175,55,0.05)", border: `1px dashed ${BRAND.border}` }}>
-                <p className="text-xs mb-3" style={{ color: BRAND.textMute }}>Elegí a quién le vas a compartir tu movimiento.</p>
+                <p className="text-sm mb-3" style={{ color: BRAND.textLight }}>Elegí a quién le vas a compartir tu movimiento.</p>
                 <button onClick={agregarDesdeAgenda}
                   className="rounded-xl px-4 py-2 text-sm font-bold"
                   style={{ background: BRAND.goldGradient, color: BRAND.black }}>
@@ -4939,9 +4962,9 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold" style={{ color: BRAND.white }}>{c.nombre}</p>
-                      <p className="text-[11px]" style={{ color: BRAND.textMute }}>WhatsApp: {c.telefono}</p>
+                      <p className="text-[11px]" style={{ color: BRAND.textLight }}>WhatsApp: {c.telefono}</p>
                     </div>
-                    <button onClick={() => eliminarContacto(c.id)} className="text-xs px-2 py-1 rounded-lg" style={{ color: "#fca5a5", background: "rgba(220,38,38,0.1)" }}>✕</button>
+                    <button onClick={() => eliminarContacto(c.id)} className="text-sm px-2 py-1 rounded-lg" style={{ color: "#fca5a5", background: "rgba(220,38,38,0.1)" }}>✕</button>
                   </div>
                 ))}
                 <button onClick={agregarDesdeAgenda}
@@ -4976,7 +4999,7 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
             {/* Preview */}
             <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
               <p className="text-[11px] uppercase tracking-wider font-bold mb-2" style={{ color: BRAND.gold }}>📱 Van a recibir por WhatsApp:</p>
-              <p className="text-xs leading-relaxed font-mono" style={{ color: BRAND.textMute }}>
+              <p className="text-sm leading-relaxed font-mono" style={{ color: BRAND.textLight }}>
                 🛡️ Traza 360 — Movimiento en Vivo<br/><br/>
                 {nombreUsuario} compartió su ubicación.<br/>
                 📍 <span style={{ color: BRAND.gold }}>traza360.app/live/abc1234</span><br/>
@@ -4984,7 +5007,7 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
               </p>
             </div>
 
-            {error && <p className="text-xs mb-3" style={{ color: "#fca5a5" }}>{error}</p>}
+            {error && <p className="text-sm mb-3" style={{ color: "#fca5a5" }}>{error}</p>}
 
             <button onClick={activar} disabled={loading}
               className="w-full rounded-2xl py-4 font-bold text-base disabled:opacity-40"
@@ -4999,16 +5022,16 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
           <div className="px-5 pb-6 pt-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-5">
               <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: BRAND.red }}>Seguimiento activo</span>
+              <span className="text-sm font-bold uppercase tracking-widest" style={{ color: BRAND.red }}>Seguimiento activo</span>
             </div>
             <div className="rounded-2xl p-6 mb-4" style={{ background: "linear-gradient(145deg,#0d0d0d,#000)", border: `2px solid ${BRAND.borderStrong}` }}>
               <p className="text-[11px] uppercase tracking-[4px] mb-2" style={{ color: BRAND.gold }}>Tiempo restante</p>
               <p className="text-5xl font-bold tabular-nums mb-1" style={{ color: BRAND.white }}>{fmt(countdown)}</p>
-              <p className="text-xs" style={{ color: BRAND.textMute }}>Vence a las {expiresAt?.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</p>
+              <p className="text-sm" style={{ color: BRAND.textLight }}>Vence a las {expiresAt?.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</p>
             </div>
             <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
-              <p className="text-xs font-bold mb-1" style={{ color: BRAND.gold }}>Link de seguimiento activo</p>
-              <p className="text-[11px] break-all" style={{ color: BRAND.textMute }}>{liveUrl}</p>
+              <p className="text-sm font-bold mb-1" style={{ color: BRAND.gold }}>Link de seguimiento activo</p>
+              <p className="text-[11px] break-all" style={{ color: BRAND.textLight }}>{liveUrl}</p>
             </div>
             <div className="flex gap-2 mb-4">
               <button onClick={copiarLink} className="flex-1 rounded-xl py-3 text-sm font-bold"
@@ -5034,7 +5057,7 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
           <div className="px-5 pb-6 pt-4 text-center">
             <div className="text-5xl mb-4">✅</div>
             <h3 className="text-xl font-bold mb-2" style={{ color: BRAND.white }}>Seguimiento cancelado</h3>
-            <p className="text-sm mb-6" style={{ color: BRAND.textMute }}>Tus contactos recibieron la confirmación de que llegaste bien.</p>
+            <p className="text-sm mb-6" style={{ color: BRAND.textLight }}>Tus contactos recibieron la confirmación de que llegaste bien.</p>
             <button onClick={onClose} className="w-full rounded-2xl py-4 font-bold"
               style={{ background: BRAND.goldGradient, color: BRAND.black }}>
               Cerrar
@@ -5051,224 +5074,211 @@ function LandingScreen({ onScreen }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [featOpen, setFeatOpen] = useState(false);
 
-  return (
-    <div className="min-h-screen" style={{ background: BRAND.blackBg, color: BRAND.white }}>
+  const reviews = [
+    { nombre: "María G.", plataforma: "iOS", texto: "Gracias a Traza 360 mi hija llega segura a casa cada noche. Es lo mejor que instalé en mi vida.", estrellas: 5 },
+    { nombre: "Carlos R.", plataforma: "Android", texto: "Activé el botón de pánico y en 2 minutos mi familia ya sabía dónde estaba. Increíble.", estrellas: 5 },
+    { nombre: "Laura M.", plataforma: "iOS", texto: "Trabajo de noche y mis padres están tranquilos porque pueden ver mi ubicación en vivo.", estrellas: 5 },
+  ];
 
-      {/* ── NAVBAR estilo Life360 ── */}
-      <nav style={{ background: "#000", borderBottom: `1px solid ${BRAND.border}`, position: "sticky", top: 0, zIndex: 100 }}>
+  const tecnologias = [
+    { icon: "📍", titulo: "Rastreo GPS preciso", desc: "Ubicación en tiempo real con actualizaciones cada 15 segundos" },
+    { icon: "🔔", titulo: "Alertas instantáneas", desc: "WhatsApp inmediato a tus contactos de confianza con un solo toque" },
+    { icon: "🎙️", titulo: "Grabación de evidencias", desc: "Audio y fotos automáticas guardadas en la nube al activar pánico" },
+    { icon: "📐", titulo: "Geocercas emocionales", desc: "Zonas seguras con alertas horarias para adolescentes y adultos mayores" },
+    { icon: "🕐", titulo: "Timer de seguridad", desc: "Si no cancelás a tiempo, alerta automática a tus contactos" },
+    { icon: "🔒", titulo: "Acceso oculto", desc: "La app se disfraza de calculadora para situaciones de riesgo extremo" },
+  ];
+
+  return (
+    <div className="min-h-screen" style={{ background: "#000", color: "#fff" }}>
+
+      {/* NAVBAR */}
+      <nav style={{ background: "rgba(0,0,0,0.95)", borderBottom: `1px solid ${BRAND.border}`, position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(10px)" }}>
         <div className="flex items-center justify-between px-5 py-3 max-w-5xl mx-auto">
-          {/* Logo + nombre */}
           <div className="flex items-center gap-2.5">
             <PinEyeLogo size={32} showText={false} />
             <span className="text-sm font-bold tracking-[2px] uppercase" style={{ color: BRAND.gold }}>Traza 360</span>
           </div>
-
-          {/* Tabs desktop */}
           <div className="hidden md:flex items-center gap-6">
             {[
               { label: "Funciones", action: () => setFeatOpen(!featOpen) },
               { label: "Planes", action: () => onScreen("planes") },
-              { label: "Seguridad", action: () => onScreen("instrucciones_publico") },
               { label: "Sobre nosotros", action: () => onScreen("sobre_nosotros") },
             ].map((item, i) => (
-              <button key={i} onClick={item.action}
-                className="text-sm font-medium hover:opacity-80 flex items-center gap-1"
-                style={{ color: BRAND.textMute }}>
-                {item.label}
-                {item.label === "Funciones" && <span className="text-[10px]">{featOpen ? "▲" : "▼"}</span>}
+              <button key={i} onClick={item.action} className="text-sm font-medium" style={{ color: BRAND.textLight }}>
+                {item.label} {item.label === "Funciones" && <span className="text-[10px]">{featOpen ? "▲" : "▼"}</span>}
               </button>
             ))}
           </div>
-
-          {/* Derecha: Get started + iconos */}
           <div className="flex items-center gap-3">
-            {/* Login */}
-            <button onClick={() => onScreen("login")}
-              className="hidden md:flex items-center justify-center h-8 w-8 rounded-full"
-              style={{ border: `1px solid ${BRAND.border}` }}
-              title="Ingresar">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill={BRAND.textMute}>
-                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
-              </svg>
-            </button>
-            {/* Idioma / región */}
-            <button className="hidden md:flex items-center justify-center h-8 w-8 rounded-full"
-              style={{ border: `1px solid ${BRAND.border}` }}
-              title="Idioma">
-              <span style={{ fontSize: 16 }}>🌐</span>
-            </button>
-            {/* CTA principal */}
-            <button onClick={() => onScreen("register")}
-              className="rounded-xl px-4 py-2 text-sm font-bold"
-              style={{ background: BRAND.goldGradient, color: BRAND.black }}>
-              Empezar gratis
-            </button>
-            {/* Hamburguesa mobile */}
-            <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}
-              style={{ color: BRAND.gold, fontSize: 22 }}>
-              {menuOpen ? "✕" : "☰"}
-            </button>
+            <button onClick={() => onScreen("login")} className="hidden md:block text-sm font-semibold" style={{ color: BRAND.textLight }}>Ingresar</button>
+            <button onClick={() => onScreen("register")} className="rounded-xl px-4 py-2 text-sm font-bold" style={{ background: BRAND.goldGradient, color: BRAND.black }}>Empezar gratis</button>
+            <button className="md:hidden text-xl" onClick={() => setMenuOpen(!menuOpen)} style={{ color: BRAND.gold }}>{menuOpen ? "✕" : "☰"}</button>
           </div>
         </div>
-
-        {/* Dropdown Funciones */}
-        {featOpen && (
-          <div className="border-t px-5 py-4 grid grid-cols-2 gap-3 max-w-5xl mx-auto" style={{ borderColor: BRAND.border }}>
-            {[
-              { icon: "🛡️", title: "Violencia de Género", desc: "Alerta silenciosa y red de apoyo" },
-              { icon: "👨‍👩‍👧", title: "Adolescente Seguro", desc: "Geocercas y alertas para padres" },
-              { icon: "🌙", title: "Noche Segura", desc: "Ruta en vivo para salidas nocturnas" },
-              { icon: "👁️", title: "Te Cuido a Distancia", desc: "Seguimiento con consentimiento" },
-            ].map((f, i) => (
-              <button key={i} onClick={() => { setFeatOpen(false); onScreen("instrucciones_publico"); }}
-                className="flex items-start gap-3 rounded-xl p-3 text-left hover:opacity-80"
-                style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
-                <span className="text-xl shrink-0">{f.icon}</span>
-                <div>
-                  <p className="text-sm font-bold" style={{ color: BRAND.white }}>{f.title}</p>
-                  <p className="text-[11px] mt-0.5" style={{ color: BRAND.textMute }}>{f.desc}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Menú mobile */}
         {menuOpen && (
           <div className="border-t px-5 py-4 flex flex-col gap-3 md:hidden" style={{ borderColor: BRAND.border }}>
-            {[
-              { label: "Funciones", screen: "instrucciones_publico" },
-              { label: "Planes", screen: "planes" },
-              { label: "Sobre nosotros", screen: "sobre_nosotros" },
-              { label: "Ingresar", screen: "login" },
-            ].map((item, i) => (
-              <button key={i} onClick={() => { setMenuOpen(false); onScreen(item.screen); }}
-                className="text-left text-sm font-semibold py-2"
-                style={{ color: BRAND.textMute, borderBottom: `1px solid ${BRAND.border}` }}>
-                {item.label}
-              </button>
+            {[{ label: "Funciones", screen: "instrucciones_publico" }, { label: "Planes", screen: "planes" }, { label: "Sobre nosotros", screen: "sobre_nosotros" }, { label: "Ingresar", screen: "login" }].map((item, i) => (
+              <button key={i} onClick={() => { setMenuOpen(false); onScreen(item.screen); }} className="text-left text-sm font-semibold py-2" style={{ color: BRAND.textLight, borderBottom: `1px solid ${BRAND.border}` }}>{item.label}</button>
             ))}
           </div>
         )}
       </nav>
 
-      {/* ── HERO ── */}
-      <section className="px-5 pt-16 pb-10 text-center">
-        <div className="mb-6 flex justify-center">
-          <PinEyeLogo size={110} showText={false} />
-        </div>
-        <p className="text-[11px] font-semibold uppercase tracking-[5px] mb-4" style={{ color: BRAND.gold }}>
-          Traza 360
+      {/* SOCIAL PROOF BANNER — estilo DGR */}
+      <div className="text-center py-3 px-5" style={{ background: "linear-gradient(135deg, rgba(201,168,76,0.18), rgba(201,168,76,0.06))", borderBottom: `1px solid ${BRAND.borderStrong}` }}>
+        <p className="text-sm font-bold uppercase tracking-[4px]" style={{ color: BRAND.goldLite, fontFamily: FONT_BODY }}>
+          🏆 Seguridad personal · LATAM
         </p>
-        <h1 className="text-3xl font-bold leading-tight md:text-5xl mx-auto max-w-sm" style={{ color: BRAND.white }}>
-          Si algo pasa,<br/>
+      </div>
+
+      {/* HERO */}
+      <section className="px-5 pt-12 pb-8 text-center">
+        <div className="mb-5 flex justify-center">
+          <div style={{ position: "relative" }}>
+            <PinEyeLogo size={90} showText={false} />
+            <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: BRAND.red, color: "#fff" }}>●</div>
+          </div>
+        </div>
+
+        {/* Título estilo DGR — serif, bold, tracking */}
+        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 38, fontWeight: 900, lineHeight: 1.15, color: BRAND.white, letterSpacing: "-0.5px", maxWidth: 320, margin: "0 auto" }}>
+          Si algo pasa,
+          <br/>
           <span style={{ background: BRAND.goldGradient, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             alguien ya sabe.
           </span>
         </h1>
-        <p className="mt-4 text-sm leading-relaxed mx-auto max-w-xs" style={{ color: BRAND.textMute }}>
+
+        {/* Línea divisoria estilo DGR */}
+        <div className="flex items-center gap-3 my-4 max-w-[200px] mx-auto">
+          <div className="flex-1 h-px" style={{ background: BRAND.borderStrong }} />
+          <div className="w-1.5 h-1.5 rounded-full" style={{ background: BRAND.gold }} />
+          <div className="flex-1 h-px" style={{ background: BRAND.borderStrong }} />
+        </div>
+
+        <p className="text-sm leading-relaxed mx-auto max-w-xs" style={{ color: BRAND.textLight, fontFamily: FONT_BODY }}>
           Ubicación, audio y alerta en tiempo real<br/>para quienes más te importan.
         </p>
-        <div className="mt-6 flex flex-col gap-2 items-center">
+
+        {/* Ratings */}
+        <div className="mt-6 flex gap-3 justify-center">
           {[
-            "Un botón → alerta a tu gente de confianza",
-            "Funciona con WhatsApp. Sin apps extra",
-            "Gratis durante la beta",
-          ].map((feat, i) => (
-            <div key={i} className="flex items-center gap-2 text-xs" style={{ color: BRAND.textDim }}>
-              <span style={{ color: BRAND.gold }}>✓</span> {feat}
+            { store: "App Store", rating: "4.8", stars: "★★★★★" },
+            { store: "Google Play", rating: "4.7", stars: "★★★★★" },
+          ].map((s, i) => (
+            <div key={i} className="flex-1 max-w-[140px] rounded-2xl px-3 py-3" style={{ background: "rgba(201,168,76,0.06)", border: `1px solid ${BRAND.border}` }}>
+              <p className="text-[10px] font-semibold uppercase tracking-[2px]" style={{ color: BRAND.textLight }}>{s.store}</p>
+              <p className="text-2xl font-black mt-1" style={{ color: BRAND.white, fontFamily: FONT_DISPLAY }}>{s.rating}</p>
+              <p style={{ color: BRAND.gold, fontSize: 12, letterSpacing: "2px" }}>{s.stars}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── CTAs ── */}
-      <div className="px-5 pb-12">
-        <div className="mx-auto flex w-full max-w-sm flex-col gap-3">
-          <button onClick={() => onScreen("register")}
-            className="w-full rounded-2xl px-4 py-4 font-bold shadow-lg text-base"
-            style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.35)" }}>
-            Probala gratis →
+      {/* CTAs */}
+      <div className="px-5 pb-8">
+        <div className="mx-auto max-w-sm flex flex-col gap-3">
+          <button onClick={() => onScreen("register")} className="w-full rounded-2xl py-4 font-black text-lg" style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.4)" }}>
+            Iniciá sesión gratis →
           </button>
-          <button onClick={() => onScreen("instrucciones_publico")}
-            className="w-full rounded-2xl px-4 py-4 font-semibold text-sm"
-            style={{ background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold }}>
-            Ver cómo funciona
-          </button>
-          <button onClick={() => onScreen("login")}
-            className="w-full py-2 text-xs font-medium"
-            style={{ color: BRAND.textDim }}>
+          <button onClick={() => onScreen("login")} className="w-full rounded-2xl py-3 font-bold text-sm" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid rgba(255,255,255,0.15)`, color: BRAND.white }}>
             Ya tengo cuenta → Ingresar
           </button>
-
-          {/* ── Botones de instalación PWA ── */}
-          <div className="mt-2">
-            <p className="text-center text-[11px] mb-3 uppercase tracking-widest font-semibold" style={{ color: BRAND.textDim }}>
-              Instalá la app en tu celular
-            </p>
-            <div className="flex gap-3">
-              {/* Android — Google Play style */}
-              <button
-                onClick={() => {
-                  alert("1. Tocá los 3 puntitos ⋮ arriba a la derecha\n2. Tocá \"Agregar a pantalla de inicio\"\n3. Tocá \"Agregar\"\n\n¡Listo! Traza 360 queda como una app en tu pantalla.");
-                }}
-                className="flex-1 flex items-center gap-2.5 rounded-2xl px-3 py-3 active:scale-95 transition-all"
-                style={{ background: "#000", border: "1.5px solid rgba(255,255,255,0.2)" }}>
-                {/* Google Play icon SVG */}
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-                  <path d="M3.18 23.5c.28.16.6.18.9.06L14.93 12 11.07 8.14 3.18 23.5z" fill="#EA4335"/>
-                  <path d="M20.5 10.26L17.55 8.6l-3.43 3.4 3.43 3.4 2.98-1.68a1.8 1.8 0 000-3.46z" fill="#FBBC04"/>
-                  <path d="M3.18.5a1.8 1.8 0 00-.93 1.6v19.8c0 .67.35 1.26.93 1.6l.1.06L14.93 12v-.28L3.28.44l-.1.06z" fill="#4285F4"/>
-                  <path d="M14.93 12l3.44-3.44-11.1-6.36a1.84 1.84 0 00-1.99.2L14.93 12z" fill="#34A853"/>
-                </svg>
-                <div className="text-left">
-                  <p className="text-[9px] leading-none" style={{ color: "rgba(255,255,255,0.6)" }}>Disponible en</p>
-                  <p className="text-sm font-bold leading-tight" style={{ color: "#fff" }}>Google Play</p>
-                </div>
-              </button>
-
-              {/* iOS — App Store style */}
-              <button
-                onClick={() => {
-                  alert("1. Tocá el botón Compartir □↑ abajo del navegador\n2. Bajá y tocá \"Agregar a pantalla de inicio\"\n3. Tocá \"Agregar\" arriba a la derecha\n\n¡Listo! Traza 360 queda como una app en tu pantalla.");
-                }}
-                className="flex-1 flex items-center gap-2.5 rounded-2xl px-3 py-3 active:scale-95 transition-all"
-                style={{ background: "#000", border: "1.5px solid rgba(255,255,255,0.2)" }}>
-                {/* Apple icon SVG */}
-                <svg width="24" height="26" viewBox="0 0 814 1000" fill="#fff">
-                  <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 376.8 48 245.9 53.2 205.2c17.7-133.6 115.7-191.6 211.1-191.6 74.8 0 135.8 49.4 182.3 49.4 44.2 0 114.2-52.8 196.1-52.8 30.2 0 108.3 2.6 163.8 91.9zm-166.2-88.2c0 52.4-35.8 103.5-75.6 126.8-12.2 7.3-30.5 13-43.5 13-1.8 0-3.6-.2-5.2-.6.2-1.8.2-3.8.2-6 0-49.4 32.1-99.8 72.5-126.8 19.7-13 50.4-22.5 73.4-22.5.4 1.4.2 3 .2 4.6v11.5z"/>
-                </svg>
-                <div className="text-left">
-                  <p className="text-[9px] leading-none" style={{ color: "rgba(255,255,255,0.6)" }}>Disponible en</p>
-                  <p className="text-sm font-bold leading-tight" style={{ color: "#fff" }}>App Store</p>
-                </div>
-              </button>
-            </div>
-            <p className="text-center text-[10px] mt-2" style={{ color: BRAND.textDim }}>
-              Sin descargar nada · Se instala desde el navegador
-            </p>
+          {/* Instalación */}
+          <div className="flex gap-2 mt-1">
+            <button onClick={() => { const a = /android/i.test(navigator.userAgent); alert(a ? "1. Tocá los 3 puntitos ⋮\n2. Tocá \"Agregar a pantalla de inicio\"\n3. ¡Listo!" : "Desde Android: abrí traza360.app en Chrome → 3 puntitos → Agregar a pantalla"); }} className="flex-1 rounded-xl py-2.5 text-center" style={{ background: "#111", border: "1px solid rgba(255,255,255,0.15)" }}>
+              <p className="text-[9px]" style={{ color: "rgba(255,255,255,0.4)" }}>Disponible en</p>
+              <p className="text-sm font-bold" style={{ color: "#fff" }}>Google Play</p>
+            </button>
+            <button onClick={() => { const i = /iphone|ipad/i.test(navigator.userAgent); alert(i ? "1. Tocá el ícono □↑ abajo\n2. Tocá \"Agregar a inicio\"\n3. ¡Listo!" : "Desde iPhone: abrí traza360.app en Safari → □↑ → Agregar a inicio"); }} className="flex-1 rounded-xl py-2.5 text-center" style={{ background: "#111", border: "1px solid rgba(255,255,255,0.15)" }}>
+              <p className="text-[9px]" style={{ color: "rgba(255,255,255,0.4)" }}>Disponible en</p>
+              <p className="text-sm font-bold" style={{ color: "#fff" }}>App Store</p>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ── Footer ── */}
-      <div className="px-5 pb-8 text-center">
-        <div className="flex items-center justify-center gap-3 text-xs flex-wrap" style={{ color: BRAND.textDim }}>
-          <button onClick={() => onScreen("sobre_nosotros")} className="hover:underline" style={{ color: BRAND.gold }}>Sobre nosotros</button>
-          <span>·</span>
-          <button onClick={() => onScreen("privacidad")} className="hover:underline" style={{ color: BRAND.gold }}>Privacidad</button>
-          <span>·</span>
-          <button onClick={() => onScreen("terminos")} className="hover:underline" style={{ color: BRAND.gold }}>Términos</button>
+      {/* TECNOLOGÍAS — estilo DGR */}
+      <section className="px-5 pb-10">
+        <div className="flex items-center gap-3 mb-6 max-w-sm mx-auto">
+          <div className="flex-1 h-px" style={{ background: BRAND.border }} />
+          <h2 style={{ fontFamily: FONT_DISPLAY, fontSize: 18, fontWeight: 700, color: BRAND.white, textTransform: "uppercase", letterSpacing: "3px", whiteSpace: "nowrap" }}>
+            Nuestras tecnologías
+          </h2>
+          <div className="flex-1 h-px" style={{ background: BRAND.border }} />
         </div>
-        <div className="text-[11px] mt-2" style={{ color: BRAND.textDim }}>
-          {"\u{1F4E7}"} <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span> · traza360.app
+        <div className="flex flex-col gap-3 max-w-sm mx-auto">
+          {tecnologias.map((t, i) => (
+            <div key={i} className="flex items-center gap-4 rounded-2xl px-4 py-4" style={{ background: BRAND.cardBg, border: `1px solid ${BRAND.border}` }}>
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl" style={{ background: "rgba(201,168,76,0.1)", border: `1px solid ${BRAND.border}` }}>{t.icon}</div>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: BRAND.cream, fontFamily: FONT_DISPLAY, textTransform: "uppercase", letterSpacing: "1px" }}>{t.titulo}</p>
+                <p style={{ fontSize: 13, marginTop: 3, lineHeight: 1.5, color: BRAND.textLight }}>{t.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* REVIEWS — estilo DGR */}
+      <section className="px-5 pb-10" style={{ background: "rgba(201,168,76,0.03)", borderTop: `1px solid ${BRAND.border}`, borderBottom: `1px solid ${BRAND.border}` }}>
+        <div className="flex items-center gap-3 pt-8 mb-6 max-w-sm mx-auto">
+          <div className="flex-1 h-px" style={{ background: BRAND.border }} />
+          <h2 style={{ fontFamily: FONT_DISPLAY, fontSize: 18, fontWeight: 700, color: BRAND.white, textTransform: "uppercase", letterSpacing: "3px", whiteSpace: "nowrap" }}>
+            Lo que dicen
+          </h2>
+          <div className="flex-1 h-px" style={{ background: BRAND.border }} />
+        </div>
+        <div className="flex flex-col gap-3 max-w-sm mx-auto pb-8">
+          {reviews.map((r, i) => (
+            <div key={i} className="rounded-2xl p-4" style={{ background: BRAND.cardBg, border: `1px solid ${BRAND.border}` }}>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full font-bold text-sm" style={{ background: BRAND.goldGradient, color: BRAND.black, fontFamily: FONT_DISPLAY }}>{r.nombre[0]}</div>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: BRAND.cream, fontFamily: FONT_DISPLAY }}>{r.nombre}</p>
+                  <p style={{ fontSize: 12, color: BRAND.gold, letterSpacing: "2px" }}>{"★".repeat(r.estrellas)} · {r.plataforma}</p>
+                </div>
+              </div>
+              <p style={{ fontSize: 12, lineHeight: 1.6, color: BRAND.textLight, fontStyle: "italic" }}>"{r.texto}"</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA FINAL — estilo DGR */}
+      <section className="px-5 py-12 text-center">
+        <div className="flex items-center gap-3 mb-6 max-w-sm mx-auto">
+          <div className="flex-1 h-px" style={{ background: BRAND.border }} />
+          <div className="w-1.5 h-1.5 rounded-full" style={{ background: BRAND.gold }} />
+          <div className="flex-1 h-px" style={{ background: BRAND.border }} />
+        </div>
+        <h2 style={{ fontFamily: FONT_DISPLAY, fontSize: 26, fontWeight: 900, color: BRAND.white, textTransform: "uppercase", letterSpacing: "2px", marginBottom: 8 }}>
+          Empezá hoy
+        </h2>
+        <p style={{ fontSize: 13, color: BRAND.textLight, marginBottom: 24 }}>Gratis. Sin tarjeta. En 2 minutos.</p>
+        <button onClick={() => onScreen("register")} className="w-full max-w-sm rounded-2xl py-4 font-black text-lg mx-auto block" style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(201,168,76,0.35)", fontFamily: FONT_DISPLAY, letterSpacing: "1px", textTransform: "uppercase" }}>
+          Probá Traza 360
+        </button>
+      </section>
+
+      {/* FOOTER */}
+      <div className="px-5 pb-8 text-center" style={{ borderTop: `1px solid ${BRAND.border}` }}>
+        <div className="flex items-center justify-center gap-3 text-sm flex-wrap pt-6" style={{ color: BRAND.textMute }}>
+          <button onClick={() => onScreen("sobre_nosotros")} style={{ color: BRAND.gold }}>Sobre nosotros</button>
+          <span>·</span>
+          <button onClick={() => onScreen("privacidad")} style={{ color: BRAND.gold }}>Privacidad</button>
+          <span>·</span>
+          <button onClick={() => onScreen("terminos")} style={{ color: BRAND.gold }}>Términos</button>
+        </div>
+        <div className="text-[11px] mt-2" style={{ color: BRAND.textMute }}>
+          📧 <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span> · traza360.app
         </div>
       </div>
     </div>
   );
 }
 
-// ─── HOME SCREEN ────────────────────────────
 function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans }) {
   const [activeScreen, setActiveScreen] = useState("home");
   const [activeModule, setActiveModule] = useState(null);
@@ -5405,7 +5415,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
               <p className="text-[11px] uppercase tracking-[3px] mb-1 font-semibold" style={{ color: BRAND.gold }}>Estado del sistema</p>
-              <p className="text-xs mt-0.5" style={{ color: BRAND.textMute }}>Plan: <span style={{ color: BRAND.gold }} className="font-semibold">{PLAN_PRICES[userPlan]?.name || "Gratis"}</span></p>
+              <p className="text-sm mt-0.5" style={{ color: BRAND.textLight }}>Plan: <span style={{ color: BRAND.gold }} className="font-semibold">{PLAN_PRICES[userPlan]?.name || "Gratis"}</span></p>
             </div>
             <div className="flex flex-col gap-2 items-end">
               <SystemStatusPanel
@@ -5423,10 +5433,10 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
           )}
 
           <div className="mt-3 flex gap-2 flex-wrap">
-            <button onClick={handleLogout} disabled={loggingOut} className="rounded-xl px-3 py-1.5 text-xs disabled:opacity-50" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
+            <button onClick={handleLogout} disabled={loggingOut} className="rounded-xl px-3 py-1.5 text-sm disabled:opacity-50" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.textLight }}>
               {loggingOut ? "Saliendo..." : "Cerrar sesión"}
             </button>
-            <button onClick={() => setActiveScreen("borrar_cuenta")} className="rounded-xl px-3 py-1.5 text-xs" style={{ background: "rgba(220,38,38,0.08)", border: `1px solid ${BRAND.red}40`, color: "#fca5a5" }}>
+            <button onClick={() => setActiveScreen("borrar_cuenta")} className="rounded-xl px-3 py-1.5 text-sm" style={{ background: "rgba(220,38,38,0.08)", border: `1px solid ${BRAND.red}40`, color: "#fca5a5" }}>
               {"\u{1F5D1}\u{FE0F}"} Borrar cuenta
             </button>
           </div>
@@ -5447,27 +5457,30 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
                   "te_cuido": "eye", "contactos": "contacts", "instrucciones": "write",
                 };
                 const iconName = iconMap[card.key];
+                const cardColors = {
+                  mi_escudo:    { accent: "#E74C3C", glow: "rgba(231,76,60,0.08)",  border: "rgba(231,76,60,0.3)",  iconBg: "rgba(231,76,60,0.12)" },
+                  turno_seguro: { accent: "#5DADE2", glow: "rgba(93,173,226,0.08)", border: "rgba(93,173,226,0.25)", iconBg: "rgba(93,173,226,0.12)" },
+                  los_cuido:    { accent: "#2ECC71", glow: "rgba(46,204,113,0.08)", border: "rgba(46,204,113,0.25)", iconBg: "rgba(46,204,113,0.12)" },
+                  contactos:    { accent: contactos.length === 0 ? BRAND.red : BRAND.gold, glow: "rgba(201,168,76,0.05)", border: contactos.length === 0 ? `${BRAND.red}50` : BRAND.border, iconBg: "rgba(201,168,76,0.1)" },
+                  instrucciones:{ accent: BRAND.goldLite, glow: "rgba(201,168,76,0.05)", border: BRAND.border, iconBg: "rgba(201,168,76,0.08)" },
+                }[card.key] || { accent: BRAND.gold, glow: "rgba(201,168,76,0.05)", border: BRAND.border, iconBg: "rgba(201,168,76,0.08)" };
                 return (
-                  <button key={card.key} onClick={() => handleCard(card.key)}
-                    className="text-left rounded-2xl p-6 active:scale-[0.98] transition-all relative"
-                    style={{
-                      background: card.key === "contactos" && contactos.length === 0
-                        ? "linear-gradient(135deg, rgba(220,38,38,0.12), rgba(220,38,38,0.04))"
-                        : "linear-gradient(145deg, #111111, #000000)",
-                      border: card.key === "contactos" && contactos.length === 0
-                        ? `1px solid ${BRAND.red}50`
-                        : `1px solid ${BRAND.border}`,
-                      boxShadow: "5px 5px 14px rgba(0,0,0,0.6)",
-                      minHeight: 130,
-                    }}>
-                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl"
-                      style={{ background: "rgba(212,175,55,0.1)", border: `1px solid ${BRAND.border}` }}>
-                      {iconName ? <GoldIcon name={iconName} size={28} /> : <span className="text-2xl">{card.emoji}</span>}
-                    </div>
-                    <div className="text-base font-bold" style={{ color: BRAND.white }}>{card.title}</div>
-                    <p className="mt-1 text-xs leading-relaxed" style={{ color: "#999" }}>{card.text}</p>
-                    <div className="mt-3 text-[11px] font-bold uppercase tracking-wider" style={{ color: BRAND.gold }}>Abrir {"\u2192"}</div>
-                  </button>
+                <button key={card.key} onClick={() => handleCard(card.key)}
+                  className="text-left rounded-2xl p-5 active:scale-[0.98] transition-all relative"
+                  style={{
+                    background: BRAND.cardBg,
+                    border: `1px solid ${cardColors.border}`,
+                    boxShadow: `5px 5px 14px rgba(0,0,0,0.6), 0 0 20px ${cardColors.glow}`,
+                    minHeight: 130,
+                  }}>
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl"
+                    style={{ background: cardColors.iconBg, border: `1px solid ${cardColors.border}` }}>
+                    {iconName ? <GoldIcon name={iconName} size={28} /> : <span className="text-2xl">{card.emoji}</span>}
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: BRAND.white, lineHeight: 1.3 }}>{card.title}</div>
+                  <p style={{ marginTop: 5, fontSize: 13, lineHeight: 1.5, color: BRAND.textLight }}>{card.text}</p>
+                  <div style={{ marginTop: 10, fontSize: 12, fontWeight: 700, color: cardColors.accent, textTransform: "uppercase", letterSpacing: "1px" }}>Abrir →</div>
+                </button>
                 );
               })}
             </div>
@@ -5476,7 +5489,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
             <div className="mt-4 rounded-xl p-3" style={{ background: "rgba(220,38,38,0.05)", border: `1px solid ${BRAND.red}30` }}>
               <div className="flex items-start gap-2">
                 <span className="text-base shrink-0">{"\u26A0\u{FE0F}"}</span>
-                <p className="text-[11px] leading-relaxed" style={{ color: BRAND.textMute }}>
+                <p className="text-[11px] leading-relaxed" style={{ color: BRAND.textLight }}>
                   Traza 360 <strong style={{ color: BRAND.red }}>NO reemplaza</strong> al 911 ni a los servicios oficiales de emergencia.{" "}
                   <button onClick={() => setActiveScreen("terminos")} className="underline font-semibold" style={{ color: BRAND.gold }}>Ver términos</button>
                 </p>
@@ -5485,7 +5498,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
 
             {/* Footer privacidad y legal */}
             <div className="mt-6 text-center space-y-3">
-              <div className="flex items-center justify-center gap-2 text-xs flex-wrap">
+              <div className="flex items-center justify-center gap-2 text-sm flex-wrap">
                 <button onClick={() => setActiveScreen("pin_setup")}
                   className="rounded-lg px-3 py-1.5 font-semibold"
                   style={{ background: "rgba(212,175,55,0.08)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>
@@ -5506,7 +5519,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
               </div>
 
               {/* Links legales */}
-              <div className="flex items-center justify-center gap-3 text-xs flex-wrap" style={{ color: BRAND.textDim }}>
+              <div className="flex items-center justify-center gap-3 text-sm flex-wrap" style={{ color: BRAND.textMute }}>
                 <button onClick={() => setActiveScreen("instrucciones")} className="hover:underline" style={{ color: BRAND.gold }}>¿Cómo funciona?</button>
                 <span>·</span>
                 <button onClick={() => setActiveScreen("sobre_nosotros")} className="hover:underline" style={{ color: BRAND.gold }}>Sobre nosotros</button>
@@ -5516,7 +5529,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
                 <button onClick={() => setActiveScreen("terminos")} className="hover:underline" style={{ color: BRAND.gold }}>Términos</button>
               </div>
 
-              <div className="text-[11px]" style={{ color: BRAND.textDim }}>
+              <div className="text-[11px]" style={{ color: BRAND.textMute }}>
                 v{APP_VERSION} · traza360.app
               </div>
             </div>
@@ -5533,21 +5546,21 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
             <div className="shrink-0"><GoldIcon name="shield" size={28} /></div>
             <div className="flex-1">
               <p className="text-sm font-bold" style={{ color: BRAND.gold }}>¿Querés entrar más rápido?</p>
-              <p className="text-xs mt-1" style={{ color: BRAND.textMute }}>Configurá un PIN de 4 dígitos para no escribir email y contraseña cada vez.</p>
+              <p className="text-sm mt-1" style={{ color: BRAND.textLight }}>Configurá un PIN de 4 dígitos para no escribir email y contraseña cada vez.</p>
               <div className="flex gap-2 mt-3">
                 <button onClick={() => { setShowPinPrompt(false); setActiveScreen("pin_setup"); }}
-                  className="rounded-lg px-3 py-1.5 text-xs font-bold"
+                  className="rounded-lg px-3 py-1.5 text-sm font-bold"
                   style={{ background: BRAND.goldGradient, color: BRAND.black }}>
                   Configurar PIN
                 </button>
                 <button onClick={() => { setShowPinPrompt(false); try { localStorage.setItem("traza360_pin_prompt_dismissed", "1"); } catch(e){} }}
-                  className="rounded-lg px-3 py-1.5 text-xs"
-                  style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>
+                  className="rounded-lg px-3 py-1.5 text-sm"
+                  style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.textLight }}>
                   Ahora no
                 </button>
               </div>
             </div>
-            <button onClick={() => { setShowPinPrompt(false); try { localStorage.setItem("traza360_pin_prompt_dismissed", "1"); } catch(e){} }} className="text-base" style={{ color: BRAND.textDim }}>×</button>
+            <button onClick={() => { setShowPinPrompt(false); try { localStorage.setItem("traza360_pin_prompt_dismissed", "1"); } catch(e){} }} className="text-base" style={{ color: BRAND.textMute }}>×</button>
           </div>
         </div>
       )}
@@ -5559,7 +5572,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
             <div className="text-center mb-4">
               <div className="mx-auto mb-2 flex justify-center"><GoldIcon name="panic" size={48} /></div>
               <h3 className="text-lg font-bold" style={{ color: BRAND.red }}>Alerta enviada</h3>
-              <p className="text-xs mt-1" style={{ color: BRAND.textMute }}>Tu contacto recibió el WhatsApp con tu ubicación</p>
+              <p className="text-sm mt-1" style={{ color: BRAND.textLight }}>Tu contacto recibió el WhatsApp con tu ubicación</p>
             </div>
             <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
               <div className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: BRAND.gold }}>Tu contacto puede responder con</div>
@@ -5575,7 +5588,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
                   </div>
                 ))}
               </div>
-              <p className="text-[12px] text-center" style={{ color: BRAND.textMute }}>Cuando responda, verás su emoji acá</p>
+              <p className="text-[12px] text-center" style={{ color: BRAND.textLight }}>Cuando responda, verás su emoji acá</p>
               <div className="grid grid-cols-2 gap-2 mt-3">
                 <button onClick={() => { if(contactos.length>0) enviarWhatsApp(contactos[0].telefono,"SIGO EN PELIGRO - necesito ayuda urgente"); }}
                   className="rounded-lg py-2 text-center active:scale-95" style={{ background: "rgba(220,38,38,0.15)", border: `1px solid ${BRAND.red}50` }}>
@@ -5587,7 +5600,7 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
                 </button>
               </div>
             </div>
-            <button onClick={() => setPanicoEnviado(false)} className="w-full rounded-xl py-3 text-sm" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.textMute }}>Cerrar</button>
+            <button onClick={() => setPanicoEnviado(false)} className="w-full rounded-xl py-3 text-sm" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.textLight }}>Cerrar</button>
           </div>
         </div>
       )}
@@ -5625,7 +5638,7 @@ function CalculadoraScreen({ onUnlock }) {
   const keys = ["7","8","9","÷","4","5","6","×","1","2","3","-","0",".","=","+","C"];
   return (
     <div className="min-h-screen bg-[#1a1a1a] flex flex-col items-center justify-end pb-8 px-4">
-      <div className="w-full max-w-sm mt-8 mb-auto"><div className="text-center text-slate-400 text-xs mb-2">Calculadora</div></div>
+      <div className="w-full max-w-sm mt-8 mb-auto"><div className="text-center text-slate-400 text-sm mb-2">Calculadora</div></div>
       <div className="w-full max-w-sm mb-4"><div className="rounded-2xl bg-[#222] p-6 text-right"><div className="text-4xl font-light text-white font-mono">{display}</div></div></div>
       <div className="w-full max-w-sm grid grid-cols-4 gap-2">
         {keys.map(k => (
@@ -5775,7 +5788,7 @@ export default function App() {
     <div className="flex min-h-screen items-center justify-center" style={{ background: BRAND.blackBg }}>
       <div className="text-center">
         <div className="mb-4 flex items-center justify-center"><PinEyeLogo size={80} showText={false} /></div>
-        <div className="text-xs mt-2" style={{ color: BRAND.gold }}>Cargando...</div>
+        <div className="text-sm mt-2" style={{ color: BRAND.gold }}>Cargando...</div>
       </div>
     </div>
   );
