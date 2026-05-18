@@ -4834,13 +4834,15 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
       const urlPublica = `${window.location.origin}/live/${nuevoToken}`;
       const msgBase = mensaje || `${nombreUsuario} compartió su movimiento en vivo. Si no cancela antes de las ${hora}, algo pasó.`;
 
-      await supabase.from("live_sessions").insert({
-        token: nuevoToken, user_id: authUser?.id, nombre_usuario: nombreUsuario,
-        modulo: "turno_seguro", mensaje: msgBase,
-        started_at: new Date().toISOString(), expires_at: expira.toISOString(),
-       cancelado_at: null,
-          contactos_ids: JSON.stringify(Array.isArray(contactosMod) ? contactosMod.map(function(c) { return c.id; }) : []), 
-      }).catch(e => console.warn("DB:", e));
+      try {
+          await supabase.from("live_sessions").insert({
+            token: nuevoToken, user_id: authUser?.id, nombre_usuario: nombreUsuario,
+            modulo: "turno_seguro", mensaje: msgBase,
+            started_at: new Date().toISOString(), expires_at: expira.toISOString(),
+            cancelado_at: null,
+            contactos_ids: JSON.stringify(Array.isArray(contactosMod) ? contactosMod.map(function(c) { return c.id; }) : [])
+          });
+        } catch(dbErr) { console.warn("DB:", dbErr); }
 
       setToken(nuevoToken); setExpiresAt(expira);
 
