@@ -4838,7 +4838,7 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
         token: nuevoToken, user_id: authUser?.id, nombre_usuario: nombreUsuario,
         modulo: "turno_seguro", mensaje: msgBase,
         started_at: new Date().toISOString(), expires_at: expira.toISOString(),
-        cancelado_at: null, contactos_ids: JSON.stringify(contactosMod.map(c => c.id)),
+        cancelado_at: null, contactos_ids: JSON.stringify(contactosMod || []).map(c => c.id)),
       }).catch(e => console.warn("DB:", e));
 
       setToken(nuevoToken); setExpiresAt(expira);
