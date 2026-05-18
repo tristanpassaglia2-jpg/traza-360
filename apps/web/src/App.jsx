@@ -179,6 +179,23 @@ async function sendWhatsAppAPI(numero, text) {
     const hora = ahora.toLocaleString('es-AR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
     // Limpiar texto para Meta (sin emojis ni caracteres especiales)
     const textoLimpio = "Alerta activada - necesito ayuda";
+   // Guardar alerta en DB y generar link para contactos
+        const alertaId = crypto.randomUUID();
+        try {
+          await supabase.from("alertas").insert({
+            id: alertaId,
+            usuario_id: userData?.data?.user?.id || null,
+            tipo: "alerta_emergencia",
+            modulo: "violencia de genero",
+            mensaje: textoLimpio,
+            latitud: location?.lat || null,
+            longitud: location?.lng || null,
+            link_mapa: location ? "https://maps.google.com/?q=" + location.lat + "," + location.lng : null,
+            enviado_a: [numLimpio],
+            creado_en: new Date().toISOString()
+          });
+        } catch(e) { console.warn("DB alerta:", e); }
+        const linkAlerta = "https://traza360.app/alerta/" + alertaId;  
     // Enviar via Edge Function
     const response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
       method: "POST",
@@ -186,7 +203,7 @@ async function sendWhatsAppAPI(numero, text) {
       body: JSON.stringify({ 
   to: numLimpio, 
   template: "alerta_emergencia", 
-  params: [nombre.substring(0,60), textoLimpio, hora, "Seguridad"],
+  params: [nombre.substring(0,60), textoLimpio + " - Ver: traza360.app/alerta/" + alertaId, hora, "Seguridad"],
   usuario_id: userData?.data?.user?.id || null,
   modulo: "violencia de genero",
   mensaje: textoLimpio,
