@@ -5305,7 +5305,9 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
   const [activeModule, setActiveModule] = useState(null);
   const [loggingOut, setLoggingOut] = useState(false);
   const [contactos, setContactos] = useState([]);
-  const [panicoEnviado, setPanicoEnviado]   = useState(false);
+  const [panicoEnviado, setPanicoEnviado] = useState(false);
+const [alertaActualId, setAlertaActualId] = useState(null);
+const [respuestasPanico, setRespuestasPanico] = useState({}); 
   const [showRutaSegura, setShowRutaSegura] = useState(false); // v19.9
   // v19.7: state para modal GPS y banner config
   const [showGpsModal, setShowGpsModal] = useState(false);
