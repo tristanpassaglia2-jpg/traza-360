@@ -5395,13 +5395,14 @@ function PanelPostPanico({ alertaActualId, respuestasPanico, setRespuestasPanico
         schema: "public",
         table: "respuestas_contacto",
         filter: "alerta_id=eq." + alertaActualId
-      }, function(payload) {
+     }, function(payload) {
+                console.log("REALTIME: respuesta recibida!", payload);
         const r = payload.new;
         setRespuestasPanico(function(prev) {
           return Object.assign({}, prev, { [r.button_id]: { hora: new Date(r.timestamp || Date.now()).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }) } });
         });
       })
-      .subscribe();
+      .subscribe(function(status) { console.log("REALTIME canal status:", status); });
     return function() { supabase.removeChannel(canal); };
   }, [alertaActualId]);
 
