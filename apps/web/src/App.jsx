@@ -5463,7 +5463,7 @@ function PanelPostPanico({ alertaActualId, respuestasPanico, setRespuestasPanico
   );
 }
   async function handlePanico() {
-    if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza primero."); return; }
+  if (contactos.length === 0 && contactosGlobales.length === 0) { alert("Configurá al menos 1 contacto de confianza primero."); return; }
 
     // v19.7: Si nunca aceptó GPS, mostrar modal explicativo primero
     const gpsAccepted = localStorage.getItem("traza360_gps_consent");
