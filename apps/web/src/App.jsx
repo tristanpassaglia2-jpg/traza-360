@@ -5388,7 +5388,7 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
   }
 function PanelPostPanico({ alertaActualId, respuestasPanico, setRespuestasPanico, contactos, enviarWhatsApp, setPanicoEnviado, setAlertaActualId, supabase, BRAND, GoldIcon }) {
   React.useEffect(function() {
-    if (!alertaActualId) return;
+    console.log("REALTIME: alertaActualId =", alertaActualId); if (!alertaActualId) return;
     const canal = supabase.channel("resp_" + alertaActualId)
       .on("postgres_changes", {
         event: "INSERT",
