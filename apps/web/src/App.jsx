@@ -5386,7 +5386,82 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
     else if (key === "instrucciones") setActiveScreen("instrucciones");
     else { const mod = MODULES.find(m => m.key === key); if (mod) setActiveModule(mod); }
   }
+function PanelPostPanico({ alertaActualId, respuestasPanico, setRespuestasPanico, contactos, enviarWhatsApp, setPanicoEnviado, setAlertaActualId, supabase, BRAND, GoldIcon }) {
+  React.useEffect(function() {
+    if (!alertaActualId) return;
+    const canal = supabase.channel("resp_" + alertaActualId)
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "respuestas_contacto",
+        filter: "alerta_id=eq." + alertaActualId
+      }, function(payload) {
+        const r = payload.new;
+        setRespuestasPanico(function(prev) {
+          return Object.assign({}, prev, { [r.button_id]: { hora: new Date(r.timestamp || Date.now()).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }) } });
+        });
+      })
+      .subscribe();
+    return function() { supabase.removeChannel(canal); };
+  }, [alertaActualId]);
 
+  function cerrar() { setPanicoEnviado(false); setAlertaActualId(null); setRespuestasPanico({}); }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 px-5 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-3xl p-6 shadow-2xl" style={{ background: "#000000", border: "2px solid " + BRAND.red }}>
+        <div className="text-center space-y-4">
+          <div className="py-4">
+            <div className="mx-auto mb-2 flex justify-center"><GoldIcon name="panic" size={48} /></div>
+            <h3 className="text-lg font-bold" style={{ color: BRAND.red }}>Alerta enviada</h3>
+            <p className="text-sm mt-1" style={{ color: BRAND.textLight }}>Tu contacto recibió el WhatsApp con tu ubicación</p>
+          </div>
+          <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(212,175,55,0.05)", border: "1px solid " + BRAND.border }}>
+            <div className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: "rgba(212,175,55,0.8)" }}>TU CONTACTO PUEDE RESPONDER CON</div>
+            <div className="grid grid-cols-3 gap-3 mb-3">
+              {[
+                { key: "salgo", emoji: "\u{1F697}", text: "Salgo" },
+                { key: "recibi", emoji: "\u2705", text: "Recibí" },
+                { key: "ubicacion", emoji: "\u{1F4CD}", text: "Ubicación" },
+              ].map(function(r) {
+                const resp = respuestasPanico[r.key];
+                return (
+                  <div key={r.key} className="rounded-lg py-3 text-center" style={{ background: resp ? "rgba(34,197,94,0.15)" : "linear-gradient(145deg, #101018, #08080c)", border: resp ? "1px solid rgba(34,197,94,0.5)" : "1px solid " + BRAND.border }}>
+                    <div className="text-2xl">{r.emoji}</div>
+                    <div className="text-[11px] mt-1 font-medium" style={{ color: resp ? "rgba(34,197,94,1)" : BRAND.gold }}>{r.text}</div>
+                    {resp && <div className="text-[10px] mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>{resp.hora}</div>}
+                  </div>
+                );
+              })}
+            </div>
+            {Object.keys(respuestasPanico).length === 0
+              ? <p className="text-[12px] text-center" style={{ color: "rgba(255,255,255,0.4)" }}>Cuando responda, verás su emoji acá</p>
+              : <p className="text-[12px] text-center" style={{ color: "rgba(34,197,94,0.8)" }}>✅ Tu contacto respondió</p>
+            }
+          </div>
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <button onClick={function() { if(contactos.length>0) enviarWhatsApp(contactos[0].telefono,"SIGO EN PELIGRO - necesito ayuda urgente"); }}
+              className="rounded-lg py-2 text-center active:scale-95"
+              style={{ background: "rgba(220,38,38,0.15)", border: "1px solid " + BRAND.red }}>
+              <div className="text-xl">{"\u{1F6A8}"}</div>
+              <div className="text-[11px] mt-0.5" style={{ color: BRAND.red }}>Sigo en peligro</div>
+            </button>
+            <button onClick={function() { if(contactos.length>0) { enviarWhatsApp(contactos[0].telefono,"Estoy bien. Falsa alarma."); cerrar(); } }}
+              className="rounded-lg py-2 text-center active:scale-95"
+              style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)" }}>
+              <div className="text-xl">{"\u2705"}</div>
+              <div className="text-[11px] mt-0.5 text-green-400">Estoy bien</div>
+            </button>
+          </div>
+          <button onClick={cerrar} className="w-full rounded-xl py-3 text-sm font-semibold mt-2"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid " + BRAND.border, color: BRAND.textLight }}>
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
   async function handlePanico() {
     if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza primero."); return; }
 
