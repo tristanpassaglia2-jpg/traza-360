@@ -5387,25 +5387,23 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
     else { const mod = MODULES.find(m => m.key === key); if (mod) setActiveModule(mod); }
   }
 function PanelPostPanico({ alertaActualId, respuestasPanico, setRespuestasPanico, contactos, enviarWhatsApp, setPanicoEnviado, setAlertaActualId, supabase, BRAND, GoldIcon }) {
-  React.useEffect(function() {
-    console.log("REALTIME: alertaActualId =", alertaActualId); if (!alertaActualId) return;
-    const canal = supabase.channel("resp_" + alertaActualId)
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "respuestas_contacto",
-        filter: "alerta_id=eq." + alertaActualId
-     }, function(payload) {
-                console.log("REALTIME: respuesta recibida!", payload);
-        const r = payload.new;
-        setRespuestasPanico(function(prev) {
-          return Object.assign({}, prev, { [r.button_id]: { hora: new Date(r.timestamp || Date.now()).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }) } });
+React.useEffect(function() {
+      if (!alertaActualId) return;
+      console.log("POLLING: escuchando respuestas para", alertaActualId);
+      var intervalo = setInterval(function() {
+        supabase.from("respuestas_contacto").select("*").eq("alerta_id", alertaActualId).then(function(res) {
+          if (res.data && res.data.length > 0) {
+            console.log("POLLING: encontradas", res.data.length, "respuestas");
+            var nuevas = {};
+            res.data.forEach(function(r) {
+              nuevas[r.button_id] = { hora: new Date(r.timestamp || Date.now()) };
+            });
+            setRespuestasPanico(nuevas);
+          }
         });
-      })
-      .subscribe(function(status) { console.log("REALTIME canal status:", status); });
-    return function() { supabase.removeChannel(canal); };
-  }, [alertaActualId]);
-
+      }, 5000);
+      return function() { clearInterval(intervalo); };
+    }, [alertaActualId]);
   function cerrar() { setPanicoEnviado(false); setAlertaActualId(null); setRespuestasPanico({}); }
 
   return (
