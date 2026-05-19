@@ -499,10 +499,10 @@ function OnboardingScreen({ onComplete }) {
       desc: "",
       cta: "Continuar →",
       modules: [
-        { key: "mi_escudo",    iconName: "shield",   label: "Para mí — Violencia o riesgo" },
-        { key: "los_cuido",    iconName: "teen",     label: "Mi hijo/a adolescente" },
-        { key: "turno_seguro", iconName: "night",    label: "Salidas nocturnas / trabajo de riesgo" },
-        { key: "te_cuido",     iconName: "eye",      label: "Cuidar a alguien a distancia" },
+        { key: "mi_escudo",    iconName: "shield",   label: "Para mí — Violencia de género" },
+        { key: "turno_seguro", iconName: "night",    label: "Para mi entorno — Noche segura" },
+        { key: "te_cuido",     iconName: "eye",      label: "Para cuidar a alguien a distancia" },
+        { key: "los_cuido",    iconName: "teen",     label: "Para adolescentes — Padres/hijos" },
       ],
     },
     {
@@ -510,7 +510,7 @@ function OnboardingScreen({ onComplete }) {
       iconName: "contacts",
       title: "Agregá contactos de confianza",
       subtitle: "Sin contactos no podemos alertar a nadie",
-      desc: "Necesitás al menos 1 contacto de confianza con WhatsApp. Podés hacerlo ahora o más tarde desde el panel.",
+      desc: "Necesitás al menos 1 contacto de confianza con WhatsApp para comenzar.",
       cta: "Empezar a usar la app →",
     },
   ];
@@ -2109,26 +2109,46 @@ const MODULES = [
   { key: "mi_escudo", iconName: "shield", emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género", desc: "Alerta silenciosa, ubicación y red de apoyo.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
-      { key: "testigo",  iconName: "mic", icon: "🔴", name: "Grabar Evidencias", desc: "Audio + foto frontal y trasera → nube y dispositivo.", type: "modo_testigo" },
+      { key: "testigo",  iconName: "mic", icon: "🔴", name: "Grabar evidencias modo multifunción", desc: "Audio + foto frontal y trasera → nube y dispositivo.", type: "modo_testigo" },
       { key: "panico", iconName: "panic", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación a tus contactos.", type: "alert_contacts", message: "ALERTA — Botón de pánico activado. Necesito ayuda urgente." },
-      { key: "estoy_en", iconName: "pin", icon: "\u{1F4CD}", name: "Estoy en...", desc: "Avisa dónde estás + ubicación GPS.", type: "alert_contacts", message: "Estoy en [completar]." },
-      { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Ingreso a este lugar", desc: "Activá tu tiempo de estadía. Si no desactivás, se envía tu ubicación en tiempo real.", type: "checkin", titulo: "Ingreso a este lugar — Violencia de Género" },
-      { key: "share", iconName: "eye", icon: "\u{1F4F2}", name: "Compartir mi movimiento en vivo", desc: "El contacto ve tu mapa moviéndose en tiempo real. Sin instalar nada.", type: "ruta_segura" },
+      { key: "estoy_en", iconName: "pin", icon: "\u{1F4CD}", name: "Estoy en...", desc: "Escribí el nombre de la persona con quien vas a reunirte. Envía nombre + ubicación en tiempo real a tus contactos elegidos.", type: "alert_contacts", message: "Estoy en [completar]." },
+      { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Ingreso a este lugar", desc: "Escribí el nombre del lugar donde ingresás + activá tiempo estimado de tu estadía. Si no desactivás, se da aviso automáticamente a tus contactos con tu ubicación.", type: "checkin", titulo: "Ingreso a este lugar — Violencia de Género" },
+      { key: "share", iconName: "eye", icon: "\u{1F4F2}", name: "Compartir mi movimiento en vivo", desc: "Tus contactos seleccionados ven tu mapa moviéndose en tiempo real. Ellos no instalan nada, reciben tu información cuando vos activás.", type: "ruta_segura" },
       { key: "grabar", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación audio silenciosa → nube.", type: "record_audio" },
       { key: "uber", iconName: "car", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber con destino.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
       { key: "taxi", iconName: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono de taxi.", type: "taxi" },
       { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver todas las grabaciones guardadas.", type: "evidencias" },
     ]},
+  // v19.1: Renombrado "Noche Segura" → "Noche Segura"
+  // Motivo: Nicho mucho más grande (jóvenes que salen de noche + trabajadores nocturnos).
+  // "Salí tranqui. Volvé tranqui."
+  { key: "turno_seguro", iconName: "night", emoji: "\u{1F303}", title: "Noche Segura", desc: "Para jóvenes que salen de noche, acompañantes, repartidores o cualquier situación de riesgo donde necesites apoyo de amigos o conocidos.",
+    color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
+    actions: [
+      { key: "testigo",     iconName: "mic",   icon: "🔴", name: "Grabar Evidencias", desc: "Audio + foto frontal y trasera → nube y dispositivo.", type: "modo_testigo" },
+      { key: "ruta_segura", iconName: "eye",   icon: "\u{1F4CD}", name: "Compartir mi movimiento en vivo", desc: "Tus contactos seleccionados ven tu mapa moviéndose en tiempo real. Ellos no instalan nada, reciben tu información cuando vos activás.", type: "ruta_segura" },
+      { key: "panico", iconName: "panic", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "SOS — Necesito ayuda urgente." },
+      { key: "sospechoso_lugar", iconName: "alert", icon: "\u26A0\u{FE0F}", name: "Entro a lugar sospechoso", desc: "Guarda dirección + timer. Si no confirmás, alerta automática.", type: "checkin", titulo: "Lugar sospechoso — Noche Segura" },
+      { key: "desconocido", iconName: "person", icon: "\u{1F6B6}", name: "Salgo con desconocido/a", desc: "Avisa contactos + nombre + ubicación.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
+      { key: "perdido", iconName: "pin", icon: "\u{1F4CD}", name: "Me perdí", desc: "Comparte GPS en vivo a tus contactos.", type: "alert_contacts", message: "Me perdí. Compartiendo mi ubicación en vivo. Por favor ayudame a volver." },
+      { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Ingreso a este lugar", desc: "Activá tu tiempo de estadía. Si no desactivás, se envía tu ubicación en tiempo real.", type: "checkin", titulo: "Ingreso a este lugar — Noche Segura" },
+      { key: "grabar", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación silenciosa → nube.", type: "record_audio" },
+      { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
+      { key: "maps", iconName: "home", icon: "\u{1F3E1}", name: "Llegar a casa", desc: "Activa GPS hasta llegar a casa.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
+      { key: "uber", iconName: "car", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
+      { key: "taxi", iconName: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono taxi.", type: "taxi" },
+    ]},
+
   { key: "los_cuido", iconName: "teen", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro", desc: "Salidas, regresos y anti-bullying.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
-      { key: "geocercas", iconName: "pin", icon: "📍", name: "Geocercas Emocionales", desc: "Zonas seguras con alertas automáticas. 'Salió del colegio a las 17:23.'", type: "geocercas" },
-      { key: "ayuda", iconName: "panic", icon: "\u{1F6A8}", name: "AYUDA", desc: "Alerta máxima urgencia al padre.", type: "alert_contacts", message: "AYUDA — Necesito ayuda urgente." },
+      { key: "maps", iconName: "home", icon: "\u{1F3E1}", name: "Llegar a casa", desc: "Abre GPS a tu domicilio.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
+      { key: "share", iconName: "eye", icon: "\u{1F4CD}", name: "Compartir mi movimiento en vivo", desc: "Tus contactos seleccionados ven tu mapa moviéndose en tiempo real. Ellos no instalan nada, reciben tu información cuando vos activás.", type: "ruta_segura" },
       { key: "bullying", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Bullying - Grabar evidencia", desc: "Grabación silenciosa real.", type: "record_audio" },
+      { key: "geocercas", iconName: "pin", icon: "📍", name: "Cerco de seguridad", desc: "Configurá un radio seguro. Si sale de ese radio se envía alerta y ubicación en tiempo real.", type: "geocercas" },
+      { key: "ayuda", iconName: "panic", icon: "\u{1F6A8}", name: "AYUDA", desc: "Alerta máxima urgencia al padre.", type: "alert_contacts", message: "AYUDA — Necesito ayuda urgente." },
       { key: "cole", iconName: "school", icon: "\u{1F3EB}", name: "Buscame por el cole", desc: "Pide al padre que lo busque.", type: "alert_contacts", message: "URGENTE — Necesito que me busquen por el colegio." },
       { key: "voy_a", iconName: "home", icon: "\u{1F3E0}", name: "Voy a lo de...", desc: "Avisa a dónde va + nombre.", type: "alert_contacts", message: "Voy a lo de [completar]." },
-      { key: "maps", iconName: "home", icon: "\u{1F3E1}", name: "Llegar a casa", desc: "Activa GPS hasta llegar a casa.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
-      { key: "share", iconName: "eye", icon: "\u{1F4CD}", name: "Compartir mi movimiento en vivo", desc: "El contacto ve tu mapa moviéndose en tiempo real. Sin instalar nada.", type: "ruta_segura" },
       { key: "uber", iconName: "car", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
       { key: "taxi", iconName: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono taxi.", type: "taxi" },
       { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
@@ -2174,25 +2194,6 @@ const MODULES = [
     ]},
   */
 
-  // v19.1: Renombrado "Noche Segura" → "Noche Segura"
-  // Motivo: Nicho mucho más grande (jóvenes que salen de noche + trabajadores nocturnos).
-  // "Salí tranqui. Volvé tranqui."
-  { key: "turno_seguro", iconName: "night", emoji: "\u{1F303}", title: "Noche Segura", desc: "Para jóvenes que salen de noche, acompañantes, repartidores o cualquier situación de riesgo donde necesites apoyo de amigos o conocidos.",
-    color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
-    actions: [
-      { key: "testigo",     iconName: "mic",   icon: "🔴", name: "Grabar Evidencias", desc: "Audio + foto frontal y trasera → nube y dispositivo.", type: "modo_testigo" },
-      { key: "ruta_segura", iconName: "eye",   icon: "\u{1F4CD}", name: "Compartir mi movimiento en vivo", desc: "El contacto ve tu mapa moviéndose en tiempo real. Sin instalar nada.", type: "ruta_segura" },
-      { key: "panico", iconName: "panic", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "SOS — Necesito ayuda urgente." },
-      { key: "sospechoso_lugar", iconName: "alert", icon: "\u26A0\u{FE0F}", name: "Entro a lugar sospechoso", desc: "Guarda dirección + timer. Si no confirmás, alerta automática.", type: "checkin", titulo: "Lugar sospechoso — Noche Segura" },
-      { key: "desconocido", iconName: "person", icon: "\u{1F6B6}", name: "Salgo con desconocido/a", desc: "Avisa contactos + nombre + ubicación.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
-      { key: "perdido", iconName: "pin", icon: "\u{1F4CD}", name: "Me perdí", desc: "Comparte GPS en vivo a tus contactos.", type: "alert_contacts", message: "Me perdí. Compartiendo mi ubicación en vivo. Por favor ayudame a volver." },
-      { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Ingreso a este lugar", desc: "Activá tu tiempo de estadía. Si no desactivás, se envía tu ubicación en tiempo real.", type: "checkin", titulo: "Ingreso a este lugar — Noche Segura" },
-      { key: "grabar", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación silenciosa → nube.", type: "record_audio" },
-      { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
-      { key: "maps", iconName: "home", icon: "\u{1F3E1}", name: "Llegar a casa", desc: "Activa GPS hasta llegar a casa.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
-      { key: "uber", iconName: "car", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
-      { key: "taxi", iconName: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono taxi.", type: "taxi" },
-    ]},
 ];
 
 // ─── MODULE CARD ────────────────────────────
@@ -2806,9 +2807,9 @@ function InstruccionesScreen({ onBack }) {
               <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>Los 4 módulos de protección</h3>
               {[
                 { icon: "shield", titulo: "Violencia de Género", desc: "Para personas en situación de riesgo. Botón de pánico, grabación silenciosa, botón de ingreso cuando entrás a un lugar desconocido, ubicación en tiempo real." },
-                { icon: "teen", titulo: "Adolescente Seguro", desc: "Para que un adolescente avise a sus padres: AYUDA, bullying con evidencia, buscarlo del cole, llegar a casa con GPS, llamar taxi/Uber." },
                 { icon: "night", titulo: "Noche Segura", desc: "Para jóvenes que salen de noche, acompañantes, repartidores y cualquier situación de riesgo. Pánico, botón de ingreso a lugares, grabación, GPS en vivo, Uber/taxi." },
                 { icon: "eye", titulo: "Te Cuido a Distancia", desc: "Un familiar/amigo puede iniciar grabación remota CON tu aprobación. Funciona con código de vínculo de 6 dígitos." },
+                { icon: "teen", titulo: "Adolescente Seguro", desc: "Para que un adolescente avise a sus padres: AYUDA, bullying con evidencia, buscarlo del cole, llegar a casa con GPS, llamar taxi/Uber." },
               ].map((m, i) => (
                 <div key={i} className="flex gap-3 rounded-xl p-3" style={{ background: "rgba(255,255,255,0.02)" }}>
                   <div className="shrink-0 mt-0.5"><GoldIcon name={m.icon} size={24} /></div>
@@ -5105,7 +5106,7 @@ function LandingScreen({ onScreen }) {
     { icon: "📍", titulo: "Rastreo GPS preciso", desc: "Ubicación en tiempo real con actualizaciones cada 15 segundos" },
     { icon: "🔔", titulo: "Alertas instantáneas", desc: "WhatsApp inmediato a tus contactos de confianza con un solo toque" },
     { icon: "🎙️", titulo: "Grabación de evidencias", desc: "Audio y fotos automáticas guardadas en la nube al activar pánico" },
-    { icon: "📐", titulo: "Geocercas emocionales", desc: "Zonas seguras con alertas horarias para adolescentes y adultos mayores" },
+    { icon: "📐", titulo: "Cerco de seguridad", desc: "Radio seguro con alertas automáticas si alguien sale de la zona configurada" },
     { icon: "🕐", titulo: "Timer de seguridad", desc: "Si no cancelás a tiempo, alerta automática a tus contactos" },
     { icon: "🔒", titulo: "Acceso oculto", desc: "La app se disfraza de calculadora para situaciones de riesgo extremo" },
   ];
@@ -5179,29 +5180,23 @@ function LandingScreen({ onScreen }) {
         </div>
 
         <p className="text-sm leading-relaxed mx-auto max-w-xs" style={{ color: BRAND.textLight, fontFamily: FONT_BODY }}>
-          Ubicación, audio y alerta en tiempo real<br/>para quienes más te importan.
+          App multimodal para protección de personas en tiempo real.
         </p>
 
-        {/* Ratings */}
-        <div className="mt-6 flex gap-3 justify-center">
-          {[
-            { store: "App Store", rating: "4.8", stars: "★★★★★" },
-            { store: "Google Play", rating: "4.7", stars: "★★★★★" },
-          ].map((s, i) => (
-            <div key={i} className="flex-1 max-w-[140px] rounded-2xl px-3 py-3" style={{ background: "rgba(201,168,76,0.06)", border: `1px solid ${BRAND.border}` }}>
-              <p className="text-[10px] font-semibold uppercase tracking-[2px]" style={{ color: BRAND.textLight }}>{s.store}</p>
-              <p className="text-2xl font-black mt-1" style={{ color: BRAND.white, fontFamily: FONT_DISPLAY }}>{s.rating}</p>
-              <p style={{ color: BRAND.gold, fontSize: 12, letterSpacing: "2px" }}>{s.stars}</p>
-            </div>
-          ))}
-        </div>
+        <p className="text-lg font-bold mt-4 mx-auto max-w-xs" style={{ color: BRAND.white }}>
+          Un botón, muchas soluciones 🗺️🎙️📷
+        </p>
+        <p className="text-xs mt-2 mx-auto max-w-xs" style={{ color: BRAND.textLight }}>
+          Traza y tus contactos te ubican, te escuchan y te miran con tu propia cámara.
+        </p>
+
       </section>
 
       {/* CTAs */}
       <div className="px-5 pb-8">
         <div className="mx-auto max-w-sm flex flex-col gap-3">
           <button onClick={() => onScreen("register")} className="w-full rounded-2xl py-4 font-black text-lg" style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.4)" }}>
-            Iniciá sesión gratis →
+            Comenzar →
           </button>
           <button onClick={() => onScreen("login")} className="w-full rounded-2xl py-3 font-bold text-sm" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid rgba(255,255,255,0.15)`, color: BRAND.white }}>
             Ya tengo cuenta → Ingresar
@@ -5237,31 +5232,6 @@ function LandingScreen({ onScreen }) {
                 <p style={{ fontSize: 13, fontWeight: 700, color: BRAND.cream, fontFamily: FONT_DISPLAY, textTransform: "uppercase", letterSpacing: "1px" }}>{t.titulo}</p>
                 <p style={{ fontSize: 13, marginTop: 3, lineHeight: 1.5, color: BRAND.textLight }}>{t.desc}</p>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* REVIEWS — estilo DGR */}
-      <section className="px-5 pb-10" style={{ background: "rgba(201,168,76,0.03)", borderTop: `1px solid ${BRAND.border}`, borderBottom: `1px solid ${BRAND.border}` }}>
-        <div className="flex items-center gap-3 pt-8 mb-6 max-w-sm mx-auto">
-          <div className="flex-1 h-px" style={{ background: BRAND.border }} />
-          <h2 style={{ fontFamily: FONT_DISPLAY, fontSize: 18, fontWeight: 700, color: BRAND.white, textTransform: "uppercase", letterSpacing: "3px", whiteSpace: "nowrap" }}>
-            Lo que dicen
-          </h2>
-          <div className="flex-1 h-px" style={{ background: BRAND.border }} />
-        </div>
-        <div className="flex flex-col gap-3 max-w-sm mx-auto pb-8">
-          {reviews.map((r, i) => (
-            <div key={i} className="rounded-2xl p-4" style={{ background: BRAND.cardBg, border: `1px solid ${BRAND.border}` }}>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full font-bold text-sm" style={{ background: BRAND.goldGradient, color: BRAND.black, fontFamily: FONT_DISPLAY }}>{r.nombre[0]}</div>
-                <div>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: BRAND.cream, fontFamily: FONT_DISPLAY }}>{r.nombre}</p>
-                  <p style={{ fontSize: 12, color: BRAND.gold, letterSpacing: "2px" }}>{"★".repeat(r.estrellas)} · {r.plataforma}</p>
-                </div>
-              </div>
-              <p style={{ fontSize: 12, lineHeight: 1.6, color: BRAND.textLight, fontStyle: "italic" }}>"{r.texto}"</p>
             </div>
           ))}
         </div>
@@ -5363,14 +5333,14 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
   // - Renombrado "Te Cuido" → "Te Cuido a Distancia"
   const quickCards = [
     { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género",    text: "Violencia de género — Alerta silenciosa, ubicación y red de apoyo." },
-    { key: "los_cuido",   emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro",   text: "Adolescente seguro — Salidas, regresos y anti-bullying." },
+    { key: "turno_seguro",emoji: "\u{1F303}", title: "Noche Segura", text: "Para jóvenes de noche, acompañantes, repartidores y cualquier situación de riesgo." },
     /* ❌ v18: Adulto Mayor comentado
     { key: "los_protejo", emoji: "\u{1FAF6}", title: "Adulto Mayor Seguro", text: "Adulto mayor — Medicamentos, caídas y asistencia." },
     */
-    { key: "turno_seguro",emoji: "\u{1F303}", title: "Noche Segura", text: "Para jóvenes de noche, acompañantes, repartidores y cualquier situación de riesgo." },
     /* ❌ v18: Hogar Seguro comentado
     { key: "mi_nido",     emoji: "\u{1F3E0}", title: "Hogar Seguro",     text: "Hogar seguro — Intrusos, accidentes y emergencias." },
     */
+    { key: "los_cuido",   emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro",   text: "Adolescente seguro — Salidas, regresos y anti-bullying." },
     // 🔄 v19: Te Cuido a Distancia FUNCIONAL — grabación remota con consentimiento
     { key: "te_cuido", emoji: "\u{1F441}\u{FE0F}", title: "Te Cuido a Distancia", text: "Activá grabación con consentimiento de la víctima." },
     { key: "contactos",   emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} configurados` },
@@ -5474,24 +5444,29 @@ React.useEffect(function() {
 
 async function ejecutarPanico() {
     // Cargar contactos frescos desde Supabase
-    let contactosParaEnviar = contactos;
+    var contactosParaEnviar = contactos;
     if (!contactosParaEnviar || contactosParaEnviar.length === 0) {
       try {
-        const { data } = await supabase.from("contactos").select("*").eq("usuario_id", authUser?.id);
-        if (data && data.length > 0) contactosParaEnviar = data;
+        var resC = await supabase.from("contactos").select("*").eq("usuario_id", authUser?.id);
+        if (resC.data && resC.data.length > 0) contactosParaEnviar = resC.data;
       } catch(e) { console.warn("Error cargando contactos:", e); }
     }
-
     if (!contactosParaEnviar || contactosParaEnviar.length === 0) {
       alert("No tenés contactos de confianza configurados.");
       return;
     }
-
-    const { location } = await getCurrentLocationWithFallback();
-    const alertaId = crypto.randomUUID();
+    var loc = await getCurrentLocationWithFallback();
+    var location = loc.location;
+    var alertaId = crypto.randomUUID();
     setAlertaActualId(alertaId);
     setRespuestasPanico({});
-
+    // Datos del usuario para el template
+    var userData = await supabase.auth.getUser();
+    var nombre = "Usuario";
+    try { nombre = userData.data.user.user_metadata.nombre || userData.data.user.user_metadata.full_name || userData.data.user.email.split("@")[0] || "Usuario"; } catch(e) {}
+    var ahora = new Date();
+    var hora = ahora.toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+    // 1. Insertar UNA SOLA alerta en DB
     try {
       await supabase.from("alertas").insert({
         id: alertaId,
@@ -5501,20 +5476,32 @@ async function ejecutarPanico() {
         mensaje: "ALERTA - Botón de pánico activado. Necesito ayuda urgente.",
         latitud: location?.lat || null,
         longitud: location?.lng || null,
-        link_mapa: location?.lat ? `https://www.google.com/maps?q=${location.lat},${location.lng}` : null,
+        link_mapa: location?.lat ? "https://www.google.com/maps?q=" + location.lat + "," + location.lng : null,
         enviado_a: contactosParaEnviar.map(function(c) { return c.telefono; }),
         creado_en: new Date().toISOString()
       });
     } catch(dbErr) { console.warn("DB alerta:", dbErr); }
-
-    const linkAlerta = "https://traza360.app/alerta/" + alertaId;
-    const msgConLink = "ALERTA - Botón de pánico activado. Necesito ayuda urgente. Ver: " + linkAlerta;
-    const msg = buildMessageWithReply(msgConLink, location);
-
-    for (const c of contactosParaEnviar) {
-      try { await enviarWhatsApp(c.telefono, msg); } catch(e) { console.warn("WA:", e); }
+    // 2. Enviar WhatsApp DIRECTAMENTE (sin pasar por sendWhatsAppAPI que crea alertas duplicadas)
+    for (var i = 0; i < contactosParaEnviar.length; i++) {
+      try {
+        var numLimpio = contactosParaEnviar[i].telefono.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
+        var response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: numLimpio,
+            template: "alerta_emergencia",
+            params: [nombre.substring(0,60), "Alerta activada - necesito ayuda - Ver: traza360.app/alerta/" + alertaId, hora, "Seguridad"],
+            alerta_id: alertaId
+          })
+        });
+        var data = await response.json();
+        if (data.messages && data.messages[0]) {
+          console.log("WhatsApp enviado OK:", data.messages[0].id);
+          try { await supabase.from("alertas").update({ wamid: data.messages[0].id }).eq("id", alertaId); } catch(e) {}
+        } else { console.warn("WhatsApp API error:", data.error || data); }
+      } catch(e) { console.warn("WA error:", e); }
     }
-
     reproducirSonido();
     setPanicoEnviado(true);
   }
