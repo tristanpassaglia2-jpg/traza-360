@@ -5475,13 +5475,26 @@ function PanelPostPanico({ alertaActualId, respuestasPanico, setRespuestasPanico
     await ejecutarPanico();
   }
 
- async function ejecutarPanico() {
+async function ejecutarPanico() {
+    // Cargar contactos frescos desde Supabase
+    let contactosParaEnviar = contactos;
+    if (!contactosParaEnviar || contactosParaEnviar.length === 0) {
+      try {
+        const { data } = await supabase.from("contactos").select("*").eq("usuario_id", authUser?.id);
+        if (data && data.length > 0) contactosParaEnviar = data;
+      } catch(e) { console.warn("Error cargando contactos:", e); }
+    }
+
+    if (!contactosParaEnviar || contactosParaEnviar.length === 0) {
+      alert("No tenés contactos de confianza configurados.");
+      return;
+    }
+
     const { location } = await getCurrentLocationWithFallback();
     const alertaId = crypto.randomUUID();
     setAlertaActualId(alertaId);
     setRespuestasPanico({});
 
-    // Insertar alerta en Supabase
     try {
       await supabase.from("alertas").insert({
         id: alertaId,
@@ -5492,24 +5505,22 @@ function PanelPostPanico({ alertaActualId, respuestasPanico, setRespuestasPanico
         latitud: location?.lat || null,
         longitud: location?.lng || null,
         link_mapa: location?.lat ? `https://www.google.com/maps?q=${location.lat},${location.lng}` : null,
-        enviado_a: contactos.map(function(c) { return c.telefono; }),
+        enviado_a: contactosParaEnviar.map(function(c) { return c.telefono; }),
         creado_en: new Date().toISOString()
       });
     } catch(dbErr) { console.warn("DB alerta:", dbErr); }
 
-    // Enviar WhatsApp a TODOS los contactos con link
     const linkAlerta = "https://traza360.app/alerta/" + alertaId;
     const msgConLink = "ALERTA - Botón de pánico activado. Necesito ayuda urgente. Ver: " + linkAlerta;
     const msg = buildMessageWithReply(msgConLink, location);
 
-    for (const c of contactos) {
+    for (const c of contactosParaEnviar) {
       try { await enviarWhatsApp(c.telefono, msg); } catch(e) { console.warn("WA:", e); }
     }
 
     reproducirSonido();
     setPanicoEnviado(true);
   }
-
   function aceptarGps() {
     try { localStorage.setItem("traza360_gps_consent", new Date().toISOString()); } catch(e){}
     setShowGpsModal(false);
