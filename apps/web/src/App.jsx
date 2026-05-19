@@ -5465,13 +5465,11 @@ function PanelPostPanico({ alertaActualId, respuestasPanico, setRespuestasPanico
   async function handlePanico() {
   if (contactos.length === 0) { console.warn("sin contactos en modulo"); }
 
-    // v19.7: Si nunca aceptó GPS, mostrar modal explicativo primero
-    const gpsAccepted = localStorage.getItem("traza360_gps_consent");
-    if (!gpsAccepted) {
-      setPendingGpsAction(() => ejecutarPanico);
-      setShowGpsModal(true);
-      return;
-    }
+  // v19.8: Si nunca aceptó GPS, guardar consent y continuar (no bloquear pánico)
+      const gpsAccepted = localStorage.getItem("traza360_gps_consent");
+      if (!gpsAccepted) {
+          localStorage.setItem("traza360_gps_consent", "true");
+      }
     await ejecutarPanico();
   }
 
