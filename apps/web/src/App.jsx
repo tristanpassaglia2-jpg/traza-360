@@ -5398,10 +5398,37 @@ function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans 
     await ejecutarPanico();
   }
 
-  async function ejecutarPanico() {
+ async function ejecutarPanico() {
     const { location } = await getCurrentLocationWithFallback();
-    const msg = buildMessageWithReply("ALERTA — Botón de pánico activado. Necesito ayuda urgente.", location);
-    const result = await enviarWhatsApp(contactos[0].telefono, msg);
+    const alertaId = crypto.randomUUID();
+    setAlertaActualId(alertaId);
+    setRespuestasPanico({});
+
+    // Insertar alerta en Supabase
+    try {
+      await supabase.from("alertas").insert({
+        id: alertaId,
+        usuario_id: authUser?.id || null,
+        tipo: "panico",
+        modulo: "boton_flotante",
+        mensaje: "ALERTA - Botón de pánico activado. Necesito ayuda urgente.",
+        latitud: location?.lat || null,
+        longitud: location?.lng || null,
+        link_mapa: location?.lat ? `https://www.google.com/maps?q=${location.lat},${location.lng}` : null,
+        enviado_a: contactos.map(function(c) { return c.telefono; }),
+        creado_en: new Date().toISOString()
+      });
+    } catch(dbErr) { console.warn("DB alerta:", dbErr); }
+
+    // Enviar WhatsApp a TODOS los contactos con link
+    const linkAlerta = "https://traza360.app/alerta/" + alertaId;
+    const msgConLink = "ALERTA - Botón de pánico activado. Necesito ayuda urgente. Ver: " + linkAlerta;
+    const msg = buildMessageWithReply(msgConLink, location);
+
+    for (const c of contactos) {
+      try { await enviarWhatsApp(c.telefono, msg); } catch(e) { console.warn("WA:", e); }
+    }
+
     reproducirSonido();
     setPanicoEnviado(true);
   }
