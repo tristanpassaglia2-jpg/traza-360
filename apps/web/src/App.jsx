@@ -5406,7 +5406,7 @@ React.useEffect(function() {
                   <div key={r.key} className="rounded-lg py-3 text-center" style={{ background: resp ? "rgba(34,197,94,0.15)" : "linear-gradient(145deg, #101018, #08080c)", border: resp ? "1px solid rgba(34,197,94,0.5)" : "1px solid " + BRAND.border }}>
                     <div className="text-2xl">{r.emoji}</div>
                     <div className="text-[11px] mt-1 font-medium" style={{ color: resp ? "rgba(34,197,94,1)" : BRAND.gold }}>{r.text}</div>
-                    {resp && <div className="text-[10px] mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>{resp.hora}</div>}
+                    {resp && <div className="text-[10px] mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>{resp.hora.toLocaleTimeString ? resp.hora.toLocaleTimeString("es-AR", {hour:"2-digit",minute:"2-digit"}) : ""}</div>}
                   </div>
                 );
               })}
