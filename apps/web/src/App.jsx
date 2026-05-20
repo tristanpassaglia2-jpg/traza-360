@@ -5359,19 +5359,27 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
 function PanelPostPanico({ alertaActualId, respuestasPanico, setRespuestasPanico, contactos, enviarWhatsApp, setPanicoEnviado, setAlertaActualId, supabase, BRAND, GoldIcon }) {
 React.useEffect(function() {
       if (!alertaActualId) return;
-      console.log("POLLING: escuchando respuestas para", alertaActualId);
+      var panicoTime = new Date().toISOString();
+      console.log("POLLING: escuchando respuestas desde", panicoTime);
       var intervalo = setInterval(function() {
-        supabase.from("respuestas_contacto").select("*").eq("alerta_id", alertaActualId).then(function(res) {
-          if (res.data && res.data.length > 0) {
-            console.log("POLLING: encontradas", res.data.length, "respuestas");
+        // Buscar respuestas por alerta_id O por timestamp reciente (últimos 3 min)
+        Promise.all([
+          supabase.from("respuestas_contacto").select("*").eq("alerta_id", alertaActualId),
+          supabase.from("respuestas_contacto").select("*").gte("timestamp", panicoTime).is("alerta_id", null)
+        ]).then(function(results) {
+          var todas = [];
+          if (results[0].data) todas = todas.concat(results[0].data);
+          if (results[1].data) todas = todas.concat(results[1].data);
+          if (todas.length > 0) {
+            console.log("POLLING: encontradas", todas.length, "respuestas");
             var nuevas = {};
-            res.data.forEach(function(r) {
+            todas.forEach(function(r) {
               nuevas[r.button_id] = { hora: new Date(r.timestamp || Date.now()) };
             });
             setRespuestasPanico(nuevas);
           }
         });
-      }, 5000);
+      }, 4000);
       return function() { clearInterval(intervalo); };
     }, [alertaActualId]);
   function cerrar() { setPanicoEnviado(false); setAlertaActualId(null); setRespuestasPanico({}); }
