@@ -1997,7 +1997,7 @@ function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "" }) {
 }
 
 // ─── SELECTOR CONTACTO MODAL ────────────────
-function SelectorContactoModal({ contactos, mensaje, onClose }) {
+function SelectorContactoModal({ contactos, mensaje, onClose, onAlertaSent, moduloKey }) {
   const [seleccionados, setSeleccionados] = useState([]);
   const [enviando, setEnviando] = useState(false);
   const [sent, setSent] = useState(false);
@@ -2011,15 +2011,55 @@ function SelectorContactoModal({ contactos, mensaje, onClose }) {
   async function enviar() {
     if (seleccionados.length === 0) { alert("Seleccioná al menos 1."); return; }
     setEnviando(true);
-    const elegidos = contactos.filter(c => seleccionados.includes(c.id));
-    const { location } = await getCurrentLocationWithFallback();
-    const msgFinal = tieneCompletar ? mensaje.replace("[completar]", detalle.trim() || "alguien") : mensaje;
-    const msg = buildMessageWithReply(msgFinal, location);
-    const result = await enviarWhatsApp(elegidos[0].telefono, msg);
+    var elegidos = contactos.filter(function(c) { return seleccionados.includes(c.id); });
+    var loc = await getCurrentLocationWithFallback();
+    var location = loc.location;
+    var msgFinal = tieneCompletar ? mensaje.replace("[completar]", detalle.trim() || "alguien") : mensaje;
+    var alertaId = crypto.randomUUID();
+    var userData = await supabase.auth.getUser();
+    var nombre = "Usuario";
+    try { nombre = userData.data.user.user_metadata.nombre || userData.data.user.user_metadata.full_name || userData.data.user.email.split("@")[0] || "Usuario"; } catch(e) {}
+    var ahora = new Date();
+    var hora = ahora.toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+    try {
+      await supabase.from("alertas").insert({
+        id: alertaId,
+        usuario_id: authUser?.id || null,
+        tipo: "alerta_emergencia",
+        modulo: moduloKey || "modulo",
+        mensaje: msgFinal,
+        latitud: location?.lat || null,
+        longitud: location?.lng || null,
+        link_mapa: location?.lat ? "https://www.google.com/maps?q=" + location.lat + "," + location.lng : null,
+        enviado_a: elegidos.map(function(c) { return c.telefono; }),
+        creado_en: new Date().toISOString()
+      });
+    } catch(e) { console.warn("DB:", e); }
+    var allOk = true;
+    for (var i = 0; i < elegidos.length; i++) {
+      try {
+        var numLimpio = elegidos[i].telefono.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
+        var response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: numLimpio,
+            template: "alerta_emergencia",
+            params: [nombre.substring(0,60), msgFinal.substring(0,200) + " - Ver: traza360.app/alerta/" + alertaId, hora, moduloKey === "mi_escudo" ? "Violencia de Género" : moduloKey === "turno_seguro" ? "Noche Segura" : moduloKey === "los_cuido" ? "Adolescente" : "Seguridad"],
+            alerta_id: alertaId
+          })
+        });
+        var data = await response.json();
+        if (data.messages && data.messages[0]) {
+          console.log("WhatsApp enviado OK:", data.messages[0].id);
+        } else { allOk = false; console.warn("WA error:", data); }
+      } catch(e) { allOk = false; console.warn("WA:", e); }
+    }
     setEnviando(false);
     setSent(true);
-    setSentOk(result.success);
+    setSentOk(allOk);
     reproducirSonido();
+    if (onAlertaSent) { onAlertaSent(alertaId); }
   }
 
   return (
@@ -2197,7 +2237,7 @@ const MODULES = [
 ];
 
 // ─── MODULE CARD ────────────────────────────
-function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, onOpenEvidencias }) {
+function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, onOpenEvidencias, onAlertaSent }) {
   const [expanded, setExpanded] = useState(autoExpand);
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [currentMessage, setCurrentMessage] = useState("");
@@ -2297,7 +2337,7 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
           </div>
         )}
       </div>
-      {selectorOpen && <SelectorContactoModal contactos={contactos} mensaje={currentMessage} onClose={() => setSelectorOpen(false)} />}
+      {selectorOpen && <SelectorContactoModal contactos={contactos} mensaje={currentMessage} onClose={() => setSelectorOpen(false)} onAlertaSent={onAlertaSent} moduloKey={m.key} />}
       {showGrabacion   && <GrabacionModal onClose={() => setShowGrabacion(false)} />}
       {showCheckIn     && <CheckInModal contactos={contactos} titulo={checkInTitulo} onClose={() => setShowCheckIn(false)} />}
       {showRutaSegura  && <RutaSeguraModal onClose={() => setShowRutaSegura(false)} contactos={contactos} authUser={window.__traza360_auth} userProfile={window.__traza360_profile} />}
@@ -5417,7 +5457,25 @@ React.useEffect(function() {
             }
           </div>
           <div className="grid grid-cols-2 gap-2 mt-3">
-            <button onClick={function() { if(contactos.length>0) enviarWhatsApp(contactos[0].telefono,"SIGO EN PELIGRO - necesito ayuda urgente"); }}
+            <button onClick={async function() {
+              if(contactos.length === 0) return;
+              try {
+                var userData = await supabase.auth.getUser();
+                var nombre = "Usuario";
+                try { nombre = userData.data.user.user_metadata.nombre || userData.data.user.user_metadata.full_name || userData.data.user.email.split("@")[0] || "Usuario"; } catch(e) {}
+                var ahora = new Date();
+                var hora = ahora.toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+                for (var i = 0; i < contactos.length; i++) {
+                  var numLimpio = contactos[i].telefono.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
+                  var resp = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [nombre.substring(0,60), "SIGO EN PELIGRO - necesito ayuda - Ver: traza360.app/alerta/" + alertaActualId, hora, "Seguridad"], alerta_id: alertaActualId })
+                  });
+                  var d = await resp.json();
+                  if (d.messages && d.messages[0]) console.log("Sigo en peligro enviado OK:", d.messages[0].id);
+                }
+              } catch(e) { console.warn("Sigo en peligro error:", e); }
+            }}
               className="rounded-lg py-2 text-center active:scale-95"
               style={{ background: "rgba(220,38,38,0.15)", border: "1px solid " + BRAND.red }}>
               <div className="text-xl">{"\u{1F6A8}"}</div>
@@ -5573,7 +5631,7 @@ async function ejecutarPanico() {
         {activeModule ? (
           <div className="mb-8">
             <button onClick={() => setActiveModule(null)} className="mb-4 rounded-xl px-5 py-3 text-sm font-bold" style={{ color: BRAND.gold, background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.borderStrong}` }}>{"\u2190"} Volver al panel</button>
-            <ModuleCard m={activeModule} autoExpand={true} contactos={contactos} onOpenPastillero={() => { setActiveModule(null); setActiveScreen("pastillero"); }} onOpenEvidencias={() => { setActiveModule(null); setActiveScreen("evidencias"); }} />
+            <ModuleCard m={activeModule} autoExpand={true} contactos={contactos} onOpenPastillero={() => { setActiveModule(null); setActiveScreen("pastillero"); }} onOpenEvidencias={() => { setActiveModule(null); setActiveScreen("evidencias"); }} onAlertaSent={function(aid) { setAlertaActualId(aid); setRespuestasPanico({}); setPanicoEnviado(true); }} />
           </div>
         ) : (
           <>
