@@ -31,6 +31,57 @@ const RESPONSABLE_NAME = "Tristan Passaglia";
 const RESPONSABLE_LOCATION = "Córdoba, Argentina";
 const APP_VERSION = "19.7";
 
+// ─── SISTEMA DE IDIOMA (ES / PT-BR) ─────────
+// Detección automática: si el navegador está en portugués → PT, sino ES
+const LANG = (navigator.language || navigator.userLanguage || "es").startsWith("pt") ? "pt" : "es";
+
+const T = {
+  // Textos generales
+  appName:        { es: "Traza 360",              pt: "Traza 360" },
+  tagline:        { es: "Si algo pasa, alguien ya sabe.", pt: "Se algo acontecer, alguém já sabe." },
+  panico:         { es: "PÁNICO",                 pt: "PÂNICO" },
+  alertaEnviada:  { es: "Alerta enviada",          pt: "Alerta enviada" },
+  contactoRecibio:{ es: "Tu contacto recibió el WhatsApp con tu ubicación", pt: "Seu contato recebeu o WhatsApp com sua localização" },
+  contactoRespondio:{ es: "Tu contacto respondió", pt: "Seu contato respondeu" },
+  cuandoResponda: { es: "Cuando responda, verás su emoji acá", pt: "Quando responder, você verá o emoji aqui" },
+  sigoEnPeligro:  { es: "Sigo en peligro",        pt: "Ainda em perigo" },
+  estoyBien:      { es: "Estoy bien",              pt: "Estou bem" },
+  cerrar:         { es: "Cerrar",                  pt: "Fechar" },
+  contactoPuedeResponder: { es: "TU CONTACTO PUEDE RESPONDER CON", pt: "SEU CONTATO PODE RESPONDER COM" },
+  salgo:          { es: "Salgo",                   pt: "Saio" },
+  recibi:         { es: "Recibí",                  pt: "Recebi" },
+  ubicacion:      { es: "Ubicación",               pt: "Localização" },
+  // Login
+  paraQuienEs:    { es: "¿Para quién es esta app?", pt: "Para quem é este app?" },
+  eligiPerfil:    { es: "Elegí tu perfil principal", pt: "Escolha seu perfil principal" },
+  continuar:      { es: "Continuar →",             pt: "Continuar →" },
+  empezar:        { es: "Empezar a usar la app →", pt: "Começar a usar o app →" },
+  // Módulos
+  violenciaGenero:{ es: "Violencia de Género",     pt: "Violência de Gênero" },
+  nocheSegura:    { es: "Noche Segura",            pt: "Noite Segura" },
+  adolescenteSeguro: { es: "Adolescente Seguro",   pt: "Adolescente Seguro" },
+  // Botones
+  comenzar:       { es: "Comenzar →",              pt: "Começar →" },
+  agregarContacto:{ es: "Agregar contacto",        pt: "Adicionar contato" },
+  guardar:        { es: "Guardar",                 pt: "Salvar" },
+  enviar:         { es: "Enviar",                  pt: "Enviar" },
+  cancelar:       { es: "Cancelar",               pt: "Cancelar" },
+  // Tracking
+  seguimientoActivo: { es: "SEGUIMIENTO ACTIVO",   pt: "RASTREAMENTO ATIVO" },
+  tiempoRestante: { es: "TIEMPO RESTANTE",         pt: "TEMPO RESTANTE" },
+  llegueQien:     { es: "Llegué bien — Cancelar seguimiento", pt: "Cheguei bem — Cancelar rastreamento" },
+  compartir:      { es: "Compartir",               pt: "Compartilhar" },
+  copiarLink:     { es: "Copiar link",             pt: "Copiar link" },
+  // Contactos
+  contactosConfianza: { es: "Contactos de confianza", pt: "Contatos de confiança" },
+  nombre:         { es: "Nombre",                  pt: "Nome" },
+  telefono:       { es: "Teléfono",                pt: "Telefone" },
+  relacion:       { es: "Relación",                pt: "Relação" },
+};
+
+// Helper: t("clave") devuelve el texto en el idioma actual
+function t(key) { return T[key] ? T[key][LANG] || T[key].es : key; }
+
 // ─── PALETA DE MARCA TRAZA 360 (v19) ────────
 // Según logo oficial: pin dorado + ojo central rojo sobre negro
 const BRAND = {
@@ -1107,12 +1158,25 @@ function CheckInModal({ onClose, contactos, titulo = "Botón de ingreso" }) {
     }
     setTiempoRestante(minutos * 60);
     setActivo(true);
-    // Aviso inicial a TODOS los contactos seleccionados
-    getCurrentLocationWithFallback().then(({ location }) => {
-      const msg = buildMessageWithReply(`Activé un botón de ingreso a un lugar. Si no confirmo en ${minutos} minutos que estoy bien, necesito ayuda.`, location);
-      const elegidos = contactos.filter(c => seleccionados.includes(c.id));
-      elegidos.forEach(c => enviarWhatsApp(c.telefono, msg));
-    });
+    // Aviso inicial con template a TODOS los contactos
+    (async function() {
+      try {
+        var userData = await supabase.auth.getUser();
+        var nombre = "Usuario";
+        try { nombre = userData.data.user.user_metadata.nombre || userData.data.user.user_metadata.full_name || userData.data.user.email.split("@")[0] || "Usuario"; } catch(e) {}
+        var horaStr = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+        var elegidos = contactos.filter(function(c) { return seleccionados.includes(c.id); });
+        for (var i = 0; i < elegidos.length; i++) {
+          try {
+            var numL = elegidos[i].telefono.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
+            await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ to: numL, template: "alerta_emergencia", params: [nombre.substring(0,60), "Ingresé a un lugar. Si no confirmo en " + minutos + " min que estoy bien, necesito ayuda.", horaStr, "Ingreso a lugar"] })
+            });
+          } catch(e) {}
+        }
+      } catch(e) { console.warn("CheckIn inicio:", e); }
+    })();
   }
 
   useEffect(() => {
@@ -1123,12 +1187,26 @@ function CheckInModal({ onClose, contactos, titulo = "Botón de ingreso" }) {
           clearInterval(timerRef.current);
           enviarNotificacion("ALERTA TRAZA 360", "No confirmaste que estás bien.");
           reproducirSonido();
-          // Alerta automática a TODOS los seleccionados
-          getCurrentLocationWithFallback().then(({ location }) => {
-            const msg = buildMessageWithReply("ALERTA AUTOMÁTICA — No confirmó que está bien en el tiempo acordado. Verificar urgente.", location);
-            const elegidos = contactos.filter(c => seleccionados.includes(c.id));
-            elegidos.forEach(c => enviarWhatsApp(c.telefono, msg));
-          });
+          // Alerta automática con template
+          (async function() {
+            try {
+              var userData = await supabase.auth.getUser();
+              var nombre = "Usuario";
+              try { nombre = userData.data.user.user_metadata.nombre || userData.data.user.user_metadata.full_name || userData.data.user.email.split("@")[0] || "Usuario"; } catch(e) {}
+              var horaStr = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+              var alertaId = crypto.randomUUID();
+              var elegidos = contactos.filter(function(c) { return seleccionados.includes(c.id); });
+              for (var i = 0; i < elegidos.length; i++) {
+                try {
+                  var numL = elegidos[i].telefono.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
+                  await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ to: numL, template: "alerta_emergencia", params: [nombre.substring(0,60), "TIMER VENCIDO — No confirmó que está bien. Verificar urgente. Ver: traza360.app/alerta/" + alertaId, horaStr, "Ingreso a lugar"] })
+                  });
+                } catch(e) {}
+              }
+            } catch(e) { console.warn("CheckIn alerta:", e); }
+          })();
           setAlertaEnviada(true);
           setActivo(false);
           return 0;
@@ -1142,9 +1220,24 @@ function CheckInModal({ onClose, contactos, titulo = "Botón de ingreso" }) {
   function estoyBien() {
     clearInterval(timerRef.current);
     setActivo(false);
-    // Aviso de "estoy bien" a todos los seleccionados
-    const elegidos = contactos.filter(c => seleccionados.includes(c.id));
-    elegidos.forEach(c => enviarWhatsApp(c.telefono, "Estoy bien. Todo en orden."));
+    (async function() {
+      try {
+        var userData = await supabase.auth.getUser();
+        var nombre = "Usuario";
+        try { nombre = userData.data.user.user_metadata.nombre || userData.data.user.user_metadata.full_name || userData.data.user.email.split("@")[0] || "Usuario"; } catch(e) {}
+        var horaStr = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+        var elegidos = contactos.filter(function(c) { return seleccionados.includes(c.id); });
+        for (var i = 0; i < elegidos.length; i++) {
+          try {
+            var numL = elegidos[i].telefono.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
+            await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ to: numL, template: "alerta_emergencia", params: [nombre.substring(0,60), "Estoy bien. Todo en orden.", horaStr, "Check-in cancelado"] })
+            });
+          } catch(e) {}
+        }
+      } catch(e) {}
+    })();
     onClose();
   }
 
@@ -4905,26 +4998,56 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
       setToken(nuevoToken); setExpiresAt(expira);
 
       function guardarGPS() {
-        navigator.geolocation.getCurrentPosition(async pos => {
-          let battery = null;
-          try { const b = await navigator.getBattery?.(); if (b) battery = Math.round(b.level * 100); } catch(e) {}
-          supabase.from("live_locations").upsert({
-            session_token: nuevoToken, lat: pos.coords.latitude, lng: pos.coords.longitude,
-            battery, speed: pos.coords.speed ?? null, updated_at: new Date().toISOString(),
-          }, { onConflict: "session_token" }).catch(console.warn);
-        }, () => {}, { enableHighAccuracy: true, timeout: 8000 });
+        navigator.geolocation.getCurrentPosition(async function(pos) {
+          var battery = null;
+          try { var b = await navigator.getBattery?.(); if (b) battery = Math.round(b.level * 100); } catch(e) {}
+          try {
+            await supabase.from("live_locations").upsert({
+              session_token: nuevoToken, lat: pos.coords.latitude, lng: pos.coords.longitude,
+              battery, speed: pos.coords.speed ?? null, updated_at: new Date().toISOString(),
+            }, { onConflict: "session_token" });
+          } catch(e) { console.warn("GPS upsert:", e); }
+        }, function() {}, { enableHighAccuracy: true, timeout: 8000 });
       }
       guardarGPS();
       gpsIntervalRef.current = setInterval(guardarGPS, 15000);
-      timerRef.current = setInterval(() => {
-        const ms = expira - new Date();
-        if (ms <= 0) { clearInterval(timerRef.current); clearInterval(gpsIntervalRef.current); }
+
+      // Timer con alerta automática cuando llega a 0
+      var alertaEnviada = false;
+      timerRef.current = setInterval(async function() {
+        var ms = expira - new Date();
+        if (ms <= 0 && !alertaEnviada) {
+          alertaEnviada = true;
+          clearInterval(timerRef.current);
+          clearInterval(gpsIntervalRef.current);
+          var horaStr = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+          for (var ci = 0; ci < contactosMod.length; ci++) {
+            try {
+              var numL = contactosMod[ci].telefono.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
+              await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ to: numL, template: "alerta_emergencia", params: [nombreUsuario.substring(0,60), "TIMER VENCIDO — No canceló seguimiento. Ver mapa: " + urlPublica, horaStr, "Seguimiento en vivo"] })
+              });
+            } catch(e) { console.warn("Timer alerta:", e); }
+          }
+          try { reproducirSonido(); } catch(e) {}
+          alert("⚠️ El tiempo se agotó. Se envió alerta automática a tus contactos.");
+        }
         setCountdown(Math.max(0, ms));
       }, 1000);
 
-      const msgWA = `🛡️ *Traza 360 — Movimiento en Vivo*\n\n${nombreUsuario} compartió su ubicación en tiempo real.\n\n📍 *Ver mapa en vivo:*\n${urlPublica}\n\n⏱️ Si no cancela antes de las ${hora}, necesita ayuda.`;
-      for (const c of contactosMod) {
-        if (c.telefono) await sendWhatsAppAPI(c.telefono, msgWA).catch(console.warn);
+      // Enviar WhatsApp inicial con template
+      var horaStr = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+      for (var ci2 = 0; ci2 < contactosMod.length; ci2++) {
+        if (contactosMod[ci2].telefono) {
+          try {
+            var numL2 = contactosMod[ci2].telefono.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
+            await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ to: numL2, template: "alerta_emergencia", params: [nombreUsuario.substring(0,60), "Movimiento en vivo activo — Ver mapa: " + urlPublica + " — Si no cancela antes de las " + hora + " necesita ayuda", horaStr, "Seguimiento en vivo"] })
+            });
+          } catch(e) { console.warn("WA seguimiento:", e); }
+        }
       }
       if (emailExtra.trim()) {
         const asunto = encodeURIComponent(`Traza 360 — ${nombreUsuario} compartió su ubicación`);
@@ -4944,8 +5067,17 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
     clearInterval(gpsIntervalRef.current); clearInterval(timerRef.current);
     if (token) {
       await supabase.from("live_sessions").update({ cancelado_at: new Date().toISOString() }).eq("token", token);
-      for (const c of contactosMod) {
-        if (c.telefono) await sendWhatsAppAPI(c.telefono, `✅ *Traza 360* — ${nombreUsuario} llegó bien. Seguimiento cancelado.`).catch(console.warn);
+      var horaStr = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+      for (var ci = 0; ci < contactosMod.length; ci++) {
+        if (contactosMod[ci].telefono) {
+          try {
+            var numL = contactosMod[ci].telefono.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
+            await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ to: numL, template: "alerta_emergencia", params: [nombreUsuario.substring(0,60), "Llegó bien. Seguimiento cancelado.", horaStr, "Seguimiento cancelado"] })
+            });
+          } catch(e) { console.warn("WA cancelar:", e); }
+        }
       }
     }
     setPaso(3);
@@ -5205,10 +5337,10 @@ function LandingScreen({ onScreen }) {
 
         {/* Título estilo DGR — serif, bold, tracking */}
         <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 38, fontWeight: 900, lineHeight: 1.15, color: BRAND.white, letterSpacing: "-0.5px", maxWidth: 320, margin: "0 auto" }}>
-          Si algo pasa,
+          {LANG === "pt" ? "Se algo acontecer," : "Si algo pasa,"}
           <br/>
           <span style={{ background: BRAND.goldGradient, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            alguien ya sabe.
+            {LANG === "pt" ? "alguém já sabe." : "alguien ya sabe."}
           </span>
         </h1>
 
@@ -5223,10 +5355,26 @@ function LandingScreen({ onScreen }) {
           App multimodal para protección de personas en tiempo real.
         </p>
 
-        <p className="text-lg font-bold mt-4 mx-auto max-w-xs" style={{ color: BRAND.white }}>
-          Un botón, muchas soluciones 🗺️🎙️📷
+        <p className="text-lg font-bold mt-5 mx-auto max-w-xs" style={{ color: BRAND.white }}>
+          Un botón, muchas soluciones
         </p>
-        <p className="text-xs mt-2 mx-auto max-w-xs" style={{ color: BRAND.textLight }}>
+
+        <div className="flex justify-center gap-6 mt-4 mb-3">
+          {[
+            { emoji: "🗺️", label: "Ubicación" },
+            { emoji: "🎙️", label: "Audio" },
+            { emoji: "📷", label: "Cámara" },
+          ].map(function(item, i) { return (
+            <div key={i} className="flex flex-col items-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl text-2xl" style={{ background: "rgba(201,168,76,0.1)", border: "1px solid " + BRAND.border }}>
+                {item.emoji}
+              </div>
+              <span className="text-[10px] mt-1.5 font-semibold uppercase tracking-wider" style={{ color: BRAND.goldLite || BRAND.gold }}>{item.label}</span>
+            </div>
+          );})}
+        </div>
+
+        <p className="text-xs mt-2 mx-auto max-w-[260px] leading-relaxed" style={{ color: BRAND.textLight }}>
           Traza y tus contactos te ubican, te escuchan y te miran con tu propia cámara.
         </p>
 
@@ -5236,7 +5384,7 @@ function LandingScreen({ onScreen }) {
       <div className="px-5 pb-8">
         <div className="mx-auto max-w-sm flex flex-col gap-3">
           <button onClick={() => onScreen("register")} className="w-full rounded-2xl py-4 font-black text-lg" style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.4)" }}>
-            Comenzar →
+            {t("comenzar")}
           </button>
           <button onClick={() => onScreen("login")} className="w-full rounded-2xl py-3 font-bold text-sm" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid rgba(255,255,255,0.15)`, color: BRAND.white }}>
             Ya tengo cuenta → Ingresar
@@ -5430,16 +5578,16 @@ React.useEffect(function() {
         <div className="text-center space-y-4">
           <div className="py-4">
             <div className="mx-auto mb-2 flex justify-center"><GoldIcon name="panic" size={48} /></div>
-            <h3 className="text-lg font-bold" style={{ color: BRAND.red }}>Alerta enviada</h3>
-            <p className="text-sm mt-1" style={{ color: BRAND.textLight }}>Tu contacto recibió el WhatsApp con tu ubicación</p>
+            <h3 className="text-lg font-bold" style={{ color: BRAND.red }}>{t("alertaEnviada")}</h3>
+            <p className="text-sm mt-1" style={{ color: BRAND.textLight }}>{t("contactoRecibio")}</p>
           </div>
           <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(212,175,55,0.05)", border: "1px solid " + BRAND.border }}>
-            <div className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: "rgba(212,175,55,0.8)" }}>TU CONTACTO PUEDE RESPONDER CON</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: "rgba(212,175,55,0.8)" }}>{t("contactoPuedeResponder")}</div>
             <div className="grid grid-cols-3 gap-3 mb-3">
               {[
-                { key: "salgo", emoji: "\u{1F697}", text: "Salgo" },
-                { key: "recibi", emoji: "\u2705", text: "Recibí" },
-                { key: "ubicacion", emoji: "\u{1F4CD}", text: "Ubicación" },
+                { key: "salgo", emoji: "\u{1F697}", text: t("salgo") },
+                { key: "recibi", emoji: "\u2705", text: t("recibi") },
+                { key: "ubicacion", emoji: "\u{1F4CD}", text: t("ubicacion") },
               ].map(function(r) {
                 const resp = respuestasPanico[r.key];
                 return (
@@ -5452,7 +5600,7 @@ React.useEffect(function() {
               })}
             </div>
             {Object.keys(respuestasPanico).length === 0
-              ? <p className="text-[12px] text-center" style={{ color: "rgba(255,255,255,0.4)" }}>Cuando responda, verás su emoji acá</p>
+              ? <p className="text-[12px] text-center" style={{ color: "rgba(255,255,255,0.4)" }}>{t("cuandoResponda")}</p>
               : <p className="text-[12px] text-center" style={{ color: "rgba(34,197,94,0.8)" }}>✅ Tu contacto respondió</p>
             }
           </div>
@@ -5479,18 +5627,18 @@ React.useEffect(function() {
               className="rounded-lg py-2 text-center active:scale-95"
               style={{ background: "rgba(220,38,38,0.15)", border: "1px solid " + BRAND.red }}>
               <div className="text-xl">{"\u{1F6A8}"}</div>
-              <div className="text-[11px] mt-0.5" style={{ color: BRAND.red }}>Sigo en peligro</div>
+              <div className="text-[11px] mt-0.5" style={{ color: BRAND.red }}>{t("sigoEnPeligro")}</div>
             </button>
             <button onClick={function() { if(contactos.length>0) { enviarWhatsApp(contactos[0].telefono,"Estoy bien. Falsa alarma."); cerrar(); } }}
               className="rounded-lg py-2 text-center active:scale-95"
               style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)" }}>
               <div className="text-xl">{"\u2705"}</div>
-              <div className="text-[11px] mt-0.5 text-green-400">Estoy bien</div>
+              <div className="text-[11px] mt-0.5 text-green-400">{t("estoyBien")}</div>
             </button>
           </div>
           <button onClick={cerrar} className="w-full rounded-xl py-3 text-sm font-semibold mt-2"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid " + BRAND.border, color: BRAND.textLight }}>
-            Cerrar
+            {t("cerrar")}
           </button>
         </div>
       </div>
@@ -5775,7 +5923,7 @@ async function ejecutarPanico() {
             <PinEyeLogo size={56} showText={false} />
           </button>
         </div>
-        <div className="text-[12px] text-center mt-1 font-bold uppercase tracking-wider" style={{ color: BRAND.gold }}>Pánico</div>
+        <div className="text-[12px] text-center mt-1 font-bold uppercase tracking-wider" style={{ color: BRAND.gold }}>{t("panico")}</div>
       </div>
       <style>{`@keyframes panicPulse { 0%,100%{opacity:0.3;transform:scale(1)} 50%{opacity:0.8;transform:scale(1.12)} }`}</style>
     </div>
