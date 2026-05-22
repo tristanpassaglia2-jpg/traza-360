@@ -5457,7 +5457,136 @@ function LandingScreen({ onScreen }) {
     </div>
   );
 }
+// ─── COMPLETAR PERFIL BANNER (v19.12) ────────
+function CompletarPerfilBanner({ authUser, onComplete, onDismiss }) {
+  const [telefono, setTelefono] = useState("");
+  const [prefijo, setPrefijo] = useState("54");
+  const [pais, setPais] = useState("");
+  const [moduloPrincipal, setModuloPrincipal] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState("");
+  const [listo, setListo] = useState(false);
 
+  const progreso = [telefono, pais, moduloPrincipal].filter(Boolean).length;
+  const pct = Math.round((progreso / 3) * 100);
+
+  const modulos = [
+    { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", label: "Me protejo a mí" },
+    { key: "turno_seguro", emoji: "\u{1F303}", label: "Salgo de noche" },
+    { key: "los_cuido",    emoji: "\u{1F9D1}\u200D\u{1F393}", label: "Cuido a mi hijo/a" },
+    { key: "te_cuido",     emoji: "\u{1F441}\u{FE0F}", label: "Cuido a alguien a distancia" },
+  ];
+
+  async function guardar() {
+    setError("");
+    if (!telefono.trim()) { setError("El teléfono es obligatorio para recuperar tu cuenta."); return; }
+    setGuardando(true);
+    try {
+      var numCompleto = prefijo + limpiarNumero(telefono);
+      await supabase.from("usuarios").update({
+        telefono: numCompleto,
+        pais: pais || null,
+        modo: moduloPrincipal || null,
+        perfil_completo: true,
+      }).eq("auth_user_id", authUser?.id);
+      setListo(true);
+      setTimeout(function() { onComplete(); }, 1500);
+    } catch(e) {
+      setError("Error al guardar. Intentá de nuevo.");
+    }
+    setGuardando(false);
+  }
+
+  if (listo) return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/80 backdrop-blur-sm px-5">
+      <div className="w-full max-w-sm rounded-3xl p-8 text-center" style={{ background: "#000", border: "2px solid " + BRAND.borderStrong }}>
+        <div className="text-5xl mb-3">{"\u2705"}</div>
+        <h3 className="text-lg font-bold" style={{ color: BRAND.gold }}>Perfil completo</h3>
+        <p className="text-sm mt-2" style={{ color: BRAND.textLight }}>Tu cuenta está lista para protegerte.</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-end justify-center bg-black/80 backdrop-blur-sm px-4" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div className="w-full max-w-md rounded-t-3xl overflow-hidden" style={{ background: "#000", border: "2px solid " + BRAND.borderStrong, maxHeight: "88vh", overflowY: "auto" }}>
+        <div className="flex justify-center pt-3 pb-1"><div className="h-1 w-12 rounded-full" style={{ background: BRAND.borderStrong }} /></div>
+        <div className="px-5 pb-7 pt-2">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-bold" style={{ color: BRAND.white }}>Completá tu perfil</h2>
+              <p className="text-sm mt-0.5" style={{ color: BRAND.textLight }}>Tarda 60 segundos — tu cuenta queda más segura</p>
+            </div>
+            <button onClick={onDismiss} className="text-xl mt-1" style={{ color: BRAND.textMute }}>{"\u2715"}</button>
+          </div>
+          <div className="rounded-full h-2 mb-1" style={{ background: "rgba(255,255,255,0.08)" }}>
+            <div className="h-2 rounded-full transition-all" style={{ width: pct + "%", background: BRAND.goldGradient }} />
+          </div>
+          <p className="text-[11px] mb-5 text-right" style={{ color: BRAND.textMute }}>{pct}% completado</p>
+
+          <div className="mb-4">
+            <label className="text-[11px] uppercase tracking-wider font-bold block mb-2" style={{ color: BRAND.gold }}>{"\u{1F4F1}"} Tu teléfono WhatsApp</label>
+            <PhoneInput value={telefono} onChange={setTelefono} prefix={prefijo} onPrefixChange={setPrefijo} placeholder="Número sin 0 ni 15" />
+            <p className="text-[11px] mt-1.5" style={{ color: BRAND.textMute }}>Para recuperar tu cuenta y recibir alertas propias.</p>
+          </div>
+
+          <div className="mb-4">
+            <label className="text-[11px] uppercase tracking-wider font-bold block mb-2" style={{ color: BRAND.gold }}>{"\u{1F30E}"} Tu país</label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { code: "AR", flag: "\u{1F1E6}\u{1F1F7}", label: "Argentina" },
+                { code: "CL", flag: "\u{1F1E8}\u{1F1F1}", label: "Chile" },
+                { code: "BR", flag: "\u{1F1E7}\u{1F1F7}", label: "Brasil" },
+                { code: "CO", flag: "\u{1F1E8}\u{1F1F4}", label: "Colombia" },
+                { code: "MX", flag: "\u{1F1F2}\u{1F1FD}", label: "México" },
+                { code: "otro", flag: "\u{1F30E}", label: "Otro" },
+              ].map(function(p) { return (
+                <button key={p.code} onClick={function() { setPais(p.code); }} className="rounded-xl py-2.5 text-center" style={{ background: pais === p.code ? "rgba(212,175,55,0.15)" : "rgba(255,255,255,0.04)", border: "1px solid " + (pais === p.code ? BRAND.borderStrong : BRAND.border) }}>
+                  <div className="text-xl">{p.flag}</div>
+                  <div className="text-[10px] mt-1 font-semibold" style={{ color: pais === p.code ? BRAND.gold : BRAND.textMute }}>{p.label}</div>
+                </button>
+              ); })}
+            </div>
+          </div>
+
+          <div className="mb-5">
+            <label className="text-[11px] uppercase tracking-wider font-bold block mb-2" style={{ color: BRAND.gold }}>{"\u{1F3AF}"} ¿Para qué usás la app?</label>
+            <div className="space-y-2">
+              {modulos.map(function(m) { return (
+                <button key={m.key} onClick={function() { setModuloPrincipal(m.key); }} className="w-full rounded-xl px-4 py-3 flex items-center gap-3 text-left" style={{ background: moduloPrincipal === m.key ? "rgba(212,175,55,0.12)" : "rgba(255,255,255,0.03)", border: "1px solid " + (moduloPrincipal === m.key ? BRAND.borderStrong : BRAND.border) }}>
+                  <span className="text-xl shrink-0">{m.emoji}</span>
+                  <span className="text-sm font-semibold" style={{ color: moduloPrincipal === m.key ? BRAND.gold : BRAND.white }}>{m.label}</span>
+                  {moduloPrincipal === m.key && <span className="ml-auto font-bold" style={{ color: BRAND.gold }}>{"\u2713"}</span>}
+                </button>
+              ); })}
+            </div>
+          </div>
+
+          {error && <p className="text-sm mb-3" style={{ color: "#fca5a5" }}>{error}</p>}
+
+          <button onClick={guardar} disabled={guardando} className="w-full rounded-2xl py-4 font-bold text-base disabled:opacity-40" style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.3)" }}>
+            {guardando ? "Guardando..." : "\u2705 Guardar y continuar"}
+          </button>
+          <button onClick={onDismiss} className="w-full py-3 text-sm mt-2" style={{ color: BRAND.textMute }}>Ahora no</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── BANNER MINI PERFIL INCOMPLETO (v19.12) ────────
+function PerfilIncompletoBannerMini({ onClick }) {
+  return (
+    <button onClick={onClick} className="w-full rounded-xl py-2.5 px-4 text-left flex items-center gap-3 mb-3" style={{ background: "rgba(212,175,55,0.08)", border: "1px solid " + BRAND.borderStrong }}>
+      <span className="text-lg shrink-0">{"\u{1F4DD}"}</span>
+      <div className="flex-1">
+        <p className="text-sm font-bold" style={{ color: BRAND.gold }}>Completá tu perfil</p>
+        <p className="text-[11px]" style={{ color: BRAND.textLight }}>Teléfono + país — para protegerte mejor</p>
+      </div>
+      <span className="text-sm" style={{ color: BRAND.gold }}>{"\u2192"}</span>
+    </button>
+  );
+}
 function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans }) {
   const [activeScreen, setActiveScreen] = useState("home");
   const [activeModule, setActiveModule] = useState(null);
@@ -5471,6 +5600,8 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
   const [showGpsModal, setShowGpsModal] = useState(false);
   const [pendingGpsAction, setPendingGpsAction] = useState(null);
   const [showPinPrompt, setShowPinPrompt] = useState(false);
+   const [showCompletarPerfil, setShowCompletarPerfil] = useState(false);
+  const [perfilCompleto, setPerfilCompleto] = useState(true);
   const [hasPin, setHasPin] = useState(false);
 
   const nombreUsuario = userProfile?.nombre || pendingName || sessionStorage.getItem("traza360_pending_name") || authUser?.email?.split("@")[0] || "Usuario";
@@ -5484,6 +5615,18 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
 
   useEffect(() => {
     cargarContactos();
+     // v19.12: Detectar si perfil está completo
+    async function checkPerfil() {
+      try {
+        var r = await supabase.from("usuarios").select("perfil_completo").eq("auth_user_id", authUser?.id).single();
+        if (r.data && !r.data.perfil_completo) {
+          setPerfilCompleto(false);
+          var dismissed = sessionStorage.getItem("traza360_perfil_dismissed");
+          if (!dismissed) setShowCompletarPerfil(true);
+        } else { setPerfilCompleto(true); }
+      } catch(e) {}
+    }
+    checkPerfil();
     // Detectar si ya tiene PIN configurado
     try { setHasPin(!!localStorage.getItem("traza360_quick_pin")); } catch(e){}
     // Detectar si debe ver el prompt de configurar PIN (primera vez con contactos OK)
@@ -5898,7 +6041,21 @@ async function ejecutarPanico() {
           </div>
         </div>
       )}
+{/* v19.12: Banner completar perfil (overlay) */}
+      {showCompletarPerfil && (
+        <CompletarPerfilBanner
+          authUser={authUser}
+          onComplete={function() { setShowCompletarPerfil(false); setPerfilCompleto(true); }}
+          onDismiss={function() { setShowCompletarPerfil(false); try { sessionStorage.setItem("traza360_perfil_dismissed", "1"); } catch(e){} }}
+        />
+      )}
 
+      {/* v19.12: Banner mini si perfil incompleto y cerró el overlay */}
+      {!perfilCompleto && !showCompletarPerfil && !activeModule && (
+        <div className="fixed bottom-28 left-5 right-5 z-40" style={{ maxWidth: "400px", margin: "0 auto" }}>
+          <PerfilIncompletoBannerMini onClick={function() { setShowCompletarPerfil(true); }} />
+        </div>
+      )}
       {/* PANEL POST-PÁNICO */}
  {panicoEnviado && (
   <PanelPostPanico
