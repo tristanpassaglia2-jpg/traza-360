@@ -2239,7 +2239,7 @@ function SelectorContactoModal({ contactos, mensaje, onClose, onAlertaSent, modu
 // - Sacado "Escribir" de Adolescente Seguro
 // - Fusionados "Entro a la casa de..." y "Me reúno con..." → "Estoy en..."
 const MODULES = [
-  { key: "mi_escudo", iconName: "shield", emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género", desc: "Alerta silenciosa, ubicación y red de apoyo.",
+  { key: "mi_escudo", iconName: "shield", emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género", desc: "Alerta silenciosa, ubicación y grabación de entorno con descarga automática en la nube y dispositivo.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
       { key: "testigo",  iconName: "mic", icon: "🔴", name: "Grabar evidencias modo multifunción", desc: "Audio + foto frontal y trasera → nube y dispositivo.", type: "modo_testigo" },
@@ -5031,7 +5031,7 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
             } catch(e) { console.warn("Timer alerta:", e); }
           }
           try { reproducirSonido(); } catch(e) {}
-          alert("⚠️ El tiempo se agotó. Se envió alerta automática a tus contactos.");
+          enviarNotificacion("⚠️ Traza 360", "El tiempo se agotó. Se envió alerta automática a tus contactos.");
         }
         setCountdown(Math.max(0, ms));
       }, 1000);
@@ -5291,7 +5291,7 @@ function LandingScreen({ onScreen }) {
         <div className="flex items-center justify-between px-5 py-3 max-w-5xl mx-auto">
           <div className="flex items-center gap-2.5">
             <PinEyeLogo size={32} showText={false} />
-            <span className="text-sm font-bold tracking-[2px] uppercase" style={{ color: BRAND.gold }}>Regreso</span>
+            <span className="text-lg font-black tracking-[3px] uppercase" style={{ color: BRAND.gold, fontFamily: FONT_DISPLAY }}>Regreso</span>
           </div>
           <div className="hidden md:flex items-center gap-6">
             {[
@@ -5322,7 +5322,7 @@ function LandingScreen({ onScreen }) {
       {/* SOCIAL PROOF BANNER — estilo DGR */}
       <div className="text-center py-3 px-5" style={{ background: "linear-gradient(135deg, rgba(201,168,76,0.18), rgba(201,168,76,0.06))", borderBottom: `1px solid ${BRAND.borderStrong}` }}>
         <p className="text-sm font-bold uppercase tracking-[4px]" style={{ color: BRAND.goldLite, fontFamily: FONT_BODY }}>
-          🏆 Seguridad personal · LATAM
+          🏆 1ra app de seguridad inteligente multimodal de Latinoamérica
         </p>
       </div>
 
@@ -5375,7 +5375,7 @@ function LandingScreen({ onScreen }) {
         </div>
 
         <p className="text-xs mt-2 mx-auto max-w-[260px] leading-relaxed" style={{ color: BRAND.textLight }}>
-          Traza y tus contactos te ubican, te escuchan y te miran con tu propia cámara.
+          Tus contactos seleccionados te ubican, te escuchan y te miran con tu propia cámara.
         </p>
 
       </section>
@@ -5389,17 +5389,9 @@ function LandingScreen({ onScreen }) {
           <button onClick={() => onScreen("login")} className="w-full rounded-2xl py-3 font-bold text-sm" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid rgba(255,255,255,0.15)`, color: BRAND.white }}>
             Ya tengo cuenta → Ingresar
           </button>
-          {/* Instalación */}
-          <div className="flex gap-2 mt-1">
-            <button onClick={() => { const a = /android/i.test(navigator.userAgent); alert(a ? "1. Tocá los 3 puntitos ⋮\n2. Tocá \"Agregar a pantalla de inicio\"\n3. ¡Listo!" : "Desde Android: abrí traza360.app en Chrome → 3 puntitos → Agregar a pantalla"); }} className="flex-1 rounded-xl py-2.5 text-center" style={{ background: "#111", border: "1px solid rgba(255,255,255,0.15)" }}>
-              <p className="text-[9px]" style={{ color: "rgba(255,255,255,0.4)" }}>Disponible en</p>
-              <p className="text-sm font-bold" style={{ color: "#fff" }}>Google Play</p>
-            </button>
-            <button onClick={() => { const i = /iphone|ipad/i.test(navigator.userAgent); alert(i ? "1. Tocá el ícono □↑ abajo\n2. Tocá \"Agregar a inicio\"\n3. ¡Listo!" : "Desde iPhone: abrí traza360.app en Safari → □↑ → Agregar a inicio"); }} className="flex-1 rounded-xl py-2.5 text-center" style={{ background: "#111", border: "1px solid rgba(255,255,255,0.15)" }}>
-              <p className="text-[9px]" style={{ color: "rgba(255,255,255,0.4)" }}>Disponible en</p>
-              <p className="text-sm font-bold" style={{ color: "#fff" }}>App Store</p>
-            </button>
-          </div>
+          <button onClick={() => onScreen("register")} className="w-full rounded-2xl py-4 font-black text-lg mt-1" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid rgba(255,255,255,0.2)`, color: BRAND.white }}>
+            Registrarme gratis →
+          </button>
         </div>
       </div>
 
@@ -5471,7 +5463,7 @@ function CompletarPerfilBanner({ authUser, onComplete, onDismiss }) {
   const pct = Math.round((progreso / 3) * 100);
 
   const modulos = [
-    { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", label: "Me protejo a mí" },
+    { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", label: "Violencia de Género" },
     { key: "turno_seguro", emoji: "\u{1F303}", label: "Salgo de noche" },
     { key: "los_cuido",    emoji: "\u{1F9D1}\u200D\u{1F393}", label: "Cuido a mi hijo/a" },
     { key: "te_cuido",     emoji: "\u{1F441}\u{FE0F}", label: "Cuido a alguien a distancia" },
@@ -5663,7 +5655,7 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
   // - "Hogar Seguro" (mi_nido) y "Adulto Mayor Seguro" (los_protejo) COMENTADOS
   // - Renombrado "Te Cuido" → "Te Cuido a Distancia"
   const quickCards = [
-    { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género",    text: "Violencia de género — Alerta silenciosa, ubicación y red de apoyo." },
+    { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género",    text: "Violencia de género — Alerta silenciosa, ubicación y grabación de entorno con descarga automática en la nube y dispositivo." },
     { key: "turno_seguro",emoji: "\u{1F303}", title: "Noche Segura", text: "Para jóvenes de noche, acompañantes, repartidores y cualquier situación de riesgo." },
     /* ❌ v18: Adulto Mayor comentado
     { key: "los_protejo", emoji: "\u{1FAF6}", title: "Adulto Mayor Seguro", text: "Adulto mayor — Medicamentos, caídas y asistencia." },
@@ -5921,7 +5913,7 @@ async function ejecutarPanico() {
 
         {activeModule ? (
           <div className="mb-8">
-            <button onClick={() => setActiveModule(null)} className="mb-4 rounded-xl px-5 py-3 text-sm font-bold" style={{ color: BRAND.gold, background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.borderStrong}` }}>{"\u2190"} Volver al panel</button>
+            <div className="flex items-center gap-3 mb-4">   <button onClick={() => setActiveModule(null)} className="rounded-xl px-5 py-3 text-sm font-bold flex items-center gap-2" style={{ color: BRAND.gold, background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.borderStrong}` }}>     {"\u2190"} Volver al panel   </button>   <span className="text-sm font-bold uppercase tracking-wider" style={{ color: BRAND.textMute }}>{activeModule?.title}</span> </div>
             <ModuleCard m={activeModule} autoExpand={true} contactos={contactos} onOpenPastillero={() => { setActiveModule(null); setActiveScreen("pastillero"); }} onOpenEvidencias={() => { setActiveModule(null); setActiveScreen("evidencias"); }} onAlertaSent={function(aid) { setAlertaActualId(aid); setRespuestasPanico({}); setPanicoEnviado(true); }} />
           </div>
         ) : (
