@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { signUp, signIn, signOut, getCurrentUser, supabase, getContactos, addContacto, deleteContacto, getMedicamentos, addMedicamento, deleteMedicamento, getTomasHoy, getTomasSemana, marcarTomado, crearTomasDelDia } from "./lib/supabase";
 
 /* ═══════════════════════════════════════════════════════════════
-   TRAZA 360 — App completa v19.11
-   Versión: 19.11 · Mayo 2026
+   LEXIA — App completa v19.12
+   Versión: 19.12 · Mayo 2026
    ═══════════════════════════════════════════════════════════════
    CAMBIOS v19.11:
    1. Modo Testigo (audio + fotos + nube al activar pánico)
@@ -82,7 +82,7 @@ const T = {
 // Helper: t("clave") devuelve el texto en el idioma actual
 function t(key) { return T[key] ? T[key][LANG] || T[key].es : key; }
 
-// ─── PALETA DE MARCA TRAZA 360 (v19) ────────
+// ─── PALETA DE MARCA LEXIA (v19) ────────
 // Según logo oficial: pin dorado + ojo central rojo sobre negro
 const BRAND = {
   // Paleta DGR-inspired — dorado envejecido, negro profundo, cálido
@@ -499,7 +499,7 @@ function SystemStatusPanel({ contactos, onGoToContactos, onClose }) {
             label="Ubicación GPS"
             detalleFalla="Tu dispositivo bloqueó la ubicación. Sin GPS, tus contactos recibirán alertas sin ubicación."
             accion="Cómo activarlo"
-            onAccion={() => alert("Para activar el GPS:\n\n📱 Android: Configuración → Privacidad → Permisos de ubicación → Traza 360 → Permitir\n\n🍎 iPhone: Configuración → Safari → Ubicación → Permitir\n\nDespués de activarlo, recargá la app.")}
+            onAccion={() => alert("Para activar el GPS:\n\n📱 Android: Configuración → Privacidad → Permisos de ubicación → LEXIA → Permitir\n\n🍎 iPhone: Configuración → Safari → Ubicación → Permitir\n\nDespués de activarlo, recargá la app.")}
           />
           <Indicador
             ok={contactosOk}
@@ -537,7 +537,7 @@ function OnboardingScreen({ onComplete }) {
   const steps = [
     {
       iconType: "logo",
-      title: "Bienvenido/a a Traza 360",
+      title: "Bienvenido/a a LEXIA",
       subtitle: "Alguien cuida de vos.",
       desc: "Esta app te protege a vos y a quienes querés. Con un solo botón podés alertar a tu gente de confianza, compartir tu ubicación y grabar evidencia.",
       cta: "¿Empezamos a cuidarte? →",
@@ -670,7 +670,7 @@ function OnboardingScreen({ onComplete }) {
 
 // ─── VERIFICACIÓN CONTACTO (Safety Check) ───
 async function verificarContacto(telefono, nombreContacto, nombreUsuario) {
-  const msg = `Hola ${nombreContacto} 👋 Soy ${nombreUsuario} y te agregué como contacto de confianza en Traza 360, una app de seguridad personal.\n\n✅ Si recibís este mensaje, todo funciona correctamente.\n\nRespondé "OK" para confirmar que lo recibiste.\n\n🛡️ Traza 360 — traza360.app`;
+  const msg = `Hola ${nombreContacto} 👋 Soy ${nombreUsuario} y te agregué como contacto de confianza en LEXIA, una app de seguridad personal.\n\n✅ Si recibís este mensaje, todo funciona correctamente.\n\nRespondé "OK" para confirmar que lo recibiste.\n\n🛡️ LEXIA — traza360.app`;
   return await sendWhatsAppAPI(telefono, msg);
 }
 
@@ -1185,7 +1185,7 @@ function CheckInModal({ onClose, contactos, titulo = "Botón de ingreso" }) {
       setTiempoRestante(t => {
         if (t <= 1) {
           clearInterval(timerRef.current);
-          enviarNotificacion("ALERTA TRAZA 360", "No confirmaste que estás bien.");
+          enviarNotificacion("ALERTA LEXIA", "No confirmaste que estás bien.");
           reproducirSonido();
           // Alerta automática con template
           (async function() {
@@ -1783,7 +1783,7 @@ function PlanesScreen({ onBack, currentPlan = "gratis" }) {
       sessionStorage.setItem("traza360_lista_espera", JSON.stringify(lista));
 
       // Avisar a Tristan por WhatsApp para que tenga el lead
-      const mensaje = `Nueva inscripción a lista de espera Traza 360:\nPlan: ${plan.name} (${plan.priceARS}${plan.period})\nEmail: ${emailWaitlist.trim()}\nFecha: ${new Date().toLocaleString('es-AR')}`;
+      const mensaje = `Nueva inscripción a lista de espera LEXIA:\nPlan: ${plan.name} (${plan.priceARS}${plan.period})\nEmail: ${emailWaitlist.trim()}\nFecha: ${new Date().toLocaleString('es-AR')}`;
       try {
         await sendWhatsAppAPI(WHATSAPP_NUMBER_DEFAULT, mensaje);
       } catch(e) { console.warn("No se pudo notificar a admin:", e); }
@@ -1981,7 +1981,7 @@ function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "" }) {
     if (r.success) {
       // Safety Check automático
       setVerificando(true);
-      await verificarContacto(numCompleto, nombre.trim(), nombreUsuario || "Tu contacto de Traza 360");
+      await verificarContacto(numCompleto, nombre.trim(), nombreUsuario || "Tu contacto de LEXIA");
       setVerificando(false);
       setVista("lista"); setNombre(""); setTelefono(""); cargar();
     } else setError(r.error || "Error al guardar.");
@@ -2272,7 +2272,7 @@ const MODULES = [
       { key: "taxi", iconName: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono taxi.", type: "taxi" },
     ]},
 
-  { key: "los_cuido", iconName: "teen", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro", desc: "Salidas, LEXIAs y anti-bullying.",
+  { key: "los_cuido", iconName: "teen", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro", desc: "Salidas, salidas y anti-bullying.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
       { key: "maps", iconName: "home", icon: "\u{1F3E1}", name: "Llegar a casa", desc: "Abre GPS a tu domicilio.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
@@ -2536,7 +2536,7 @@ function RegisterScreen({ onBack, onSuccess, setPendingName, onScreen }) {
             <button type="button" onClick={(e) => { e.stopPropagation(); onScreen && onScreen("privacidad"); }} className="underline font-semibold" style={{ color: BRAND.gold }}>
               Política de Privacidad
             </button>.
-            <p className="mt-1.5 text-[11px]" style={{ color: BRAND.textMute }}>Importante: Traza 360 no reemplaza al 911 ni a servicios oficiales de emergencia.</p>
+            <p className="mt-1.5 text-[11px]" style={{ color: BRAND.textMute }}>Importante: LEXIA no reemplaza al 911 ni a servicios oficiales de emergencia.</p>
           </div>
         </label>
       </div>
@@ -2625,7 +2625,6 @@ function PinEyeLogo({ size = 80, showText = true }) {
           <>
             {/* TRAZA en dorado + 360 en rojo */}
             <text x="100" y="262" textAnchor="middle" fontSize="32" fontWeight="800" fontFamily="sans-serif" letterSpacing="1">
-              <tspan fill="#D4AF37">TRAZA</tspan>
               <tspan fill="#D4AF37">LEXIA</tspan>
             </text>
           </>
@@ -2672,7 +2671,7 @@ function TeCuidoScreen({ onBack, contactos = [] }) {
     const newPin = generarPin();
     setPin(newPin);
     const link = `${window.location.origin}/cuidar/aceptar/${newPin}`;
-    const msg = `👁️ *Traza 360 — Solicitud de cuidado*\n\n[Tu nombre] quiere seguirte en tiempo real para protegerte.\n\n✅ *Aceptar:* ${link}\n❌ Si no querés, ignorá este mensaje.\n\n_Para cancelar en cualquier momento, usá tu PIN de seguridad en la app._`;
+    const msg = `👁️ *LEXIA — Solicitud de cuidado*\n\n[Tu nombre] quiere seguirte en tiempo real para protegerte.\n\n✅ *Aceptar:* ${link}\n❌ Si no querés, ignorá este mensaje.\n\n_Para cancelar en cualquier momento, usá tu PIN de seguridad en la app._`;
     try {
       await sendWhatsAppAPI(tel, msg);
       setEnviado(true);
@@ -2790,7 +2789,7 @@ function TeCuidoScreen({ onBack, contactos = [] }) {
             </p>
             <div className="rounded-xl p-3 mb-5" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BRAND.border}` }}>
               <p className="text-sm" style={{ color: BRAND.textLight }}>
-                ⏳ Si no recibe el mensaje, pedile que abra Traza 360 y vaya a "Alguien me está cuidando".
+                ⏳ Si no recibe el mensaje, pedile que abra LEXIA y vaya a "Alguien me está cuidando".
               </p>
             </div>
             <button onClick={() => { setEnviado(false); setModo("elegir"); }}
@@ -2912,7 +2911,7 @@ function InstruccionesScreen({ onBack }) {
         <div className="mb-6 text-center">
           <PinEyeLogo size={70} showText={false} />
           <p className="text-[11px] uppercase tracking-[3px] mt-2" style={{ color: BRAND.gold }}>Guía de uso</p>
-          <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>¿Cómo funciona Traza 360?</h2>
+          <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>¿Cómo funciona LEXIA?</h2>
         </div>
 
         {/* Tabs */}
@@ -2980,11 +2979,11 @@ function InstruccionesScreen({ onBack }) {
           {seccion === "acceso" && (
             <>
               <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>Acceso rápido y oculto</h3>
-              <p className="text-sm mb-4" style={{ color: BRAND.textLight }}>Tres formas de tener Traza 360 a mano sin que se note.</p>
+              <p className="text-sm mb-4" style={{ color: BRAND.textLight }}>Tres formas de tener LEXIA a mano sin que se note.</p>
 
               {/* OPCIÓN 1: Agregar al inicio del celular (sin la palabra PWA) */}
               <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BRAND.border}` }}>
-                <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F4F2}"} 1. Agregar Traza 360 al inicio de tu celular</p>
+                <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F4F2}"} 1. Agregar LEXIA al inicio de tu celular</p>
                 <p className="text-sm mb-3" style={{ color: BRAND.textLight }}>Para abrir la app de un toque, como una app descargada (pero sin descargarla).</p>
 
                 <div className="space-y-2.5">
@@ -3007,13 +3006,13 @@ function InstruccionesScreen({ onBack }) {
                   </div>
                 </div>
 
-                <p className="text-[11px] mt-3" style={{ color: BRAND.gold }}>{"\u2713"} El ícono de Traza 360 aparece como cualquier otra app del celular.</p>
+                <p className="text-[11px] mt-3" style={{ color: BRAND.gold }}>{"\u2713"} El ícono de LEXIA aparece como cualquier otra app del celular.</p>
               </div>
 
               {/* OPCIÓN 2: Modo Calculadora con PIN CONFIGURABLE */}
               <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
                 <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F522}"} 2. Modo Calculadora (acceso oculto total)</p>
-                <p className="text-sm mb-3" style={{ color: BRAND.textLight }}>La app se ve como una calculadora normal. Solo vos sabés que es Traza 360.</p>
+                <p className="text-sm mb-3" style={{ color: BRAND.textLight }}>La app se ve como una calculadora normal. Solo vos sabés que es LEXIA.</p>
 
                 {/* PIN ACTUAL */}
                 <div className="rounded-lg p-3 mb-3" style={{ background: "rgba(0,0,0,0.4)", border: `1px solid ${BRAND.border}` }}>
@@ -3060,7 +3059,7 @@ function InstruccionesScreen({ onBack }) {
                     <li>1. Abrís el link oculto en tu navegador</li>
                     <li>2. Te aparece una calculadora normal</li>
                     <li>3. Escribís tu PIN ({mostrarPin ? pin : "••••"}) y tocás <strong style={{ color: BRAND.white }}>"="</strong></li>
-                    <li>4. Se abre Traza 360</li>
+                    <li>4. Se abre LEXIA</li>
                   </ol>
                   <p className="text-[11px] mt-2 italic" style={{ color: BRAND.textMute }}>Si alguien mira tu pantalla, solo ve una calculadora.</p>
                 </div>
@@ -3087,7 +3086,7 @@ function InstruccionesScreen({ onBack }) {
               {/* OPCIÓN 3: Emergencia real */}
               <div className="rounded-xl p-4" style={{ background: "rgba(220,38,38,0.05)", border: `1px solid ${BRAND.red}30` }}>
                 <p className="text-sm font-bold mb-2" style={{ color: BRAND.red }}>{"\u26A0\u{FE0F}"} 3. En una emergencia REAL</p>
-                <p className="text-sm" style={{ color: BRAND.textLight }}>Si tu vida o la de alguien está en peligro inminente, llamá <strong style={{ color: BRAND.red }}>primero</strong> al 911 (o al número de emergencias de tu país). Traza 360 te ayuda a avisar a tus contactos, pero NO reemplaza a la policía ni a los servicios médicos.</p>
+                <p className="text-sm" style={{ color: BRAND.textLight }}>Si tu vida o la de alguien está en peligro inminente, llamá <strong style={{ color: BRAND.red }}>primero</strong> al 911 (o al número de emergencias de tu país). LEXIA te ayuda a avisar a tus contactos, pero NO reemplaza a la policía ni a los servicios médicos.</p>
               </div>
             </>
           )}
@@ -3141,7 +3140,7 @@ function PoliticaPrivacidadScreen({ onBack }) {
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>1. Responsable del tratamiento de datos</h3>
             <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
-              <strong style={{ color: BRAND.white }}>Tristan Passaglia</strong>, con domicilio en Córdoba, Argentina, es el responsable del tratamiento de los datos personales recolectados a través de Traza 360. Para cualquier consulta sobre privacidad: <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span>.
+              <strong style={{ color: BRAND.white }}>Tristan Passaglia</strong>, con domicilio en Córdoba, Argentina, es el responsable del tratamiento de los datos personales recolectados a través de LEXIA. Para cualquier consulta sobre privacidad: <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span>.
             </p>
           </div>
 
@@ -3236,7 +3235,7 @@ function PoliticaPrivacidadScreen({ onBack }) {
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>9. Edad mínima</h3>
             <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
-              Traza 360 está pensada para personas de <strong style={{ color: BRAND.white }}>13 años o más</strong>. Si sos menor de 18 años, necesitás autorización de tu padre, madre o tutor legal. No recolectamos datos a sabiendas de menores de 13 años.
+              LEXIA está pensada para personas de <strong style={{ color: BRAND.white }}>13 años o más</strong>. Si sos menor de 18 años, necesitás autorización de tu padre, madre o tutor legal. No recolectamos datos a sabiendas de menores de 13 años.
             </p>
           </div>
 
@@ -3284,7 +3283,7 @@ function TerminosScreen({ onBack }) {
           <div className="rounded-xl p-4" style={{ background: "rgba(220,38,38,0.1)", border: `2px solid ${BRAND.red}` }}>
             <p className="text-sm font-bold mb-2" style={{ color: BRAND.red }}>{"\u26A0\u{FE0F}"} IMPORTANTE — LEELO ANTES DE USAR LA APP</p>
             <p className="text-sm leading-relaxed" style={{ color: BRAND.white }}>
-              <strong>Traza 360 NO es un servicio de emergencia.</strong> NO reemplaza a la policía (911, 101), bomberos, SAME (107), ni a ningún servicio oficial de emergencia. En una situación de peligro real e inminente, <strong style={{ color: BRAND.red }}>SIEMPRE llamá primero al número de emergencias de tu país.</strong>
+              <strong>LEXIA NO es un servicio de emergencia.</strong> NO reemplaza a la policía (911, 101), bomberos, SAME (107), ni a ningún servicio oficial de emergencia. En una situación de peligro real e inminente, <strong style={{ color: BRAND.red }}>SIEMPRE llamá primero al número de emergencias de tu país.</strong>
             </p>
           </div>
 
@@ -3292,15 +3291,15 @@ function TerminosScreen({ onBack }) {
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>1. Aceptación de los términos</h3>
             <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
-              Al registrarte en Traza 360 aceptás estos Términos y Condiciones y la Política de Privacidad. Si no estás de acuerdo, no uses la app.
+              Al registrarte en LEXIA aceptás estos Términos y Condiciones y la Política de Privacidad. Si no estás de acuerdo, no uses la app.
             </p>
           </div>
 
           {/* 2. Qué es la app */}
           <div>
-            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>2. Qué hace Traza 360</h3>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>2. Qué hace LEXIA</h3>
             <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
-              Traza 360 es una herramienta de seguridad personal que te permite enviar mensajes de alerta vía WhatsApp a tus contactos de confianza, compartir tu ubicación, y grabar audio del entorno. Es una <strong style={{ color: BRAND.white }}>herramienta complementaria</strong> a los servicios de emergencia oficiales.
+              LEXIA es una herramienta de seguridad personal que te permite enviar mensajes de alerta vía WhatsApp a tus contactos de confianza, compartir tu ubicación, y grabar audio del entorno. Es una <strong style={{ color: BRAND.white }}>herramienta complementaria</strong> a los servicios de emergencia oficiales.
             </p>
           </div>
 
@@ -3319,7 +3318,7 @@ function TerminosScreen({ onBack }) {
               <li><span style={{ color: BRAND.red }}>✗</span> La grabación de audio se complete si el navegador la corta.</li>
             </ul>
             <p className="text-sm mt-3 italic" style={{ color: BRAND.textMute }}>
-              Traza 360 hace todo lo posible para que el servicio funcione, pero depende de servicios externos (internet, GPS, WhatsApp, Supabase) que pueden fallar.
+              LEXIA hace todo lo posible para que el servicio funcione, pero depende de servicios externos (internet, GPS, WhatsApp, Supabase) que pueden fallar.
             </p>
           </div>
 
@@ -3341,7 +3340,7 @@ function TerminosScreen({ onBack }) {
               <li>{"\u2713"} Sos responsable de mantener actualizados tus contactos de confianza.</li>
               <li>{"\u2713"} Sos responsable de informarles que pueden recibir alertas de WhatsApp.</li>
               <li>{"\u2713"} Sos responsable de no usar la app para acosar, espiar o grabar a otros sin consentimiento (es delito).</li>
-              <li>{"\u2713"} No podés usar Traza 360 para actividades ilegales.</li>
+              <li>{"\u2713"} No podés usar LEXIA para actividades ilegales.</li>
               <li>{"\u2713"} Sos responsable de la veracidad de tus datos.</li>
             </ul>
           </div>
@@ -3373,7 +3372,7 @@ function TerminosScreen({ onBack }) {
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>8. Edad mínima</h3>
             <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
-              Debés tener al menos <strong style={{ color: BRAND.white }}>13 años</strong> para usar Traza 360. Si sos menor de 18 años, necesitás autorización de tu padre/madre/tutor.
+              Debés tener al menos <strong style={{ color: BRAND.white }}>13 años</strong> para usar LEXIA. Si sos menor de 18 años, necesitás autorización de tu padre/madre/tutor.
             </p>
           </div>
 
@@ -3666,7 +3665,7 @@ function SobreNosotrosScreen({ onBack }) {
           <div>
             <h3 className="font-bold mb-3" style={{ color: BRAND.gold }}>Nuestra misión</h3>
             <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
-              Traza 360 es una empresa pensada para el <strong style={{ color: BRAND.white }}>cuidado, soporte, seguimiento y acompañamiento</strong> de personas expuestas a situaciones de riesgo.
+              LEXIA es una empresa pensada para el <strong style={{ color: BRAND.white }}>cuidado, soporte, seguimiento y acompañamiento</strong> de personas expuestas a situaciones de riesgo.
             </p>
             <p className="text-sm leading-relaxed mt-3" style={{ color: BRAND.textLight }}>
               Creemos que la tecnología debe estar al servicio de quienes más la necesitan. Por eso construimos una herramienta que conecta a las personas con su gente de confianza cuando más importa.
@@ -3725,7 +3724,7 @@ function TourDemoScreen({ onComplete, onSkip }) {
       titulo: "Vamos a hacer una prueba",
       subtitulo: "Sin enviar nada real",
       icono: "panic",
-      texto: "Antes de que necesites usar Traza 360 en una emergencia real, te mostramos cómo funciona en 4 pasos rápidos. Esto es una simulación: NO se va a enviar ningún mensaje a nadie.",
+      texto: "Antes de que necesites usar LEXIA en una emergencia real, te mostramos cómo funciona en 4 pasos rápidos. Esto es una simulación: NO se va a enviar ningún mensaje a nadie.",
       ctaText: "Empezar prueba",
     },
     {
@@ -4381,11 +4380,11 @@ async function registrarBiometria(nombreUsuario) {
     const credential = await navigator.credentials.create({
       publicKey: {
         challenge,
-        rp: { name: "Traza 360", id: window.location.hostname },
+        rp: { name: "LEXIA", id: window.location.hostname },
         user: {
           id: userId,
           name: nombreUsuario || "usuario",
-          displayName: nombreUsuario || "Usuario Traza 360",
+          displayName: nombreUsuario || "Usuario LEXIA",
         },
         pubKeyCredParams: [
           { alg: -7,   type: "public-key" }, // ES256
@@ -5052,12 +5051,12 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
         }
       }
       if (emailExtra.trim()) {
-        const asunto = encodeURIComponent(`Traza 360 — ${nombreUsuario} compartió su ubicación`);
+        const asunto = encodeURIComponent(`LEXIA — ${nombreUsuario} compartió su ubicación`);
         const cuerpo = encodeURIComponent(`${nombreUsuario} activó seguimiento en vivo.\n\nVer mapa: ${urlPublica}\n\n${msgBase}`);
         window.open(`mailto:${emailExtra.trim()}?subject=${asunto}&body=${cuerpo}`, "_blank");
       }
       if (smsExtra.trim()) {
-        const msgSMS = encodeURIComponent(`Traza 360: ${nombreUsuario} compartió su ubicación. Ver mapa: ${urlPublica}`);
+        const msgSMS = encodeURIComponent(`LEXIA: ${nombreUsuario} compartió su ubicación. Ver mapa: ${urlPublica}`);
         window.open(`sms:${smsExtra.trim()}?body=${msgSMS}`, "_blank");
       }
       setPaso(2);
@@ -5196,7 +5195,7 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
             <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
               <p className="text-[11px] uppercase tracking-wider font-bold mb-2" style={{ color: BRAND.gold }}>📱 Van a recibir por WhatsApp:</p>
               <p className="text-sm leading-relaxed font-mono" style={{ color: BRAND.textLight }}>
-                🛡️ Traza 360 — Movimiento en Vivo<br/><br/>
+                🛡️ LEXIA — Movimiento en Vivo<br/><br/>
                 {nombreUsuario} compartió su ubicación.<br/>
                 📍 <span style={{ color: BRAND.gold }}>traza360.app/live/abc1234</span><br/>
                 ⏱️ Si no cancela antes de las [hora], necesita ayuda.
@@ -5271,7 +5270,7 @@ function LandingScreen({ onScreen }) {
   const [featOpen, setFeatOpen] = useState(false);
 
   const reviews = [
-    { nombre: "María G.", plataforma: "iOS", texto: "Gracias a Traza 360 mi hija llega segura a casa cada noche. Es lo mejor que instalé en mi vida.", estrellas: 5 },
+    { nombre: "María G.", plataforma: "iOS", texto: "Gracias a LEXIA mi hija llega segura a casa cada noche. Es lo mejor que instalé en mi vida.", estrellas: 5 },
     { nombre: "Carlos R.", plataforma: "Android", texto: "Activé el botón de pánico y en 2 minutos mi familia ya sabía dónde estaba. Increíble.", estrellas: 5 },
     { nombre: "Laura M.", plataforma: "iOS", texto: "Trabajo de noche y mis padres están tranquilos porque pueden ver mi ubicación en vivo.", estrellas: 5 },
   ];
@@ -5331,10 +5330,7 @@ function LandingScreen({ onScreen }) {
       {/* HERO */}
       <section className="px-5 pt-12 pb-8 text-center">
         <div className="mb-5 flex justify-center">
-          <div style={{ position: "relative" }}>
-            <PinEyeLogo size={90} showText={false} />
-            <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: BRAND.red, color: "#fff" }}>●</div>
-          </div>
+          <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 52, fontWeight: 900, letterSpacing: "4px", color: BRAND.gold, textShadow: "0 0 40px rgba(212,175,55,0.5)" }}>LEXIA</h1>
         </div>
 
         {/* Título estilo DGR — serif, bold, tracking */}
@@ -5431,7 +5427,7 @@ function LandingScreen({ onScreen }) {
         </h2>
         <p style={{ fontSize: 13, color: BRAND.textLight, marginBottom: 24 }}>Gratis. Sin tarjeta. En 2 minutos.</p>
         <button onClick={() => onScreen("register")} className="w-full max-w-sm rounded-2xl py-4 font-black text-lg mx-auto block" style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(201,168,76,0.35)", fontFamily: FONT_DISPLAY, letterSpacing: "1px", textTransform: "uppercase" }}>
-          Probá Traza 360
+          Probá LEXIA
         </button>
       </section>
 
@@ -5665,7 +5661,7 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
     /* ❌ v18: Hogar Seguro comentado
     { key: "mi_nido",     emoji: "\u{1F3E0}", title: "Hogar Seguro",     text: "Hogar seguro — Intrusos, accidentes y emergencias." },
     */
-    { key: "los_cuido",   emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro",   text: "Adolescente seguro — Salidas, LEXIAs y anti-bullying." },
+    { key: "los_cuido",   emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro",   text: "Adolescente seguro — Salidas, salidas y anti-bullying." },
     // 🔄 v19: Te Cuido a Distancia FUNCIONAL — grabación remota con consentimiento
     { key: "te_cuido", emoji: "\u{1F441}\u{FE0F}", title: "Te Cuido a Distancia", text: "Activá grabación con consentimiento de la víctima." },
     { key: "contactos",   emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} configurados` },
@@ -5961,7 +5957,7 @@ async function ejecutarPanico() {
               <div className="flex items-start gap-2">
                 <span className="text-base shrink-0">{"\u26A0\u{FE0F}"}</span>
                 <p className="text-[11px] leading-relaxed" style={{ color: BRAND.textLight }}>
-                  Traza 360 <strong style={{ color: BRAND.red }}>NO reemplaza</strong> al 911 ni a los servicios oficiales de emergencia.{" "}
+                  LEXIA <strong style={{ color: BRAND.red }}>NO reemplaza</strong> al 911 ni a los servicios oficiales de emergencia.{" "}
                   <button onClick={() => setActiveScreen("terminos")} className="underline font-semibold" style={{ color: BRAND.gold }}>Ver términos</button>
                 </p>
               </div>
