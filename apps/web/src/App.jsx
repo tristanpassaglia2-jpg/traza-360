@@ -37,7 +37,7 @@ const LANG = (navigator.language || navigator.userLanguage || "es").startsWith("
 
 const T = {
   // Textos generales
-  appName:        { es: "Regreso",                pt: "Regreso" },
+  appName:        { es: "LEXIA",                pt: "LEXIA" },
   tagline:        { es: "Si algo pasa, alguien ya sabe.", pt: "Se algo acontecer, alguém já sabe." },
   panico:         { es: "PÁNICO",                 pt: "PÂNICO" },
   alertaEnviada:  { es: "Alerta enviada",          pt: "Alerta enviada" },
@@ -2272,7 +2272,7 @@ const MODULES = [
       { key: "taxi", iconName: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono taxi.", type: "taxi" },
     ]},
 
-  { key: "los_cuido", iconName: "teen", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro", desc: "Salidas, regresos y anti-bullying.",
+  { key: "los_cuido", iconName: "teen", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro", desc: "Salidas, LEXIAs y anti-bullying.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
       { key: "maps", iconName: "home", icon: "\u{1F3E1}", name: "Llegar a casa", desc: "Abre GPS a tu domicilio.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
@@ -2626,7 +2626,7 @@ function PinEyeLogo({ size = 80, showText = true }) {
             {/* TRAZA en dorado + 360 en rojo */}
             <text x="100" y="262" textAnchor="middle" fontSize="32" fontWeight="800" fontFamily="sans-serif" letterSpacing="1">
               <tspan fill="#D4AF37">TRAZA</tspan>
-              <tspan fill="#D4AF37">REGRESO</tspan>
+              <tspan fill="#D4AF37">LEXIA</tspan>
             </text>
           </>
         )}
@@ -5286,14 +5286,14 @@ function LandingScreen({ onScreen }) {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: "#000", color: "#fff" }}>
+    <div className="min-h-screen" style={{ background: "#000", color: "#fff", backgroundImage: "url(/db0cd607-0fe5-4ec6-97fc-b02e330089dd.jpg)", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }}>
 
       {/* NAVBAR */}
       <nav style={{ background: "rgba(0,0,0,0.95)", borderBottom: `1px solid ${BRAND.border}`, position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(10px)" }}>
         <div className="flex items-center justify-between px-5 py-3 max-w-5xl mx-auto">
           <div className="flex items-center gap-2.5">
             <PinEyeLogo size={32} showText={false} />
-            <span className="text-lg font-black tracking-[3px] uppercase" style={{ color: BRAND.gold, fontFamily: FONT_DISPLAY }}>Regreso</span>
+            <span className="text-lg font-black tracking-[3px] uppercase" style={{ color: BRAND.gold, fontFamily: FONT_DISPLAY }}>LEXIA</span>
           </div>
           <div className="hidden md:flex items-center gap-6">
             {[
@@ -5665,7 +5665,7 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
     /* ❌ v18: Hogar Seguro comentado
     { key: "mi_nido",     emoji: "\u{1F3E0}", title: "Hogar Seguro",     text: "Hogar seguro — Intrusos, accidentes y emergencias." },
     */
-    { key: "los_cuido",   emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro",   text: "Adolescente seguro — Salidas, regresos y anti-bullying." },
+    { key: "los_cuido",   emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro",   text: "Adolescente seguro — Salidas, LEXIAs y anti-bullying." },
     // 🔄 v19: Te Cuido a Distancia FUNCIONAL — grabación remota con consentimiento
     { key: "te_cuido", emoji: "\u{1F441}\u{FE0F}", title: "Te Cuido a Distancia", text: "Activá grabación con consentimiento de la víctima." },
     { key: "contactos",   emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} configurados` },
