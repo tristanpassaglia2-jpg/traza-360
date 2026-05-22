@@ -586,7 +586,7 @@ function OnboardingScreen({ onComplete }) {
           {/* Ícono: paso 1 = logo dorado completo, otros = GoldIcon */}
           <div className="mb-4 flex justify-center">
             {current.iconType === "logo" ? (
-              
+            <PinEyeLogo size={90} showText={false} />  
             ) : (
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.2), rgba(154,123,15,0.08))", border: `1px solid ${BRAND.borderStrong}` }}>
                 <GoldIcon name={current.iconName} size={36} />
