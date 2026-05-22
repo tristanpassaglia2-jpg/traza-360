@@ -586,7 +586,7 @@ function OnboardingScreen({ onComplete }) {
           {/* Ícono: paso 1 = logo dorado completo, otros = GoldIcon */}
           <div className="mb-4 flex justify-center">
             {current.iconType === "logo" ? (
-              <PinEyeLogo size={90} showText={false} />
+              
             ) : (
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.2), rgba(154,123,15,0.08))", border: `1px solid ${BRAND.borderStrong}` }}>
                 <GoldIcon name={current.iconName} size={36} />
@@ -5286,7 +5286,7 @@ function LandingScreen({ onScreen }) {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: "#000", color: "#fff", backgroundImage: "url(/db0cd607-0fe5-4ec6-97fc-b02e330089dd.jpg)", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }}>
+    <div className="min-h-screen" style={{ background: "#000", color: "#fff", backgroundImage: "url(/db0cd607-0fe5-4ec6-97fc-b02e330089dd.jpg)", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "scroll", backgroundRepeat: "no-repeat", minHeight: "100vh" }}>
 
       {/* NAVBAR */}
       <nav style={{ background: "rgba(0,0,0,0.95)", borderBottom: `1px solid ${BRAND.border}`, position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(10px)" }}>
