@@ -29,7 +29,7 @@ const HOME_ADDRESS_DEFAULT = "Mi casa";
 const SUPPORT_EMAIL = "traza360.app@gmail.com"; // ⚠️ Tristan: cambiá este string por tu Gmail nuevo cuando lo crees
 const RESPONSABLE_NAME = "Tristan Passaglia";
 const RESPONSABLE_LOCATION = "Córdoba, Argentina";
-const APP_VERSION = "19.7";
+const APP_VERSION = "19.12";
 
 // ─── SISTEMA DE IDIOMA (ES / PT-BR) ─────────
 // Detección automática: si el navegador está en portugués → PT, sino ES
@@ -37,7 +37,7 @@ const LANG = (navigator.language || navigator.userLanguage || "es").startsWith("
 
 const T = {
   // Textos generales
-  appName:        { es: "Traza 360",              pt: "Traza 360" },
+  appName:        { es: "Regreso",                pt: "Regreso" },
   tagline:        { es: "Si algo pasa, alguien ya sabe.", pt: "Se algo acontecer, alguém já sabe." },
   panico:         { es: "PÁNICO",                 pt: "PÂNICO" },
   alertaEnviada:  { es: "Alerta enviada",          pt: "Alerta enviada" },
@@ -2624,7 +2624,7 @@ function PinEyeLogo({ size = 80, showText = true }) {
             {/* TRAZA en dorado + 360 en rojo */}
             <text x="100" y="262" textAnchor="middle" fontSize="32" fontWeight="800" fontFamily="sans-serif" letterSpacing="1">
               <tspan fill="#D4AF37">TRAZA</tspan>
-              <tspan fill="#DC2626" dx="3">360</tspan>
+              <tspan <tspan fill="#D4AF37">REGRESO</tspan>>360</tspan>
             </text>
           </>
         )}
@@ -5291,7 +5291,7 @@ function LandingScreen({ onScreen }) {
         <div className="flex items-center justify-between px-5 py-3 max-w-5xl mx-auto">
           <div className="flex items-center gap-2.5">
             <PinEyeLogo size={32} showText={false} />
-            <span className="text-sm font-bold tracking-[2px] uppercase" style={{ color: BRAND.gold }}>Traza 360</span>
+            <span className="text-sm font-bold tracking-[2px] uppercase" style={{ color: BRAND.gold }}>Regreso</span>
           </div>
           <div className="hidden md:flex items-center gap-6">
             {[
