@@ -2413,7 +2413,7 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
 {expanded && (
           <div className="mt-4 space-y-3">
             <button onClick={() => setExpanded(false)} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold w-full mb-2" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>{"\u2190"} Volver</button>
-          <div className="mt-4 space-y-3">
+         
             {m.actions.map(a => (
               <button key={a.key} onClick={() => handleAction(a)}
                 className="w-full rounded-2xl px-4 py-4 text-left active:scale-[0.98] transition-all"
