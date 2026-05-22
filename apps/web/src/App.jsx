@@ -2624,7 +2624,7 @@ function PinEyeLogo({ size = 80, showText = true }) {
             {/* TRAZA en dorado + 360 en rojo */}
             <text x="100" y="262" textAnchor="middle" fontSize="32" fontWeight="800" fontFamily="sans-serif" letterSpacing="1">
               <tspan fill="#D4AF37">TRAZA</tspan>
-              <tspan <tspan fill="#D4AF37">REGRESO</tspan>>360</tspan>
+              <tspan fill="#D4AF37">REGRESO</tspan>
             </text>
           </>
         )}
