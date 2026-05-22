@@ -5033,7 +5033,7 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
             } catch(e) { console.warn("Timer alerta:", e); }
           }
           try { reproducirSonido(); } catch(e) {}
-          enviarNotificacion("⚠️ Traza 360", "El tiempo se agotó. Se envió alerta automática a tus contactos.");
+          reproducirSonido();
         }
         setCountdown(Math.max(0, ms));
       }, 1000);
