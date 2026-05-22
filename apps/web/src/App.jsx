@@ -551,7 +551,7 @@ function OnboardingScreen({ onComplete }) {
       cta: "Continuar →",
       modules: [
         { key: "mi_escudo",    iconName: "shield",   label: "Para mí — Violencia de género" },
-        { key: "turno_seguro", iconName: "night",    label: "Para mi entorno — Noche segura" },
+        { key: "turno_seguro", iconName: "night",    label: "Para mí y mi entorno — Noche segura" },
         { key: "te_cuido",     iconName: "eye",      label: "Para cuidar a alguien a distancia" },
         { key: "los_cuido",    iconName: "teen",     label: "Para adolescentes — Padres/hijos" },
       ],
@@ -2255,7 +2255,7 @@ const MODULES = [
   // v19.1: Renombrado "Noche Segura" → "Noche Segura"
   // Motivo: Nicho mucho más grande (jóvenes que salen de noche + trabajadores nocturnos).
   // "Salí tranqui. Volvé tranqui."
-  { key: "turno_seguro", iconName: "night", emoji: "\u{1F303}", title: "Noche Segura", desc: "Para jóvenes que salen de noche, acompañantes, repartidores o cualquier situación de riesgo donde necesites apoyo de amigos o conocidos.",
+  { key: "turno_seguro", iconName: "night", emoji: "\u{1F303}", title: "Noche Segura", desc: "Para jóvenes que salen de noche, acompañantes, repartidores, comisionistas o cualquier situación de riesgo donde necesites apoyo de amigos o conocidos.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
       { key: "testigo",     iconName: "mic",   icon: "🔴", name: "Grabar Evidencias", desc: "Audio + foto frontal y trasera → nube y dispositivo.", type: "modo_testigo" },
@@ -2410,7 +2410,9 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
           <span>{expanded ? "Ocultar opciones" : "Ver opciones"}</span>
           <span className={`text-xs transition-transform ${expanded ? "rotate-180" : ""}`}>▼</span>
         </button>
-        {expanded && (
+{expanded && (
+          <div className="mt-4 space-y-3">
+            <button onClick={() => setExpanded(false)} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold w-full mb-2" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>{"\u2190"} Volver</button>
           <div className="mt-4 space-y-3">
             {m.actions.map(a => (
               <button key={a.key} onClick={() => handleAction(a)}
@@ -2940,7 +2942,7 @@ function InstruccionesScreen({ onBack }) {
               <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>Los 4 módulos de protección</h3>
               {[
                 { icon: "shield", titulo: "Violencia de Género", desc: "Para personas en situación de riesgo. Botón de pánico, grabación silenciosa, botón de ingreso cuando entrás a un lugar desconocido, ubicación en tiempo real." },
-                { icon: "night", titulo: "Noche Segura", desc: "Para jóvenes que salen de noche, acompañantes, repartidores y cualquier situación de riesgo. Pánico, botón de ingreso a lugares, grabación, GPS en vivo, Uber/taxi." },
+                { icon: "night", titulo: "Noche Segura", desc: "Para jóvenes que salen de noche, acompañantes, repartidores, comisionistas y cualquier situación de riesgo. Pánico, botón de ingreso a lugares, grabación, GPS en vivo, Uber/taxi." },
                 { icon: "eye", titulo: "Te Cuido a Distancia", desc: "Un familiar/amigo puede iniciar grabación remota CON tu aprobación. Funciona con código de vínculo de 6 dígitos." },
                 { icon: "teen", titulo: "Adolescente Seguro", desc: "Para que un adolescente avise a sus padres: AYUDA, bullying con evidencia, buscarlo del cole, llegar a casa con GPS, llamar taxi/Uber." },
               ].map((m, i) => (
