@@ -332,7 +332,7 @@ function GoldIcon({ name, size = 24 }) {
     work:      <g stroke={color} strokeWidth="1.6" fill="none" strokeLinejoin="round"><rect x="3" y="8" width="18" height="12" rx="1.5"/><path d="M8 8 V6 C8 5 9 4 10 4 H14 C15 4 16 5 16 6 V8"/><path d="M3 13 H21"/></g>,
     eye:       <g stroke={color} strokeWidth="1.6" fill="none"><path d="M2 12 C4 7 8 4 12 4 C16 4 20 7 22 12 C20 17 16 20 12 20 C8 20 4 17 2 12 Z"/><circle cx="12" cy="12" r="3" fill={color}/></g>,
     contacts:  <g stroke={color} strokeWidth="1.6" fill="none"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20 V18 C3 15.5 5.5 14 9 14 C12.5 14 15 15.5 15 18 V20"/><path d="M14.5 14.5 C16 14 17 14 18 14 C19.5 14 21 15 21 17 V19"/></g>,
-    panic:     <g stroke={color} strokeWidth="1.6" fill="none" strokeLinejoin="round"><path d="M12 2 L2 22 H22 L12 2 Z"/><path d="M12 10 V14" strokeLinecap="round"/><circle cx="12" cy="17.5" r="0.5" fill={color}/></g>,
+    panic:     <g stroke={color} strokeWidth="1.6" fill="none" strokeLinejoin="round"><path d="M12 2 L4 6 V12 C4 17 7.5 20.5 12 22 C16.5 20.5 20 17 20 12 V6 L12 2 Z"/><path d="M12 8 L10 12 H12 L10 16" strokeLinecap="round" stroke={color} fill="none"/></g>,
     mic:       <g stroke={color} strokeWidth="1.6" fill="none" strokeLinecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11 V12 C5 16 8 19 12 19 C16 19 19 16 19 12 V11"/><path d="M12 19 V22"/></g>,
     folder:    <g stroke={color} strokeWidth="1.6" fill="none" strokeLinejoin="round"><path d="M3 7 V18 C3 19 4 20 5 20 H19 C20 20 21 19 21 18 V9 C21 8 20 7 19 7 H12 L10 5 H5 C4 5 3 6 3 7 Z"/></g>,
     pin:       <g stroke={color} strokeWidth="1.6" fill="none" strokeLinejoin="round"><path d="M12 22 C7 16 4 13 4 9 A8 8 0 0 1 20 9 C20 13 17 16 12 22 Z"/><circle cx="12" cy="9" r="2.5" fill={color}/></g>,
@@ -343,7 +343,7 @@ function GoldIcon({ name, size = 24 }) {
     home:      <g stroke={color} strokeWidth="1.6" fill="none" strokeLinejoin="round"><path d="M3 11 L12 3 L21 11 V20 H15 V14 H9 V20 H3 Z"/></g>,
     write:     <g stroke={color} strokeWidth="1.6" fill="none" strokeLinejoin="round" strokeLinecap="round"><path d="M14 4 L20 10 L8 22 H2 V16 L14 4 Z"/></g>,
     night:     <g stroke={color} strokeWidth="1.6" fill="none" strokeLinejoin="round"><path d="M20 14 A8 8 0 1 1 10 4 A6 6 0 0 0 20 14 Z"/></g>,
-    alert:     <g stroke={color} strokeWidth="1.6" fill="none" strokeLinejoin="round" strokeLinecap="round"><path d="M12 3 L22 21 H2 L12 3 Z"/><path d="M12 10 V14"/><circle cx="12" cy="17.5" r="0.5" fill={color}/></g>,
+    alert:     <g stroke={color} strokeWidth="1.6" fill="none" strokeLinejoin="round"><circle cx="12" cy="9" r="4"/><path d="M12 13 C7 13 4 15.5 4 18 V20 H20 V18 C20 15.5 17 13 12 13 Z"/><line x1="12" y1="3" x2="12" y2="5" strokeLinecap="round"/><line x1="16" y1="4" x2="15" y2="6" strokeLinecap="round"/></g>,
     person:    <g stroke={color} strokeWidth="1.6" fill="none"><circle cx="12" cy="7" r="3.5"/><path d="M4 21 C4 16 8 13.5 12 13.5 C16 13.5 20 16 20 21"/></g>,
   };
   return (
@@ -540,7 +540,7 @@ function OnboardingScreen({ onComplete }) {
       title: "Bienvenido/a a LEXIA",
       subtitle: "Alguien cuida de vos.",
       desc: "Esta app te protege a vos y a quienes querés. Con un solo botón podés alertar a tu gente de confianza, compartir tu ubicación y grabar evidencia.",
-      cta: "¿Empezamos a cuidarte? →",
+      cta: "Comenzar →",
     },
     {
       iconType: "icon",
@@ -586,7 +586,7 @@ function OnboardingScreen({ onComplete }) {
           {/* Ícono: paso 1 = logo dorado completo, otros = GoldIcon */}
           <div className="mb-4 flex justify-center">
             {current.iconType === "logo" ? (
-            <PinEyeLogo size={90} showText={false} />  
+            <img src="/preview.webp" alt="LEXIA" style={{ width: 90, height: 90, objectFit: "contain" }} />  
             ) : (
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.2), rgba(154,123,15,0.08))", border: `1px solid ${BRAND.borderStrong}` }}>
                 <GoldIcon name={current.iconName} size={36} />
@@ -2243,7 +2243,7 @@ const MODULES = [
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
       { key: "testigo",  iconName: "mic", icon: "🔴", name: "Grabar evidencias modo multifunción", desc: "Audio + foto frontal y trasera → nube y dispositivo.", type: "modo_testigo" },
-      { key: "panico", iconName: "panic", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación a tus contactos.", type: "alert_contacts", message: "ALERTA — Botón de pánico activado. Necesito ayuda urgente." },
+      { key: "panico", iconName: "shield", icon: "🛡️", name: "Botón de pánico", desc: "Alerta inmediata + ubicación a tus contactos.", type: "alert_contacts", message: "ALERTA — Botón de pánico activado. Necesito ayuda urgente." },
       { key: "estoy_en", iconName: "pin", icon: "\u{1F4CD}", name: "Estoy en...", desc: "Escribí el nombre de la persona con quien vas a reunirte. Envía nombre + ubicación en tiempo real a tus contactos elegidos.", type: "alert_contacts", message: "Estoy en [completar]." },
       { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Ingreso a este lugar", desc: "Escribí el nombre del lugar donde ingresás + activá tiempo estimado de tu estadía. Si no desactivás, se da aviso automáticamente a tus contactos con tu ubicación.", type: "checkin", titulo: "Ingreso a este lugar — Violencia de Género" },
       { key: "share", iconName: "eye", icon: "\u{1F4F2}", name: "Compartir mi movimiento en vivo", desc: "Tus contactos seleccionados ven tu mapa moviéndose en tiempo real. Ellos no instalan nada, reciben tu información cuando vos activás.", type: "ruta_segura" },
@@ -2260,8 +2260,8 @@ const MODULES = [
     actions: [
       { key: "testigo",     iconName: "mic",   icon: "🔴", name: "Grabar Evidencias", desc: "Audio + foto frontal y trasera → nube y dispositivo.", type: "modo_testigo" },
       { key: "ruta_segura", iconName: "eye",   icon: "\u{1F4CD}", name: "Compartir mi movimiento en vivo", desc: "Tus contactos seleccionados ven tu mapa moviéndose en tiempo real. Ellos no instalan nada, reciben tu información cuando vos activás.", type: "ruta_segura" },
-      { key: "panico", iconName: "panic", icon: "\u{1F6A8}", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "SOS — Necesito ayuda urgente." },
-      { key: "sospechoso_lugar", iconName: "alert", icon: "\u26A0\u{FE0F}", name: "Entro a lugar sospechoso", desc: "Guarda dirección + timer. Si no confirmás, alerta automática.", type: "checkin", titulo: "Lugar sospechoso — Noche Segura" },
+      { key: "panico", iconName: "shield", icon: "🛡️", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "SOS — Necesito ayuda urgente." },
+      { key: "sospechoso_lugar", iconName: "pin", icon: "📍", name: "Entro a lugar sospechoso", desc: "Guarda dirección + timer. Si no confirmás, alerta automática.", type: "checkin", titulo: "Lugar sospechoso — Noche Segura" },
       { key: "desconocido", iconName: "person", icon: "\u{1F6B6}", name: "Salgo con desconocido/a", desc: "Avisa contactos + nombre + ubicación.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
       { key: "perdido", iconName: "pin", icon: "\u{1F4CD}", name: "Me perdí", desc: "Comparte GPS en vivo a tus contactos.", type: "alert_contacts", message: "Me perdí. Compartiendo mi ubicación en vivo. Por favor ayudame a volver." },
       { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Ingreso a este lugar", desc: "Activá tu tiempo de estadía. Si no desactivás, se envía tu ubicación en tiempo real.", type: "checkin", titulo: "Ingreso a este lugar — Noche Segura" },
@@ -2279,7 +2279,7 @@ const MODULES = [
       { key: "share", iconName: "eye", icon: "\u{1F4CD}", name: "Compartir mi movimiento en vivo", desc: "Tus contactos seleccionados ven tu mapa moviéndose en tiempo real. Ellos no instalan nada, reciben tu información cuando vos activás.", type: "ruta_segura" },
       { key: "bullying", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Bullying - Grabar evidencia", desc: "Grabación silenciosa real.", type: "record_audio" },
       { key: "geocercas", iconName: "pin", icon: "📍", name: "Cerco de seguridad", desc: "Configurá un radio seguro. Si sale de ese radio se envía alerta y ubicación en tiempo real.", type: "geocercas" },
-      { key: "ayuda", iconName: "panic", icon: "\u{1F6A8}", name: "AYUDA", desc: "Alerta máxima urgencia al padre.", type: "alert_contacts", message: "AYUDA — Necesito ayuda urgente." },
+      { key: "ayuda", iconName: "shield", icon: "🛡️", name: "AYUDA", desc: "Alerta máxima urgencia al padre.", type: "alert_contacts", message: "AYUDA — Necesito ayuda urgente." },
       { key: "cole", iconName: "school", icon: "\u{1F3EB}", name: "Buscame por el cole", desc: "Pide al padre que lo busque.", type: "alert_contacts", message: "URGENTE — Necesito que me busquen por el colegio." },
       { key: "voy_a", iconName: "home", icon: "\u{1F3E0}", name: "Voy a lo de...", desc: "Avisa a dónde va + nombre.", type: "alert_contacts", message: "Voy a lo de [completar]." },
       { key: "uber", iconName: "car", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
@@ -2397,7 +2397,7 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
       <div className="rounded-2xl p-5 flex flex-col" style={{ background: BRAND.cardBg, border: `1px solid ${modColor.border}`, boxShadow: `6px 6px 18px rgba(0,0,0,0.7), 0 0 24px ${modColor.bg}` }}>
         <div className="mb-4 flex items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl" style={{ background: modColor.bg, border: `1.5px solid ${modColor.border}` }}>
-            <PinEyeLogo size={40} showText={false} />
+            <img src="/preview.webp" alt="LEXIA" style={{ width: 40, height: 40, objectFit: "contain" }} />
           </div>
           <div>
             <h4 style={{ fontSize: 20, fontWeight: 800, color: BRAND.white, fontFamily: FONT_DISPLAY, lineHeight: 1.2 }}>{m.title}</h4>
@@ -2636,7 +2636,7 @@ function PinEyeLogo({ size = 80, showText = true }) {
 
 // Alias para mantener compatibilidad con referencias existentes
 function EagleEyeLogo({ size = 80 }) {
-  return <PinEyeLogo size={size} showText={true} />;
+  return <img src="/preview.webp" alt="LEXIA" style={{ width: 60, height: 60, objectFit: "contain" }} />;
 }
 
 // ═══════════════════════════════════════════════
@@ -2909,7 +2909,7 @@ function InstruccionesScreen({ onBack }) {
       <div className="mx-auto max-w-2xl">
         <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver al panel</button>
         <div className="mb-6 text-center">
-          <PinEyeLogo size={70} showText={false} />
+          <img src="/preview.webp" alt="LEXIA" style={{ width: 70, height: 70, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[3px] mt-2" style={{ color: BRAND.gold }}>Guía de uso</p>
           <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>¿Cómo funciona LEXIA?</h2>
         </div>
@@ -3128,7 +3128,7 @@ function PoliticaPrivacidadScreen({ onBack }) {
         <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver</button>
 
         <div className="mb-6 text-center">
-          <PinEyeLogo size={60} showText={false} />
+          <img src="/preview.webp" alt="LEXIA" style={{ width: 60, height: 60, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[3px] mt-2" style={{ color: BRAND.gold }}>Política de Privacidad</p>
           <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>Tus datos son tuyos</h2>
           <p className="text-[11px] mt-2" style={{ color: BRAND.textMute }}>Versión 19.6 · Vigente desde Mayo 2026</p>
@@ -3271,7 +3271,7 @@ function TerminosScreen({ onBack }) {
         <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver</button>
 
         <div className="mb-6 text-center">
-          <PinEyeLogo size={60} showText={false} />
+          <img src="/preview.webp" alt="LEXIA" style={{ width: 60, height: 60, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[3px] mt-2" style={{ color: BRAND.gold }}>Términos y Condiciones</p>
           <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>Acuerdo de uso</h2>
           <p className="text-[11px] mt-2" style={{ color: BRAND.textMute }}>Versión 19.6 · Vigente desde Mayo 2026</p>
@@ -3654,7 +3654,7 @@ function SobreNosotrosScreen({ onBack }) {
         <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver</button>
 
         <div className="mb-6 text-center">
-          <PinEyeLogo size={80} showText={false} />
+          <img src="/preview.webp" alt="LEXIA" style={{ width: 80, height: 80, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[3px] mt-3" style={{ color: BRAND.gold }}>Sobre nosotros</p>
           <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>Quiénes somos</h2>
         </div>
@@ -3699,7 +3699,6 @@ function SobreNosotrosScreen({ onBack }) {
             <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F4E7}"} Contacto</p>
             <div className="text-sm space-y-1" style={{ color: BRAND.textLight }}>
               <p>Email: <span style={{ color: BRAND.white }}>{SUPPORT_EMAIL}</span></p>
-              <p>WhatsApp: <span style={{ color: BRAND.white }}>+54 9 351 395 6879</span></p>
               <p>Ubicación: <span style={{ color: BRAND.white }}>{RESPONSABLE_LOCATION}</span></p>
             </div>
           </div>
@@ -3803,7 +3802,7 @@ function TourDemoScreen({ onComplete, onSkip }) {
                 <div className="absolute inset-[-6px] rounded-full" style={{ border: `2px solid ${BRAND.gold}`, animation: "panicPulseDemo 2s infinite" }} />
                 <div className="flex h-16 w-16 items-center justify-center rounded-full"
                   style={{ background: BRAND.black, border: `3px solid ${BRAND.gold}`, boxShadow: `0 0 20px ${BRAND.gold}55` }}>
-                  <PinEyeLogo size={42} showText={false} />
+                  <img src="/preview.webp" alt="LEXIA" style={{ width: 42, height: 42, objectFit: "contain" }} />
                 </div>
               </div>
               <style>{`@keyframes panicPulseDemo { 0%,100%{opacity:0.4;transform:scale(1)} 50%{opacity:0.9;transform:scale(1.12)} }`}</style>
@@ -4257,7 +4256,7 @@ function PinAuthScreen({ onSuccess, onFallback, onLogout }) {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-6">
-          <PinEyeLogo size={70} showText={false} />
+          <img src="/preview.webp" alt="LEXIA" style={{ width: 70, height: 70, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[3px] mt-3 font-bold" style={{ color: BRAND.gold }}>{TAGLINE}</p>
         </div>
 
@@ -5285,7 +5284,7 @@ function LandingScreen({ onScreen }) {
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
 
   // Unsplash: calle nocturna mojada premium
-  const BG_LANDING = "https://images.unsplash.com/photo-1515621061946-eff1c2a352bd?q=80&w=1920&auto=format&fit=crop";
+  const BG_LANDING = "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?q=80&w=1920&auto=format&fit=crop";
 
   // Fotos de módulos Unsplash
   const MODULE_CARDS = [
@@ -5293,14 +5292,14 @@ function LandingScreen({ onScreen }) {
       key: "mi_escudo",
       title: "Violencia de Género",
       subtitle: "Alerta silenciosa e inmediata",
-      img: "https://images.unsplash.com/photo-1589156280159-27698a70f29e?q=80&w=1920&auto=format&fit=crop",
+      img: "https://images.unsplash.com/photo-1516585427167-9f4af9627e6c?q=80&w=1920&auto=format&fit=crop",
       icon: "🛡️",
     },
     {
       key: "turno_seguro",
       title: "Noche Segura",
       subtitle: "GPS en vivo para salidas nocturnas",
-      img: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1920&auto=format&fit=crop",
+      img: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?q=80&w=1920&auto=format&fit=crop",
       icon: "🌙",
     },
     {
@@ -5445,7 +5444,7 @@ function LandingScreen({ onScreen }) {
         justifyContent: "space-between",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <LexiaLogo size={36} />
+          <img src="/preview.webp" alt="LEXIA" style={{ width: 36, height: 36, objectFit: "contain" }} />
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <button onClick={() => setVista(vista === "login" ? "hero" : "login")}
@@ -5468,7 +5467,7 @@ function LandingScreen({ onScreen }) {
             {/* Hero Section */}
             <section style={{ textAlign: "center", padding: "60px 20px 40px" }}>
               <div style={{ marginBottom: 24, display: "flex", justifyContent: "center" }}>
-                <LexiaLogo size={100} />
+                <img src="/preview.webp" alt="LEXIA" style={{ width: 100, height: 100, objectFit: "contain", filter: "drop-shadow(0 0 20px rgba(201,168,76,0.5))" }} />
               </div>
 
               {/* Badge */}
@@ -5631,7 +5630,7 @@ function LandingScreen({ onScreen }) {
           <div style={{ minHeight: "calc(100vh - 60px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
             <div style={{ width: "100%", maxWidth: 400, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(20px)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 24, padding: "32px 24px" }}>
               <div style={{ textAlign: "center", marginBottom: 24 }}>
-                <LexiaLogo size={60} />
+                <img src="/preview.webp" alt="LEXIA" style={{ width: 60, height: 60, objectFit: "contain" }} />
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginTop: 8 }}>Ingresar</h2>
               </div>
 
@@ -5695,7 +5694,7 @@ function LandingScreen({ onScreen }) {
           <div style={{ minHeight: "calc(100vh - 60px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
             <div style={{ width: "100%", maxWidth: 400, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(20px)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 24, padding: "32px 24px" }}>
               <div style={{ textAlign: "center", marginBottom: 24 }}>
-                <LexiaLogo size={60} />
+                <img src="/preview.webp" alt="LEXIA" style={{ width: 60, height: 60, objectFit: "contain" }} />
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginTop: 8 }}>Crear cuenta</h2>
               </div>
 
@@ -5867,9 +5866,9 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
   // v19.13: Cards con fotos Unsplash cinematográficas
   const quickCards = [
     { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género",    text: "Alerta silenciosa, ubicación y grabación de entorno automática.",
-      img: "https://images.unsplash.com/photo-1589156280159-27698a70f29e?q=80&w=800&auto=format&fit=crop" },
+      img: "https://images.unsplash.com/photo-1516585427167-9f4af9627e6c?q=80&w=800&auto=format&fit=crop" },
     { key: "turno_seguro", emoji: "\u{1F303}", title: "Noche Segura", text: "Para jóvenes de noche, acompañantes, repartidores y comisionistas.",
-      img: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=800&auto=format&fit=crop" },
+      img: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?q=80&w=800&auto=format&fit=crop" },
     { key: "los_cuido",    emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro", text: "Salidas seguras, anti-bullying y GPS para padres.",
       img: "https://images.unsplash.com/photo-1516724562728-afc824a36e84?q=80&w=800&auto=format&fit=crop" },
     { key: "te_cuido",     emoji: "\u{1F441}\u{FE0F}", title: "Te Cuido a Distancia", text: "Seguimiento con consentimiento de la persona protegida.",
@@ -6082,7 +6081,7 @@ async function ejecutarPanico() {
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-6 text-center">
-          <PinEyeLogo size={80} showText={false} />
+          <img src="/preview.webp" alt="LEXIA" style={{ width: 80, height: 80, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[4px] mt-2 font-semibold" style={{ color: BRAND.gold }}>{TAGLINE}</p>
         </div>
 
@@ -6293,13 +6292,14 @@ async function ejecutarPanico() {
       {/* BOTÓN PÁNICO FLOTANTE — v19: con logo de la app + paleta dorada/roja */}
       <div className="fixed bottom-5 right-5 z-50">
         <div style={{ position: "relative" }}>
-          <div style={{ position: "absolute", inset: "-8px", borderRadius: "50%", border: `2px solid ${BRAND.gold}`, animation: "panicPulse 2.5s infinite", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", inset: "-8px", borderRadius: "50%", border: "2px solid rgba(201,168,76,0.7)", animation: "panicPulse 2.5s infinite", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", inset: "-16px", borderRadius: "50%", border: "1px solid rgba(201,168,76,0.3)", animation: "panicPulse 2.5s infinite 0.5s", pointerEvents: "none" }} />
           <button onClick={handlePanico} className="flex h-20 w-20 items-center justify-center rounded-full active:scale-95"
-            style={{ background: BRAND.black, border: `3px solid ${BRAND.gold}`, boxShadow: `6px 6px 18px rgba(0,0,0,0.8), 0 0 30px ${BRAND.gold}55` }}>
-            <PinEyeLogo size={56} showText={false} />
+            style={{ background: "rgba(0,0,0,0.9)", border: "2px solid rgba(201,168,76,0.8)", boxShadow: "0 0 30px rgba(201,168,76,0.4), 0 0 60px rgba(201,168,76,0.15)", overflow: "hidden" }}>
+            <img src="/preview.webp" alt="LEXIA" style={{ width: 52, height: 52, objectFit: "contain" }} />
           </button>
         </div>
-        <div className="text-[12px] text-center mt-1 font-bold uppercase tracking-wider" style={{ color: BRAND.gold }}>{t("panico")}</div>
+        <div className="text-[11px] text-center mt-1.5 font-bold uppercase tracking-[2px]" style={{ color: BRAND.gold, textShadow: "0 0 10px rgba(201,168,76,0.5)" }}>{t("panico")}</div>
       </div>
       <style>{`@keyframes panicPulse { 0%,100%{opacity:0.3;transform:scale(1)} 50%{opacity:0.8;transform:scale(1.12)} }`}</style>
     </div>
@@ -6479,7 +6479,7 @@ export default function App() {
   if (screen === "loading") return (
     <div className="flex min-h-screen items-center justify-center" style={{ background: BRAND.blackBg }}>
       <div className="text-center">
-        <div className="mb-4 flex items-center justify-center"><PinEyeLogo size={80} showText={false} /></div>
+        <div className="mb-4 flex items-center justify-center"><img src="/preview.webp" alt="LEXIA" style={{ width: 80, height: 80, objectFit: "contain" }} /></div>
         <div className="text-sm mt-2" style={{ color: BRAND.gold }}>Cargando...</div>
       </div>
     </div>
