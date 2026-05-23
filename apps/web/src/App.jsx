@@ -5421,14 +5421,14 @@ function LandingScreen({ onScreen }) {
         backgroundImage: `url(${BG_LANDING})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
-        filter: "brightness(0.3) contrast(1.2)",
+        filter: "brightness(0.4) contrast(1.3) saturate(1.2)",
         zIndex: 0,
       }} />
       {/* Overlay gradiente premium */}
       <div style={{
         position: "fixed",
         inset: 0,
-        background: "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.7) 100%)",
+        background: "linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.05) 40%, rgba(0,0,0,0.6) 100%)",
         zIndex: 1,
       }} />
 
@@ -5582,12 +5582,12 @@ function LandingScreen({ onScreen }) {
                       backgroundImage: `url(${card.img})`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
-                      filter: "brightness(0.45) grayscale(0.15)",
+                      filter: "brightness(0.6) contrast(1.2) saturate(1.3)",
                     }} />
                     {/* Overlay */}
                     <div style={{
                       position: "absolute", inset: 0,
-                      background: "linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(201,168,76,0.08) 100%)",
+                      background: "linear-gradient(135deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.2) 100%)",
                     }} />
                     {/* Gold left border accent */}
                     <div style={{
@@ -6153,14 +6153,14 @@ async function ejecutarPanico() {
                       backgroundImage: `url(${card.img})`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
-                      filter: "brightness(0.4) grayscale(0.1)",
+                      filter: "brightness(0.55) contrast(1.2) saturate(1.3)",
                     }} />
                   )}
                   {/* Dark overlay */}
                   <div style={{
                     position: "absolute", inset: 0,
                     background: card.img
-                      ? "linear-gradient(135deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.4) 100%)"
+                      ? "linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.15) 100%)"
                       : BRAND.cardBg,
                   }} />
                   {/* Gold left accent */}
