@@ -569,7 +569,10 @@ function OnboardingScreen({ onComplete }) {
   const current = steps[step];
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-5 py-8" style={{ background: "#000", color: BRAND.white, backgroundImage: "url(https://images.unsplash.com/photo-1716908332073-c76e68c09e42?q=80&w=1920&auto=format&fit=crop)", backgroundSize: "cover", backgroundPosition: "center", position: "relative" }}>
+      {/* Dark overlay */}
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(2px)" }} />
+      <div style={{ position: "relative", zIndex: 10, width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
       {/* Progress dots dorados */}
       <div className="flex gap-2 mb-8">
         {steps.map((_, i) => (
@@ -582,7 +585,7 @@ function OnboardingScreen({ onComplete }) {
 
       <div className="w-full max-w-sm">
         {/* Card paleta dorada */}
-        <div className="rounded-3xl p-8 text-center mb-6" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.borderStrong}`, boxShadow: "8px 8px 24px rgba(0,0,0,0.6), 0 0 30px rgba(212,175,55,0.05)" }}>
+        <div className="rounded-3xl p-8 text-center mb-6" style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(20px)", border: "1px solid rgba(201,168,76,0.4)", boxShadow: "0 8px 40px rgba(0,0,0,0.5), 0 0 30px rgba(201,168,76,0.1)" }}>
           {/* Ícono: paso 1 = logo dorado completo, otros = GoldIcon */}
           <div className="mb-4 flex justify-center">
             {current.iconType === "logo" ? (
@@ -604,8 +607,10 @@ function OnboardingScreen({ onComplete }) {
                 <button key={m.key} onClick={() => setSelectedModule(m.key)}
                   className="w-full rounded-2xl px-5 py-4 flex items-center gap-4 transition-all active:scale-[0.98]"
                   style={{
-                    background: selectedModule === m.key ? "rgba(212,175,55,0.15)" : "rgba(255,255,255,0.05)",
-                    border: selectedModule === m.key ? `2px solid ${BRAND.gold}` : `1px solid rgba(255,255,255,0.12)`,
+                    background: selectedModule === m.key ? "rgba(201,168,76,0.2)" : "rgba(255,255,255,0.08)",
+                    backdropFilter: "blur(10px)",
+                    border: selectedModule === m.key ? "2px solid rgba(201,168,76,0.7)" : "1px solid rgba(201,168,76,0.25)",
+                    boxShadow: selectedModule === m.key ? "0 0 20px rgba(201,168,76,0.15)" : "none",
                   }}>
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
                     style={{ background: selectedModule === m.key ? "rgba(212,175,55,0.2)" : "rgba(255,255,255,0.06)" }}>
@@ -630,7 +635,7 @@ function OnboardingScreen({ onComplete }) {
                 { iconName: "eye", text: "Tus contactos solo se enteran cuando los necesitás" },
               ].map((tip, i) => (
                 <div key={i} className="flex items-center gap-4 rounded-2xl px-4 py-3.5"
-                  style={{ background: "rgba(212,175,55,0.06)", border: `1px solid ${BRAND.borderStrong}` }}>
+                  style={{ background: "rgba(201,168,76,0.1)", backdropFilter: "blur(10px)", border: "1px solid rgba(201,168,76,0.35)" }}>
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
                     style={{ background: "rgba(212,175,55,0.12)" }}>
                     <GoldIcon name={tip.iconName} size={22} />
@@ -654,7 +659,7 @@ function OnboardingScreen({ onComplete }) {
           }}
           disabled={step === 1 && !selectedModule}
           className="w-full rounded-2xl py-4 font-bold shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.3)" }}>
+          style={{ background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 30%, #E8C96A 50%, #C9A84C 70%, #8B6914 100%)", color: "#000", boxShadow: "0 8px 30px rgba(201,168,76,0.4), 0 0 15px rgba(201,168,76,0.2)" }}>
           {current.cta}
         </button>
 
@@ -663,6 +668,7 @@ function OnboardingScreen({ onComplete }) {
             ← Volver
           </button>
         )}
+      </div>
       </div>
     </div>
   );
@@ -3762,7 +3768,10 @@ function TourDemoScreen({ onComplete, onSkip }) {
   const esUltimo = paso === pasos.length - 1;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-5 py-8" style={{ background: "#000", color: BRAND.white, backgroundImage: "url(https://images.unsplash.com/photo-1716908332073-c76e68c09e42?q=80&w=1920&auto=format&fit=crop)", backgroundSize: "cover", backgroundPosition: "center", position: "relative" }}>
+      {/* Dark overlay */}
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(2px)" }} />
+      <div style={{ position: "relative", zIndex: 10, width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
       {/* Progress dots */}
       <div className="flex gap-2 mb-6">
         {pasos.map((_, i) => (
@@ -3829,7 +3838,7 @@ function TourDemoScreen({ onComplete, onSkip }) {
         {/* CTA */}
         <button onClick={() => esUltimo ? onComplete() : setPaso(paso + 1)}
           className="w-full rounded-2xl py-4 mt-6 font-bold shadow-lg"
-          style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.3)" }}>
+          style={{ background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 30%, #E8C96A 50%, #C9A84C 70%, #8B6914 100%)", color: "#000", boxShadow: "0 8px 30px rgba(201,168,76,0.4), 0 0 15px rgba(201,168,76,0.2)" }}>
           {actual.ctaText} {esUltimo ? "" : "→"}
         </button>
 
@@ -3951,7 +3960,7 @@ function BiometriaSetupInline({ nombreUsuario, onDone }) {
   );
 
   return (
-    <div className="rounded-xl p-4" style={{ background: "rgba(212,175,55,0.06)", border: `1px solid ${BRAND.borderStrong}` }}>
+    <div className="rounded-xl p-4" style={{ background: "rgba(201,168,76,0.1)", backdropFilter: "blur(10px)", border: "1px solid rgba(201,168,76,0.35)" }}>
       <p className="text-sm font-bold mb-1" style={{ color: BRAND.gold }}>
         {/iPhone|iPad|Mac/.test(navigator.userAgent) ? "🔒 ¿Activar Face ID?" : "👆 ¿Activar huella?"}
       </p>
@@ -4517,7 +4526,7 @@ function GeocercasScreen({ onBack, contactos, authUser }) {
         </div>
 
         {/* Explicación */}
-        <div className="rounded-2xl p-4 mb-5" style={{ background: "rgba(212,175,55,0.06)", border: `1px solid ${BRAND.borderStrong}` }}>
+        <div className="rounded-2xl p-4 mb-5" style={{ background: "rgba(201,168,76,0.1)", backdropFilter: "blur(10px)", border: "1px solid rgba(201,168,76,0.35)" }}>
           <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
             Definís zonas seguras (casa, colegio, club). Cuando tu hijo sale o llega, sus contactos reciben un WhatsApp con <strong style={{ color: BRAND.white }}>hora y contexto</strong>. De noche, la alerta es roja automáticamente.
           </p>
@@ -5149,7 +5158,7 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
               <div className="space-y-2 mb-3">
                 {contactosMod.map(c => (
                   <div key={c.id} className="flex items-center gap-3 rounded-xl p-3"
-                    style={{ background: "rgba(212,175,55,0.06)", border: `1px solid ${BRAND.borderStrong}` }}>
+                    style={{ background: "rgba(201,168,76,0.1)", backdropFilter: "blur(10px)", border: "1px solid rgba(201,168,76,0.35)" }}>
                     <div className="flex h-9 w-9 items-center justify-center rounded-full shrink-0"
                       style={{ background: "rgba(212,175,55,0.2)" }}>
                       <span className="text-sm font-bold" style={{ color: BRAND.gold }}>{c.nombre[0]?.toUpperCase()}</span>
@@ -5205,7 +5214,7 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
 
             <button onClick={activar} disabled={loading}
               className="w-full rounded-2xl py-4 font-bold text-base disabled:opacity-40"
-              style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.3)" }}>
+              style={{ background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 30%, #E8C96A 50%, #C9A84C 70%, #8B6914 100%)", color: "#000", boxShadow: "0 8px 30px rgba(201,168,76,0.4), 0 0 15px rgba(201,168,76,0.2)" }}>
               {loading ? "Activando..." : "🚀 Activar seguimiento en vivo"}
             </button>
           </div>
@@ -5421,14 +5430,14 @@ function LandingScreen({ onScreen }) {
         backgroundImage: `url(${BG_LANDING})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
-        filter: "brightness(0.4) contrast(1.3) saturate(1.2)",
+        filter: "brightness(0.55) contrast(1.4) saturate(1.4)",
         zIndex: 0,
       }} />
       {/* Overlay gradiente premium */}
       <div style={{
         position: "fixed",
         inset: 0,
-        background: "linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.05) 40%, rgba(0,0,0,0.6) 100%)",
+        background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.5) 100%)",
         zIndex: 1,
       }} />
 
@@ -5582,12 +5591,12 @@ function LandingScreen({ onScreen }) {
                       backgroundImage: `url(${card.img})`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
-                      filter: "brightness(0.6) contrast(1.2) saturate(1.3)",
+                      filter: "brightness(0.7) contrast(1.3) saturate(1.5)",
                     }} />
                     {/* Overlay */}
                     <div style={{
                       position: "absolute", inset: 0,
-                      background: "linear-gradient(135deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.2) 100%)",
+                      background: "linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 100%)",
                     }} />
                     {/* Gold left border accent */}
                     <div style={{
@@ -6153,14 +6162,14 @@ async function ejecutarPanico() {
                       backgroundImage: `url(${card.img})`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
-                      filter: "brightness(0.55) contrast(1.2) saturate(1.3)",
+                      filter: "brightness(0.65) contrast(1.3) saturate(1.5)",
                     }} />
                   )}
                   {/* Dark overlay */}
                   <div style={{
                     position: "absolute", inset: 0,
                     background: card.img
-                      ? "linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.15) 100%)"
+                      ? "linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.05) 100%)"
                       : BRAND.cardBg,
                   }} />
                   {/* Gold left accent */}
