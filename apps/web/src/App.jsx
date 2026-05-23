@@ -208,7 +208,7 @@ function getCurrentLocationWithFallback() {
   });
 }
 
-function buildMapLink(loc) { return loc ? `https://www.google.com/maps?q=${loc.lat},${loc.lng}` : null; }
+function buildMapLink(loc) { return loc ? `https://maps.google.com/?q=${loc.lat},${loc.lng}` : null; }
 
 // ─── WHATSAPP VÍA API ────────────────────────
 async function sendWhatsAppAPI(numero, text) {
@@ -2123,7 +2123,7 @@ function SelectorContactoModal({ contactos, mensaje, onClose, onAlertaSent, modu
         mensaje: msgFinal,
         latitud: location?.lat || null,
         longitud: location?.lng || null,
-        link_mapa: location?.lat ? "https://www.google.com/maps?q=" + location.lat + "," + location.lng : null,
+        link_mapa: location?.lat ? "https://maps.google.com/?q=" + location.lat + "," + location.lng : null,
         enviado_a: elegidos.map(function(c) { return c.telefono; }),
         creado_en: new Date().toISOString()
       });
@@ -5265,316 +5265,522 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
 }
 
 // ─── LANDING SCREEN (v19 — rebrand dorado) ───
+// ─── LANDING SCREEN v19.13 — LEXIA Premium ───────────────────
+// Login + Registro integrados. Sin páginas separadas.
+// Fondo: calle nocturna Unsplash. Logo LEXIA impactante.
 function LandingScreen({ onScreen }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [featOpen, setFeatOpen] = useState(false);
+  const [vista, setVista] = useState("hero"); // hero | login | register
+  // Login state
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  // Register state
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regLoading, setRegLoading] = useState(false);
+  const [regError, setRegError] = useState("");
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
 
-  const reviews = [
-    { nombre: "María G.", plataforma: "iOS", texto: "Gracias a LEXIA mi hija llega segura a casa cada noche. Es lo mejor que instalé en mi vida.", estrellas: 5 },
-    { nombre: "Carlos R.", plataforma: "Android", texto: "Activé el botón de pánico y en 2 minutos mi familia ya sabía dónde estaba. Increíble.", estrellas: 5 },
-    { nombre: "Laura M.", plataforma: "iOS", texto: "Trabajo de noche y mis padres están tranquilos porque pueden ver mi ubicación en vivo.", estrellas: 5 },
+  // Unsplash: calle nocturna mojada premium
+  const BG_LANDING = "https://images.unsplash.com/photo-1515621061946-eff1c2a352bd?q=80&w=1920&auto=format&fit=crop";
+
+  // Fotos de módulos Unsplash
+  const MODULE_CARDS = [
+    {
+      key: "mi_escudo",
+      title: "Violencia de Género",
+      subtitle: "Alerta silenciosa e inmediata",
+      img: "https://images.unsplash.com/photo-1589156280159-27698a70f29e?q=80&w=1920&auto=format&fit=crop",
+      icon: "🛡️",
+    },
+    {
+      key: "turno_seguro",
+      title: "Noche Segura",
+      subtitle: "GPS en vivo para salidas nocturnas",
+      img: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1920&auto=format&fit=crop",
+      icon: "🌙",
+    },
+    {
+      key: "los_cuido",
+      title: "Adolescente Seguro",
+      subtitle: "Protección para tus hijos",
+      img: "https://images.unsplash.com/photo-1516724562728-afc824a36e84?q=80&w=1920&auto=format&fit=crop",
+      icon: "👨‍👩‍👧",
+    },
+    {
+      key: "te_cuido",
+      title: "Te Cuido a Distancia",
+      subtitle: "Seguimiento con consentimiento",
+      img: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=1920&auto=format&fit=crop",
+      icon: "👁️",
+    },
   ];
 
-  const tecnologias = [
-    { icon: "📍", titulo: "Rastreo GPS preciso", desc: "Ubicación en tiempo real con actualizaciones cada 15 segundos" },
-    { icon: "🔔", titulo: "Alertas instantáneas", desc: "WhatsApp inmediato a tus contactos de confianza con un solo toque" },
-    { icon: "🎙️", titulo: "Grabación de evidencias", desc: "Audio y fotos automáticas guardadas en la nube al activar pánico" },
-    { icon: "📐", titulo: "Cerco de seguridad", desc: "Radio seguro con alertas automáticas si alguien sale de la zona configurada" },
-    { icon: "🕐", titulo: "Timer de seguridad", desc: "Si no cancelás a tiempo, alerta automática a tus contactos" },
-    { icon: "🔒", titulo: "Acceso oculto", desc: "La app se disfraza de calculadora para situaciones de riesgo extremo" },
-  ];
-
-  return (
-    <div className="min-h-screen" style={{ background: "#000", color: "#fff", backgroundImage: "url(/db0cd607-0fe5-4ec6-97fc-b02e330089dd.jpg)", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "scroll", backgroundRepeat: "no-repeat", minHeight: "100vh" }}>
-
-      {/* NAVBAR */}
-      <nav style={{ background: "rgba(0,0,0,0.95)", borderBottom: `1px solid ${BRAND.border}`, position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(10px)" }}>
-        <div className="flex items-center justify-between px-5 py-3 max-w-5xl mx-auto">
-          <div className="flex items-center gap-2.5">
-            <PinEyeLogo size={32} showText={false} />
-            <span className="text-lg font-black tracking-[3px] uppercase" style={{ color: BRAND.gold, fontFamily: FONT_DISPLAY }}>LEXIA</span>
-          </div>
-          <div className="hidden md:flex items-center gap-6">
-            {[
-              { label: "Funciones", action: () => setFeatOpen(!featOpen) },
-              { label: "Planes", action: () => onScreen("planes") },
-              { label: "Sobre nosotros", action: () => onScreen("sobre_nosotros") },
-            ].map((item, i) => (
-              <button key={i} onClick={item.action} className="text-sm font-medium" style={{ color: BRAND.textLight }}>
-                {item.label} {item.label === "Funciones" && <span className="text-[10px]">{featOpen ? "▲" : "▼"}</span>}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => onScreen("login")} className="hidden md:block text-sm font-semibold" style={{ color: BRAND.textLight }}>Ingresar</button>
-            <button onClick={() => onScreen("register")} className="rounded-xl px-4 py-2 text-sm font-bold" style={{ background: BRAND.goldGradient, color: BRAND.black }}>Empezar gratis</button>
-            <button className="md:hidden text-xl" onClick={() => setMenuOpen(!menuOpen)} style={{ color: BRAND.gold }}>{menuOpen ? "✕" : "☰"}</button>
-          </div>
-        </div>
-        {menuOpen && (
-          <div className="border-t px-5 py-4 flex flex-col gap-3 md:hidden" style={{ borderColor: BRAND.border }}>
-            {[{ label: "Funciones", screen: "instrucciones_publico" }, { label: "Planes", screen: "planes" }, { label: "Sobre nosotros", screen: "sobre_nosotros" }, { label: "Ingresar", screen: "login" }].map((item, i) => (
-              <button key={i} onClick={() => { setMenuOpen(false); onScreen(item.screen); }} className="text-left text-sm font-semibold py-2" style={{ color: BRAND.textLight, borderBottom: `1px solid ${BRAND.border}` }}>{item.label}</button>
-            ))}
-          </div>
-        )}
-      </nav>
-
-      {/* SOCIAL PROOF BANNER — estilo DGR */}
-      <div className="text-center py-3 px-5" style={{ background: "linear-gradient(135deg, rgba(201,168,76,0.18), rgba(201,168,76,0.06))", borderBottom: `1px solid ${BRAND.borderStrong}` }}>
-        <p className="text-sm font-bold uppercase tracking-[4px]" style={{ color: BRAND.goldLite, fontFamily: FONT_BODY }}>
-          🏆 1ra app de seguridad inteligente multimodal de Latinoamérica
-        </p>
-      </div>
-
-      {/* HERO */}
-      <section className="px-5 pt-12 pb-8 text-center">
-        <div className="mb-5 flex justify-center">
-          <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 52, fontWeight: 900, letterSpacing: "4px", color: BRAND.gold, textShadow: "0 0 40px rgba(212,175,55,0.5)" }}>LEXIA</h1>
-        </div>
-
-        {/* Título estilo DGR — serif, bold, tracking */}
-        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 38, fontWeight: 900, lineHeight: 1.15, color: BRAND.white, letterSpacing: "-0.5px", maxWidth: 320, margin: "0 auto" }}>
-          {LANG === "pt" ? "Se algo acontecer," : "Si algo pasa,"}
-          <br/>
-          <span style={{ background: BRAND.goldGradient, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            {LANG === "pt" ? "alguém já sabe." : "alguien ya sabe."}
-          </span>
-        </h1>
-
-        {/* Línea divisoria estilo DGR */}
-        <div className="flex items-center gap-3 my-4 max-w-[200px] mx-auto">
-          <div className="flex-1 h-px" style={{ background: BRAND.borderStrong }} />
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: BRAND.gold }} />
-          <div className="flex-1 h-px" style={{ background: BRAND.borderStrong }} />
-        </div>
-
-        <p className="text-sm leading-relaxed mx-auto max-w-xs" style={{ color: BRAND.textLight, fontFamily: FONT_BODY }}>
-          App multimodal para protección de personas en tiempo real.
-        </p>
-
-        <p className="text-lg font-bold mt-5 mx-auto max-w-xs" style={{ color: BRAND.white }}>
-          Un botón, muchas soluciones
-        </p>
-
-        <div className="flex justify-center gap-6 mt-4 mb-3">
-          {[
-            { emoji: "🗺️", label: "Ubicación" },
-            { emoji: "🎙️", label: "Audio" },
-            { emoji: "📷", label: "Cámara" },
-          ].map(function(item, i) { return (
-            <div key={i} className="flex flex-col items-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl text-2xl" style={{ background: "rgba(201,168,76,0.1)", border: "1px solid " + BRAND.border }}>
-                {item.emoji}
-              </div>
-              <span className="text-[10px] mt-1.5 font-semibold uppercase tracking-wider" style={{ color: BRAND.goldLite || BRAND.gold }}>{item.label}</span>
-            </div>
-          );})}
-        </div>
-
-        <p className="text-xs mt-2 mx-auto max-w-[260px] leading-relaxed" style={{ color: BRAND.textLight }}>
-          Tus contactos seleccionados te ubican, te escuchan y te miran con tu propia cámara.
-        </p>
-
-      </section>
-
-      {/* CTAs */}
-      <div className="px-5 pb-8">
-        <div className="mx-auto max-w-sm flex flex-col gap-3">
-          <button onClick={() => onScreen("register")} className="w-full rounded-2xl py-4 font-black text-lg" style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.4)" }}>
-            {t("comenzar")}
-          </button>
-          <button onClick={() => onScreen("login")} className="w-full rounded-2xl py-3 font-bold text-sm" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid rgba(255,255,255,0.15)`, color: BRAND.white }}>
-            Ya tengo cuenta → Ingresar
-          </button>
-          <button onClick={() => onScreen("register")} className="w-full rounded-2xl py-4 font-black text-lg mt-1" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid rgba(255,255,255,0.2)`, color: BRAND.white }}>
-            Registrarme gratis →
-          </button>
-        </div>
-      </div>
-
-      {/* TECNOLOGÍAS — estilo DGR */}
-      <section className="px-5 pb-10">
-        <div className="flex items-center gap-3 mb-6 max-w-sm mx-auto">
-          <div className="flex-1 h-px" style={{ background: BRAND.border }} />
-          <h2 style={{ fontFamily: FONT_DISPLAY, fontSize: 18, fontWeight: 700, color: BRAND.white, textTransform: "uppercase", letterSpacing: "3px", whiteSpace: "nowrap" }}>
-            Nuestras tecnologías
-          </h2>
-          <div className="flex-1 h-px" style={{ background: BRAND.border }} />
-        </div>
-        <div className="flex flex-col gap-3 max-w-sm mx-auto">
-          {tecnologias.map((t, i) => (
-            <div key={i} className="flex items-center gap-4 rounded-2xl px-4 py-4" style={{ background: BRAND.cardBg, border: `1px solid ${BRAND.border}` }}>
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl" style={{ background: "rgba(201,168,76,0.1)", border: `1px solid ${BRAND.border}` }}>{t.icon}</div>
-              <div>
-                <p style={{ fontSize: 13, fontWeight: 700, color: BRAND.cream, fontFamily: FONT_DISPLAY, textTransform: "uppercase", letterSpacing: "1px" }}>{t.titulo}</p>
-                <p style={{ fontSize: 13, marginTop: 3, lineHeight: 1.5, color: BRAND.textLight }}>{t.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA FINAL — estilo DGR */}
-      <section className="px-5 py-12 text-center">
-        <div className="flex items-center gap-3 mb-6 max-w-sm mx-auto">
-          <div className="flex-1 h-px" style={{ background: BRAND.border }} />
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: BRAND.gold }} />
-          <div className="flex-1 h-px" style={{ background: BRAND.border }} />
-        </div>
-        <h2 style={{ fontFamily: FONT_DISPLAY, fontSize: 26, fontWeight: 900, color: BRAND.white, textTransform: "uppercase", letterSpacing: "2px", marginBottom: 8 }}>
-          Empezá hoy
-        </h2>
-        <p style={{ fontSize: 13, color: BRAND.textLight, marginBottom: 24 }}>Gratis. Sin tarjeta. En 2 minutos.</p>
-        <button onClick={() => onScreen("register")} className="w-full max-w-sm rounded-2xl py-4 font-black text-lg mx-auto block" style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(201,168,76,0.35)", fontFamily: FONT_DISPLAY, letterSpacing: "1px", textTransform: "uppercase" }}>
-          Probá LEXIA
-        </button>
-      </section>
-
-      {/* FOOTER */}
-      <div className="px-5 pb-8 text-center" style={{ borderTop: `1px solid ${BRAND.border}` }}>
-        <div className="flex items-center justify-center gap-3 text-sm flex-wrap pt-6" style={{ color: BRAND.textMute }}>
-          <button onClick={() => onScreen("sobre_nosotros")} style={{ color: BRAND.gold }}>Sobre nosotros</button>
-          <span>·</span>
-          <button onClick={() => onScreen("privacidad")} style={{ color: BRAND.gold }}>Privacidad</button>
-          <span>·</span>
-          <button onClick={() => onScreen("terminos")} style={{ color: BRAND.gold }}>Términos</button>
-        </div>
-        <div className="text-[11px] mt-2" style={{ color: BRAND.textMute }}>
-          📧 <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span> · traza360.app
-        </div>
-      </div>
-    </div>
-  );
-}
-// ─── COMPLETAR PERFIL BANNER (v19.12) ────────
-function CompletarPerfilBanner({ authUser, onComplete, onDismiss }) {
-  const [telefono, setTelefono] = useState("");
-  const [prefijo, setPrefijo] = useState("54");
-  const [pais, setPais] = useState("");
-  const [moduloPrincipal, setModuloPrincipal] = useState("");
-  const [guardando, setGuardando] = useState(false);
-  const [error, setError] = useState("");
-  const [listo, setListo] = useState(false);
-
-  const progreso = [telefono, pais, moduloPrincipal].filter(Boolean).length;
-  const pct = Math.round((progreso / 3) * 100);
-
-  const modulos = [
-    { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", label: "Violencia de Género" },
-    { key: "turno_seguro", emoji: "\u{1F303}", label: "Salgo de noche" },
-    { key: "los_cuido",    emoji: "\u{1F9D1}\u200D\u{1F393}", label: "Cuido a mi hijo/a" },
-    { key: "te_cuido",     emoji: "\u{1F441}\u{FE0F}", label: "Cuido a alguien a distancia" },
-  ];
-
-  async function guardar() {
-    setError("");
-    if (!telefono.trim()) { setError("El teléfono es obligatorio para recuperar tu cuenta."); return; }
-    setGuardando(true);
-    try {
-      var numCompleto = prefijo + limpiarNumero(telefono);
-      await supabase.from("usuarios").update({
-        telefono: numCompleto,
-        pais: pais || null,
-        modo: moduloPrincipal || null,
-        perfil_completo: true,
-      }).eq("auth_user_id", authUser?.id);
-      setListo(true);
-      setTimeout(function() { onComplete(); }, 1500);
-    } catch(e) {
-      setError("Error al guardar. Intentá de nuevo.");
-    }
-    setGuardando(false);
+  async function handleLogin() {
+    setLoginError("");
+    if (!loginEmail.trim() || !loginPassword.trim()) { setLoginError("Completá todos los campos."); return; }
+    setLoginLoading(true);
+    const r = await signIn(loginEmail.trim(), loginPassword);
+    setLoginLoading(false);
+    if (r.success) onScreen("home_after_login");
+    else setLoginError(r.error?.includes("Invalid") ? "Email o contraseña incorrectos." : r.error || "Error al ingresar.");
   }
 
-  if (listo) return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/80 backdrop-blur-sm px-5">
-      <div className="w-full max-w-sm rounded-3xl p-8 text-center" style={{ background: "#000", border: "2px solid " + BRAND.borderStrong }}>
-        <div className="text-5xl mb-3">{"\u2705"}</div>
-        <h3 className="text-lg font-bold" style={{ color: BRAND.gold }}>Perfil completo</h3>
-        <p className="text-sm mt-2" style={{ color: BRAND.textLight }}>Tu cuenta está lista para protegerte.</p>
+  async function handleGoogle() {
+    setLoginError(""); setRegError("");
+    if (vista === "register" && !aceptaTerminos) { setRegError("Aceptá los Términos y la Política de Privacidad."); return; }
+    const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
+    if (error) { setLoginError("Error al conectar con Google."); }
+  }
+
+  async function handleRegister() {
+    setRegError("");
+    if (!regName.trim() || !regEmail.trim() || !regPassword.trim()) { setRegError("Completá todos los campos."); return; }
+    if (regPassword.length < 6) { setRegError("Contraseña mínimo 6 caracteres."); return; }
+    if (!aceptaTerminos) { setRegError("Aceptá los Términos y la Política de Privacidad."); return; }
+    setRegLoading(true);
+    try { sessionStorage.setItem("traza360_pending_name", regName.trim()); } catch(e){}
+    const r = await signUp(regEmail.trim(), regPassword, regName.trim());
+    setRegLoading(false);
+    if (r.success) onScreen("home_after_login");
+    else setRegError(r.error?.includes("already") ? "Email ya registrado. ¿Querés ingresar?" : r.error || "Error al crear cuenta.");
+  }
+
+  // ── LEXIA Logo premium ──────────────────────────────────────
+  function LexiaLogo({ size = 80 }) {
+    return (
+      <div style={{ textAlign: "center", lineHeight: 0 }}>
+        <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="shieldGold" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#1a3a6b"/>
+              <stop offset="40%" stopColor="#1e4d8c"/>
+              <stop offset="100%" stopColor="#0d2444"/>
+            </linearGradient>
+            <linearGradient id="borderGold" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#8B6914"/>
+              <stop offset="30%" stopColor="#C9A84C"/>
+              <stop offset="50%" stopColor="#E8C96A"/>
+              <stop offset="70%" stopColor="#C9A84C"/>
+              <stop offset="100%" stopColor="#8B6914"/>
+            </linearGradient>
+            <linearGradient id="pinGold" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#C9A84C"/>
+              <stop offset="100%" stopColor="#E8C96A"/>
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+          </defs>
+          {/* Shield body */}
+          <path d="M50 5 L10 20 V50 C10 72 28 88 50 95 C72 88 90 72 90 50 V20 Z"
+            fill="url(#shieldGold)" stroke="url(#borderGold)" strokeWidth="2.5" filter="url(#glow)"/>
+          {/* Circuit lines */}
+          <line x1="25" y1="45" x2="40" y2="45" stroke="#C9A84C" strokeWidth="1" opacity="0.6"/>
+          <line x1="60" y1="45" x2="75" y2="45" stroke="#C9A84C" strokeWidth="1" opacity="0.6"/>
+          <line x1="50" y1="65" x2="50" y2="75" stroke="#C9A84C" strokeWidth="1" opacity="0.6"/>
+          <circle cx="25" cy="45" r="2" fill="#C9A84C" opacity="0.8"/>
+          <circle cx="75" cy="45" r="2" fill="#C9A84C" opacity="0.8"/>
+          <circle cx="50" cy="75" r="2" fill="#C9A84C" opacity="0.8"/>
+          {/* GPS Pin */}
+          <path d="M50 25 C42 25 36 31 36 39 C36 50 50 62 50 62 C50 62 64 50 64 39 C64 31 58 25 50 25 Z"
+            fill="url(#pinGold)" filter="url(#glow)"/>
+          <circle cx="50" cy="39" r="5" fill="#1a3a6b"/>
+          <circle cx="50" cy="39" r="2" fill="#E8C96A"/>
+        </svg>
+        <div style={{
+          fontFamily: "'Georgia', serif",
+          fontSize: size * 0.28,
+          fontWeight: 900,
+          letterSpacing: "4px",
+          background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 30%, #E8C96A 50%, #C9A84C 70%, #8B6914 100%)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          marginTop: 4,
+        }}>LEXIA</div>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-end justify-center bg-black/80 backdrop-blur-sm px-4" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-      <div className="w-full max-w-md rounded-t-3xl overflow-hidden" style={{ background: "#000", border: "2px solid " + BRAND.borderStrong, maxHeight: "88vh", overflowY: "auto" }}>
-        <div className="flex justify-center pt-3 pb-1"><div className="h-1 w-12 rounded-full" style={{ background: BRAND.borderStrong }} /></div>
-        <div className="px-5 pb-7 pt-2">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-bold" style={{ color: BRAND.white }}>Completá tu perfil</h2>
-              <p className="text-sm mt-0.5" style={{ color: BRAND.textLight }}>Tarda 60 segundos — tu cuenta queda más segura</p>
-            </div>
-            <button onClick={onDismiss} className="text-xl mt-1" style={{ color: BRAND.textMute }}>{"\u2715"}</button>
-          </div>
-          <div className="rounded-full h-2 mb-1" style={{ background: "rgba(255,255,255,0.08)" }}>
-            <div className="h-2 rounded-full transition-all" style={{ width: pct + "%", background: BRAND.goldGradient }} />
-          </div>
-          <p className="text-[11px] mb-5 text-right" style={{ color: BRAND.textMute }}>{pct}% completado</p>
+    <div style={{
+      minHeight: "100vh",
+      background: "#000",
+      color: "#fff",
+      fontFamily: "'system-ui', sans-serif",
+      position: "relative",
+      overflowX: "hidden",
+    }}>
+      {/* Fondo: calle nocturna Unsplash */}
+      <div style={{
+        position: "fixed",
+        inset: 0,
+        backgroundImage: `url(${BG_LANDING})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        filter: "brightness(0.35)",
+        zIndex: 0,
+      }} />
+      {/* Overlay gradiente premium */}
+      <div style={{
+        position: "fixed",
+        inset: 0,
+        background: "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.7) 100%)",
+        zIndex: 1,
+      }} />
 
-          <div className="mb-4">
-            <label className="text-[11px] uppercase tracking-wider font-bold block mb-2" style={{ color: BRAND.gold }}>{"\u{1F4F1}"} Tu teléfono WhatsApp</label>
-            <PhoneInput value={telefono} onChange={setTelefono} prefix={prefijo} onPrefixChange={setPrefijo} placeholder="Número sin 0 ni 15" />
-            <p className="text-[11px] mt-1.5" style={{ color: BRAND.textMute }}>Para recuperar tu cuenta y recibir alertas propias.</p>
-          </div>
-
-          <div className="mb-4">
-            <label className="text-[11px] uppercase tracking-wider font-bold block mb-2" style={{ color: BRAND.gold }}>{"\u{1F30E}"} Tu país</label>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { code: "AR", flag: "\u{1F1E6}\u{1F1F7}", label: "Argentina" },
-                { code: "CL", flag: "\u{1F1E8}\u{1F1F1}", label: "Chile" },
-                { code: "BR", flag: "\u{1F1E7}\u{1F1F7}", label: "Brasil" },
-                { code: "CO", flag: "\u{1F1E8}\u{1F1F4}", label: "Colombia" },
-                { code: "MX", flag: "\u{1F1F2}\u{1F1FD}", label: "México" },
-                { code: "otro", flag: "\u{1F30E}", label: "Otro" },
-              ].map(function(p) { return (
-                <button key={p.code} onClick={function() { setPais(p.code); }} className="rounded-xl py-2.5 text-center" style={{ background: pais === p.code ? "rgba(212,175,55,0.15)" : "rgba(255,255,255,0.04)", border: "1px solid " + (pais === p.code ? BRAND.borderStrong : BRAND.border) }}>
-                  <div className="text-xl">{p.flag}</div>
-                  <div className="text-[10px] mt-1 font-semibold" style={{ color: pais === p.code ? BRAND.gold : BRAND.textMute }}>{p.label}</div>
-                </button>
-              ); })}
-            </div>
-          </div>
-
-          <div className="mb-5">
-            <label className="text-[11px] uppercase tracking-wider font-bold block mb-2" style={{ color: BRAND.gold }}>{"\u{1F3AF}"} ¿Para qué usás la app?</label>
-            <div className="space-y-2">
-              {modulos.map(function(m) { return (
-                <button key={m.key} onClick={function() { setModuloPrincipal(m.key); }} className="w-full rounded-xl px-4 py-3 flex items-center gap-3 text-left" style={{ background: moduloPrincipal === m.key ? "rgba(212,175,55,0.12)" : "rgba(255,255,255,0.03)", border: "1px solid " + (moduloPrincipal === m.key ? BRAND.borderStrong : BRAND.border) }}>
-                  <span className="text-xl shrink-0">{m.emoji}</span>
-                  <span className="text-sm font-semibold" style={{ color: moduloPrincipal === m.key ? BRAND.gold : BRAND.white }}>{m.label}</span>
-                  {moduloPrincipal === m.key && <span className="ml-auto font-bold" style={{ color: BRAND.gold }}>{"\u2713"}</span>}
-                </button>
-              ); })}
-            </div>
-          </div>
-
-          {error && <p className="text-sm mb-3" style={{ color: "#fca5a5" }}>{error}</p>}
-
-          <button onClick={guardar} disabled={guardando} className="w-full rounded-2xl py-4 font-bold text-base disabled:opacity-40" style={{ background: BRAND.goldGradient, color: BRAND.black, boxShadow: "0 8px 30px rgba(212,175,55,0.3)" }}>
-            {guardando ? "Guardando..." : "\u2705 Guardar y continuar"}
-          </button>
-          <button onClick={onDismiss} className="w-full py-3 text-sm mt-2" style={{ color: BRAND.textMute }}>Ahora no</button>
+      {/* NAVBAR */}
+      <nav style={{
+        position: "sticky", top: 0, zIndex: 100,
+        background: "rgba(0,0,0,0.75)",
+        backdropFilter: "blur(12px)",
+        borderBottom: "1px solid rgba(201,168,76,0.2)",
+        padding: "12px 20px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <LexiaLogo size={36} />
         </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={() => setVista(vista === "login" ? "hero" : "login")}
+            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", borderRadius: 12, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+            Ingresar
+          </button>
+          <button onClick={() => setVista(vista === "register" ? "hero" : "register")}
+            style={{ background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 50%, #8B6914 100%)", border: "none", color: "#000", borderRadius: 12, padding: "8px 16px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
+            Empezar gratis
+          </button>
+        </div>
+      </nav>
+
+      {/* CONTENT */}
+      <div style={{ position: "relative", zIndex: 10 }}>
+
+        {/* ── HERO ── */}
+        {vista === "hero" && (
+          <div>
+            {/* Hero Section */}
+            <section style={{ textAlign: "center", padding: "60px 20px 40px" }}>
+              <div style={{ marginBottom: 24, display: "flex", justifyContent: "center" }}>
+                <LexiaLogo size={100} />
+              </div>
+
+              {/* Badge */}
+              <div style={{
+                display: "inline-block",
+                background: "rgba(201,168,76,0.1)",
+                border: "1px solid rgba(201,168,76,0.4)",
+                borderRadius: 20,
+                padding: "4px 16px",
+                fontSize: 10,
+                letterSpacing: "3px",
+                textTransform: "uppercase",
+                color: "#C9A84C",
+                marginBottom: 20,
+              }}>
+                🏆 1ra app de seguridad inteligente multimodal de Latinoamérica
+              </div>
+
+              {/* Tagline */}
+              <h1 style={{
+                fontFamily: "'Georgia', serif",
+                fontSize: "clamp(32px, 8vw, 52px)",
+                fontWeight: 900,
+                lineHeight: 1.1,
+                margin: "0 auto 12px",
+                maxWidth: 360,
+                color: "#fff",
+              }}>
+                {LANG === "pt" ? "Se algo acontecer," : "Si algo pasa,"}
+                <br/>
+                <span style={{
+                  background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 40%, #E8C96A 60%, #C9A84C 80%, #8B6914 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}>
+                  {LANG === "pt" ? "alguém já sabe." : "alguien ya sabe."}
+                </span>
+              </h1>
+
+              <p style={{ fontSize: 14, color: "rgba(245,240,232,0.7)", maxWidth: 300, margin: "0 auto 8px" }}>
+                App multimodal para protección de personas en tiempo real.
+              </p>
+              <p style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 32 }}>
+                Un botón, muchas soluciones
+              </p>
+
+              {/* Feature icons */}
+              <div style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 40 }}>
+                {[
+                  { emoji: "🗺️", label: "Ubicación" },
+                  { emoji: "🎙️", label: "Audio" },
+                  { emoji: "📷", label: "Cámara" },
+                ].map((item, i) => (
+                  <div key={i} style={{ textAlign: "center" }}>
+                    <div style={{
+                      width: 56, height: 56,
+                      background: "rgba(201,168,76,0.12)",
+                      border: "1px solid rgba(201,168,76,0.3)",
+                      borderRadius: 16,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 24, margin: "0 auto 6px",
+                    }}>{item.emoji}</div>
+                    <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "2px", color: "#C9A84C", fontWeight: 700 }}>{item.label}</span>
+                  </div>
+                ))}
+              </div>
+
+              <p style={{ fontSize: 12, color: "rgba(245,240,232,0.5)", maxWidth: 280, margin: "0 auto 32px" }}>
+                Tus contactos seleccionados te ubican, te escuchan y te miran con tu propia cámara.
+              </p>
+
+              {/* CTAs */}
+              <div style={{ maxWidth: 360, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12, padding: "0 20px" }}>
+                <button onClick={() => setVista("register")}
+                  style={{ width: "100%", borderRadius: 16, padding: "16px", fontSize: 18, fontWeight: 900, background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 50%, #8B6914 100%)", color: "#000", border: "none", cursor: "pointer", boxShadow: "0 8px 30px rgba(212,175,55,0.4)", fontFamily: "'Georgia', serif", letterSpacing: "1px" }}>
+                  Comenzar →
+                </button>
+                <button onClick={() => setVista("login")}
+                  style={{ width: "100%", borderRadius: 16, padding: "14px", fontSize: 16, fontWeight: 700, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", cursor: "pointer" }}>
+                  Ya tengo cuenta → Ingresar
+                </button>
+              </div>
+            </section>
+
+            {/* ── 4 MODULE CARDS ── */}
+            <section style={{ padding: "20px 16px 40px" }}>
+              <h2 style={{ textAlign: "center", fontFamily: "'Georgia', serif", fontSize: 18, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "3px", marginBottom: 20 }}>
+                Elegí tu módulo
+              </h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 420, margin: "0 auto" }}>
+                {MODULE_CARDS.map((card) => (
+                  <button key={card.key}
+                    onClick={() => {
+                      try { sessionStorage.setItem("traza360_selected_module", card.key); } catch(e){}
+                      window.__lexia_initial_module = card.key;
+                      setVista("register");
+                    }}
+                    style={{
+                      position: "relative",
+                      borderRadius: 20,
+                      overflow: "hidden",
+                      height: 110,
+                      border: "1px solid rgba(201,168,76,0.35)",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      display: "block",
+                      width: "100%",
+                    }}>
+                    {/* Background photo */}
+                    <div style={{
+                      position: "absolute", inset: 0,
+                      backgroundImage: `url(${card.img})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      filter: "brightness(0.3) grayscale(0.4)",
+                    }} />
+                    {/* Overlay */}
+                    <div style={{
+                      position: "absolute", inset: 0,
+                      background: "linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(201,168,76,0.08) 100%)",
+                    }} />
+                    {/* Gold left border accent */}
+                    <div style={{
+                      position: "absolute", left: 0, top: 0, bottom: 0,
+                      width: 3,
+                      background: "linear-gradient(to bottom, #C9A84C, #E8C96A, #C9A84C)",
+                    }} />
+                    {/* Content */}
+                    <div style={{ position: "relative", zIndex: 2, padding: "16px 16px 16px 20px", display: "flex", alignItems: "center", gap: 14, height: "100%" }}>
+                      <span style={{ fontSize: 32, flexShrink: 0 }}>{card.icon}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 4 }}>{card.title}</div>
+                        <div style={{ fontSize: 12, color: "rgba(232,220,200,0.7)" }}>{card.subtitle}</div>
+                      </div>
+                      <span style={{ color: "#C9A84C", fontSize: 20, flexShrink: 0 }}>→</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {/* Footer */}
+            <div style={{ textAlign: "center", padding: "20px", borderTop: "1px solid rgba(201,168,76,0.15)" }}>
+              <div style={{ display: "flex", justifyContent: "center", gap: 16, fontSize: 12, color: "rgba(255,255,255,0.4)", flexWrap: "wrap" }}>
+                <button onClick={() => onScreen("sobre_nosotros")} style={{ color: "#C9A84C", background: "none", border: "none", cursor: "pointer", fontSize: 12 }}>Sobre nosotros</button>
+                <span>·</span>
+                <button onClick={() => onScreen("privacidad")} style={{ color: "#C9A84C", background: "none", border: "none", cursor: "pointer", fontSize: 12 }}>Privacidad</button>
+                <span>·</span>
+                <button onClick={() => onScreen("terminos")} style={{ color: "#C9A84C", background: "none", border: "none", cursor: "pointer", fontSize: 12 }}>Términos</button>
+              </div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>
+                📧 {SUPPORT_EMAIL} · traza360.app
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── LOGIN INTEGRADO ── */}
+        {vista === "login" && (
+          <div style={{ minHeight: "calc(100vh - 60px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+            <div style={{ width: "100%", maxWidth: 400, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(20px)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 24, padding: "32px 24px" }}>
+              <div style={{ textAlign: "center", marginBottom: 24 }}>
+                <LexiaLogo size={60} />
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginTop: 8 }}>Ingresar</h2>
+              </div>
+
+              {/* Google */}
+              <button onClick={handleGoogle}
+                style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 600, color: "#fff", cursor: "pointer", marginBottom: 16 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Continuar con Google
+              </button>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                <div style={{ flex: 1, height: 1, background: "rgba(201,168,76,0.2)" }}/>
+                <span style={{ fontSize: 12, color: "rgba(232,220,200,0.5)" }}>o con email</span>
+                <div style={{ flex: 1, height: 1, background: "rgba(201,168,76,0.2)" }}/>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
+                <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
+                  placeholder="tu@email.com"
+                  style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
+                  placeholder="Contraseña"
+                  style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+              </div>
+
+              <div style={{ textAlign: "right", marginBottom: 16 }}>
+                <button onClick={() => onScreen("recuperar")} style={{ background: "none", border: "none", color: "#C9A84C", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
+
+              {loginError && <p style={{ color: "#fca5a5", fontSize: 13, textAlign: "center", marginBottom: 12 }}>{loginError}</p>}
+
+              <button onClick={handleLogin} disabled={loginLoading}
+                style={{ width: "100%", borderRadius: 14, padding: "14px", fontSize: 15, fontWeight: 800, background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 50%, #8B6914 100%)", color: "#000", border: "none", cursor: "pointer", opacity: loginLoading ? 0.6 : 1 }}>
+                {loginLoading ? "Ingresando..." : "Ingresar"}
+              </button>
+
+              <p style={{ textAlign: "center", marginTop: 16, fontSize: 13, color: "rgba(232,220,200,0.6)" }}>
+                ¿No tenés cuenta?{" "}
+                <button onClick={() => { setVista("register"); setLoginError(""); }}
+                  style={{ background: "none", border: "none", color: "#C9A84C", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>
+                  Registrate gratis
+                </button>
+              </p>
+
+              <button onClick={() => setVista("hero")} style={{ width: "100%", marginTop: 8, background: "none", border: "none", color: "rgba(232,220,200,0.4)", fontSize: 12, cursor: "pointer" }}>
+                ← Volver
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── REGISTRO INTEGRADO ── */}
+        {vista === "register" && (
+          <div style={{ minHeight: "calc(100vh - 60px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+            <div style={{ width: "100%", maxWidth: 400, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(20px)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 24, padding: "32px 24px" }}>
+              <div style={{ textAlign: "center", marginBottom: 24 }}>
+                <LexiaLogo size={60} />
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginTop: 8 }}>Crear cuenta</h2>
+              </div>
+
+              {/* Google */}
+              <button onClick={handleGoogle}
+                style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 600, color: "#fff", cursor: "pointer", marginBottom: 16, opacity: !aceptaTerminos ? 0.5 : 1 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Continuar con Google
+              </button>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                <div style={{ flex: 1, height: 1, background: "rgba(201,168,76,0.2)" }}/>
+                <span style={{ fontSize: 12, color: "rgba(232,220,200,0.5)" }}>o con email</span>
+                <div style={{ flex: 1, height: 1, background: "rgba(201,168,76,0.2)" }}/>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
+                <input type="text" value={regName} onChange={e => setRegName(e.target.value)}
+                  placeholder="Nombre completo"
+                  style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)}
+                  placeholder="tu@email.com"
+                  style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+              </div>
+
+              {/* Términos */}
+              <div style={{ background: "rgba(201,168,76,0.05)", border: `1px solid ${aceptaTerminos ? "rgba(201,168,76,0.5)" : "rgba(201,168,76,0.2)"}`, borderRadius: 12, padding: 12, marginBottom: 16 }}>
+                <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}
+                  onClick={() => setAceptaTerminos(!aceptaTerminos)}>
+                  <div style={{
+                    width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 1,
+                    background: aceptaTerminos ? "linear-gradient(135deg, #8B6914, #C9A84C)" : "transparent",
+                    border: `2px solid ${aceptaTerminos ? "#C9A84C" : "rgba(255,255,255,0.3)"}`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    {aceptaTerminos && <span style={{ color: "#000", fontSize: 12, fontWeight: 900 }}>✓</span>}
+                  </div>
+                  <div style={{ fontSize: 12, color: "rgba(232,220,200,0.8)", lineHeight: 1.6 }}>
+                    Acepto los{" "}
+                    <button type="button" onClick={e => { e.stopPropagation(); onScreen("terminos"); }}
+                      style={{ background: "none", border: "none", color: "#C9A84C", fontWeight: 700, cursor: "pointer", fontSize: 12, textDecoration: "underline" }}>
+                      Términos
+                    </button>
+                    {" "}y la{" "}
+                    <button type="button" onClick={e => { e.stopPropagation(); onScreen("privacidad"); }}
+                      style={{ background: "none", border: "none", color: "#C9A84C", fontWeight: 700, cursor: "pointer", fontSize: 12, textDecoration: "underline" }}>
+                      Privacidad
+                    </button>.
+                    <p style={{ marginTop: 4, fontSize: 10, color: "rgba(232,220,200,0.5)" }}>LEXIA no reemplaza al 911 ni a servicios de emergencia.</p>
+                  </div>
+                </label>
+              </div>
+
+              {regError && <p style={{ color: "#fca5a5", fontSize: 13, textAlign: "center", marginBottom: 12 }}>{regError}</p>}
+
+              <button onClick={handleRegister} disabled={regLoading || !aceptaTerminos}
+                style={{ width: "100%", borderRadius: 14, padding: "14px", fontSize: 15, fontWeight: 800, background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 50%, #8B6914 100%)", color: "#000", border: "none", cursor: "pointer", opacity: (regLoading || !aceptaTerminos) ? 0.4 : 1 }}>
+                {regLoading ? "Creando cuenta..." : "Crear cuenta"}
+              </button>
+
+              <p style={{ textAlign: "center", marginTop: 16, fontSize: 13, color: "rgba(232,220,200,0.6)" }}>
+                ¿Ya tenés cuenta?{" "}
+                <button onClick={() => { setVista("login"); setRegError(""); }}
+                  style={{ background: "none", border: "none", color: "#C9A84C", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>
+                  Ingresar
+                </button>
+              </p>
+
+              <button onClick={() => setVista("hero")} style={{ width: "100%", marginTop: 8, background: "none", border: "none", color: "rgba(232,220,200,0.4)", fontSize: 12, cursor: "pointer" }}>
+                ← Volver
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
-  );
-}
-
-// ─── BANNER MINI PERFIL INCOMPLETO (v19.12) ────────
-function PerfilIncompletoBannerMini({ onClick }) {
-  return (
-    <button onClick={onClick} className="w-full rounded-xl py-2.5 px-4 text-left flex items-center gap-3 mb-3" style={{ background: "rgba(212,175,55,0.08)", border: "1px solid " + BRAND.borderStrong }}>
-      <span className="text-lg shrink-0">{"\u{1F4DD}"}</span>
-      <div className="flex-1">
-        <p className="text-sm font-bold" style={{ color: BRAND.gold }}>Completá tu perfil</p>
-        <p className="text-[11px]" style={{ color: BRAND.textLight }}>Teléfono + país — para protegerte mejor</p>
-      </div>
-      <span className="text-sm" style={{ color: BRAND.gold }}>{"\u2192"}</span>
-    </button>
   );
 }
 function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans }) {
@@ -5605,6 +5811,12 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
 
   useEffect(() => {
     cargarContactos();
+    // v19.13: Auto-abrir módulo seleccionado en onboarding
+    if (window.__lexia_initial_module) {
+      const mod = MODULES.find(m => m.key === window.__lexia_initial_module);
+      if (mod) { setTimeout(() => setActiveModule(mod), 100); }
+      window.__lexia_initial_module = null;
+    }
      // v19.12: Detectar si perfil está completo
     async function checkPerfil() {
       try {
@@ -5652,21 +5864,18 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
   // CAMBIOS v18:
   // - "Hogar Seguro" (mi_nido) y "Adulto Mayor Seguro" (los_protejo) COMENTADOS
   // - Renombrado "Te Cuido" → "Te Cuido a Distancia"
+  // v19.13: Cards con fotos Unsplash cinematográficas
   const quickCards = [
-    { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género",    text: "Violencia de género — Alerta silenciosa, ubicación y grabación de entorno con descarga automática en la nube y dispositivo." },
-    { key: "turno_seguro",emoji: "\u{1F303}", title: "Noche Segura", text: "Para jóvenes de noche, acompañantes, repartidores y cualquier situación de riesgo." },
-    /* ❌ v18: Adulto Mayor comentado
-    { key: "los_protejo", emoji: "\u{1FAF6}", title: "Adulto Mayor Seguro", text: "Adulto mayor — Medicamentos, caídas y asistencia." },
-    */
-    /* ❌ v18: Hogar Seguro comentado
-    { key: "mi_nido",     emoji: "\u{1F3E0}", title: "Hogar Seguro",     text: "Hogar seguro — Intrusos, accidentes y emergencias." },
-    */
-    { key: "los_cuido",   emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro",   text: "Adolescente seguro — Salidas, salidas y anti-bullying." },
-    // 🔄 v19: Te Cuido a Distancia FUNCIONAL — grabación remota con consentimiento
-    { key: "te_cuido", emoji: "\u{1F441}\u{FE0F}", title: "Te Cuido a Distancia", text: "Activá grabación con consentimiento de la víctima." },
-    { key: "contactos",   emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} configurados` },
-    // v19: Card de Instrucciones / Cómo funciona
-    { key: "instrucciones", emoji: "\u{2139}\u{FE0F}", title: "¿Cómo funciona?", text: "Aprendé a usar la app paso a paso." },
+    { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género",    text: "Alerta silenciosa, ubicación y grabación de entorno automática.",
+      img: "https://images.unsplash.com/photo-1589156280159-27698a70f29e?q=80&w=800&auto=format&fit=crop" },
+    { key: "turno_seguro", emoji: "\u{1F303}", title: "Noche Segura", text: "Para jóvenes de noche, acompañantes, repartidores y comisionistas.",
+      img: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=800&auto=format&fit=crop" },
+    { key: "los_cuido",    emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro", text: "Salidas seguras, anti-bullying y GPS para padres.",
+      img: "https://images.unsplash.com/photo-1516724562728-afc824a36e84?q=80&w=800&auto=format&fit=crop" },
+    { key: "te_cuido",     emoji: "\u{1F441}\u{FE0F}", title: "Te Cuido a Distancia", text: "Seguimiento con consentimiento de la persona protegida.",
+      img: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=800&auto=format&fit=crop" },
+    { key: "contactos",    emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} contactos configurados`, img: null },
+    { key: "instrucciones",emoji: "\u{2139}\u{FE0F}", title: "¿Cómo funciona?", text: "Aprendé a usar la app paso a paso.", img: null },
   ];
 
   function handleCard(key) {
@@ -5823,7 +6032,7 @@ async function ejecutarPanico() {
         mensaje: "ALERTA - Botón de pánico activado. Necesito ayuda urgente.",
         latitud: location?.lat || null,
         longitud: location?.lng || null,
-        link_mapa: location?.lat ? "https://www.google.com/maps?q=" + location.lat + "," + location.lng : null,
+        link_mapa: location?.lat ? "https://maps.google.com/?q=" + location.lat + "," + location.lng : null,
         enviado_a: contactosParaEnviar.map(function(c) { return c.telefono; }),
         creado_en: new Date().toISOString()
       });
@@ -5919,34 +6128,54 @@ async function ejecutarPanico() {
             <h3 className="mb-4 text-base font-bold uppercase tracking-[2px]" style={{ color: BRAND.white }}>¿Qué necesitás hoy?</h3>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {quickCards.map(card => {
-                const iconMap = {
-                  "mi_escudo": "shield", "los_cuido": "teen", "turno_seguro": "night",
-                  "te_cuido": "eye", "contactos": "contacts", "instrucciones": "write",
-                };
-                const iconName = iconMap[card.key];
+                // v19.13: Cinematic cards with Unsplash photo backgrounds
                 const cardColors = {
-                  mi_escudo:    { accent: "#E74C3C", glow: "rgba(231,76,60,0.08)",  border: "rgba(231,76,60,0.3)",  iconBg: "rgba(231,76,60,0.12)" },
-                  turno_seguro: { accent: "#5DADE2", glow: "rgba(93,173,226,0.08)", border: "rgba(93,173,226,0.25)", iconBg: "rgba(93,173,226,0.12)" },
-                  los_cuido:    { accent: "#2ECC71", glow: "rgba(46,204,113,0.08)", border: "rgba(46,204,113,0.25)", iconBg: "rgba(46,204,113,0.12)" },
-                  contactos:    { accent: contactos.length === 0 ? BRAND.red : BRAND.gold, glow: "rgba(201,168,76,0.05)", border: contactos.length === 0 ? `${BRAND.red}50` : BRAND.border, iconBg: "rgba(201,168,76,0.1)" },
-                  instrucciones:{ accent: BRAND.goldLite, glow: "rgba(201,168,76,0.05)", border: BRAND.border, iconBg: "rgba(201,168,76,0.08)" },
-                }[card.key] || { accent: BRAND.gold, glow: "rgba(201,168,76,0.05)", border: BRAND.border, iconBg: "rgba(201,168,76,0.08)" };
+                  mi_escudo:    { accent: "#E74C3C", border: "rgba(231,76,60,0.4)" },
+                  turno_seguro: { accent: "#5DADE2", border: "rgba(93,173,226,0.4)" },
+                  los_cuido:    { accent: "#2ECC71", border: "rgba(46,204,113,0.4)" },
+                  te_cuido:     { accent: BRAND.gold, border: BRAND.borderStrong },
+                  contactos:    { accent: contactos.length === 0 ? BRAND.red : BRAND.gold, border: contactos.length === 0 ? `${BRAND.red}50` : BRAND.border },
+                  instrucciones:{ accent: BRAND.goldLite, border: BRAND.border },
+                }[card.key] || { accent: BRAND.gold, border: BRAND.border };
                 return (
                 <button key={card.key} onClick={() => handleCard(card.key)}
-                  className="text-left rounded-2xl p-5 active:scale-[0.98] transition-all relative"
+                  className="text-left active:scale-[0.98] transition-all relative overflow-hidden"
                   style={{
-                    background: BRAND.cardBg,
+                    borderRadius: 20,
                     border: `1px solid ${cardColors.border}`,
-                    boxShadow: `5px 5px 14px rgba(0,0,0,0.6), 0 0 20px ${cardColors.glow}`,
-                    minHeight: 130,
+                    minHeight: card.img ? 140 : 110,
+                    display: "block",
+                    width: "100%",
                   }}>
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl"
-                    style={{ background: cardColors.iconBg, border: `1px solid ${cardColors.border}` }}>
-                    {iconName ? <GoldIcon name={iconName} size={28} /> : <span className="text-2xl">{card.emoji}</span>}
+                  {/* Photo background for module cards */}
+                  {card.img && (
+                    <div style={{
+                      position: "absolute", inset: 0,
+                      backgroundImage: `url(${card.img})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      filter: "brightness(0.25) grayscale(0.3)",
+                    }} />
+                  )}
+                  {/* Dark overlay */}
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    background: card.img
+                      ? "linear-gradient(135deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.4) 100%)"
+                      : BRAND.cardBg,
+                  }} />
+                  {/* Gold left accent */}
+                  <div style={{
+                    position: "absolute", left: 0, top: 0, bottom: 0, width: 3,
+                    background: `linear-gradient(to bottom, ${cardColors.accent}, rgba(201,168,76,0.3))`,
+                  }} />
+                  {/* Content */}
+                  <div style={{ position: "relative", zIndex: 2, padding: "18px 18px 18px 20px" }}>
+                    <span style={{ fontSize: 28, display: "block", marginBottom: 8 }}>{card.emoji}</span>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: BRAND.white, lineHeight: 1.3, marginBottom: 5 }}>{card.title}</div>
+                    <p style={{ fontSize: 12, lineHeight: 1.5, color: "rgba(232,220,200,0.75)" }}>{card.text}</p>
+                    <div style={{ marginTop: 10, fontSize: 11, fontWeight: 700, color: cardColors.accent, textTransform: "uppercase", letterSpacing: "1.5px" }}>Abrir →</div>
                   </div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: BRAND.white, lineHeight: 1.3 }}>{card.title}</div>
-                  <p style={{ marginTop: 5, fontSize: 13, lineHeight: 1.5, color: BRAND.textLight }}>{card.text}</p>
-                  <div style={{ marginTop: 10, fontSize: 12, fontWeight: 700, color: cardColors.accent, textTransform: "uppercase", letterSpacing: "1px" }}>Abrir →</div>
                 </button>
                 );
               })}
@@ -6212,8 +6441,15 @@ export default function App() {
   // v19.7: Onboarding → Tour Demo → Home
   function handleOnboardingComplete(selectedModule) {
     setShowOnboarding(false);
-    const tourDone = sessionStorage.getItem("traza360_tour_done");
-    if (!tourDone) { setShowTour(true); } // Mostrar tour si nunca lo hizo
+    // v19.13: Go directly to selected module, skip tour
+    if (selectedModule) {
+      try { sessionStorage.setItem("traza360_selected_module", selectedModule); } catch(e){}
+      const mod = MODULES.find(m => m.key === selectedModule);
+      if (mod) {
+        // Store for HomeScreen to pick up
+        window.__lexia_initial_module = selectedModule;
+      }
+    }
   }
 
   function handleTourComplete() {
@@ -6256,6 +6492,8 @@ export default function App() {
   if (screen === "home" && showOnboarding) return <OnboardingScreen onComplete={handleOnboardingComplete} />;
   if (screen === "home" && showTour) return <TourDemoScreen onComplete={handleTourComplete} onSkip={handleTourComplete} />;
 
+  // v19.13: Login/Register now handled inside LandingScreen
+  // These screens kept as fallback for PIN auth flow
   if (screen === "login") return <LoginScreen onBack={() => setScreen("landing")} onSuccess={handleLoginSuccess} onRecuperar={() => setScreen("recuperar")} />;
   if (screen === "register") return <RegisterScreen onBack={() => setScreen("landing")} onSuccess={handleLoginSuccess} setPendingName={setPendingName} onScreen={setScreen} />;
   if (screen === "recuperar") return <RecuperarPasswordScreen onBack={() => setScreen("login")} />;
@@ -6270,5 +6508,8 @@ export default function App() {
       <HomeScreen userProfile={userProfile} authUser={authUser} pendingName={pendingName} onLogout={handleLogout} onViewPlans={() => setScreen("planes")} />
     </>
   );
-  return <LandingScreen onScreen={setScreen} />;
+  return <LandingScreen onScreen={(s) => {
+    if (s === "home_after_login") { handleLoginSuccess(); }
+    else setScreen(s);
+  }} />;
 }
