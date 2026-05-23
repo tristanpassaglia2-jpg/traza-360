@@ -3867,7 +3867,7 @@ function TourDemoScreen({ onComplete, onSkip }) {
 function GpsExplainerModal({ onAceptar, onRechazar }) {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 px-5 backdrop-blur-sm">
-      <div 
+      <div> 
         className="w-full max-w-sm rounded-3xl p-6 shadow-2xl" 
         style={{ background: "#000000", border: "2px solid #ffffff" }}
       >
