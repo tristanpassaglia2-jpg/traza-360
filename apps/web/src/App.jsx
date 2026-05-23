@@ -3864,7 +3864,8 @@ function TourDemoScreen({ onComplete, onSkip }) {
 // MODAL EXPLICATIVO GPS (v19.7)
 // Aparece antes de pedir geolocation por primera vez
 // ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-export function GpsExplainerModal({ onAceptar, onRechazar }) {
+} 
+       export function GpsExplainerModal({ onAceptar, onRechazar }) {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 px-5 backdrop-blur-sm">
       <div 
@@ -3876,15 +3877,8 @@ export function GpsExplainerModal({ onAceptar, onRechazar }) {
     </div>
   );
 }  
-       <div className="text-center mb-4">
-          <div className="flex justify-center mb-3">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.18), rgba(154,123,15,0.08))", border: `1px solid ${BRAND.borderStrong}` }}>
-              <GoldIcon name="pin" size={36} />
-            </div>
-          </div>
-          <h3 className="text-lg font-bold" style={{ color: BRAND.white }}>Necesitamos tu ubicación</h3>
-          <p className="text-sm mt-2" style={{ color: BRAND.gold }}>Para enviarte ayuda cuando la necesites</p>
-        </div>
+     
+         
 
         <div className="rounded-xl p-4 mb-4 space-y-2.5" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
           <div className="flex items-start gap-2">
