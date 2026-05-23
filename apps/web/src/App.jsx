@@ -27,7 +27,7 @@ const HOME_ADDRESS_DEFAULT = "Mi casa";
 
 // v19.7: Email de soporte centralizado (cambialo acá para que se actualice en TODA la app)
 const SUPPORT_EMAIL = "traza360.app@gmail.com"; // ⚠️ Tristan: cambiá este string por tu Gmail nuevo cuando lo crees
-const RESPONSABLE_NAME = "Tristan Passaglia";
+const RESPONSABLE_NAME = "LEXIA Security";
 const RESPONSABLE_LOCATION = "Córdoba, Argentina";
 const APP_VERSION = "19.12";
 
@@ -531,7 +531,7 @@ function SystemStatusPanel({ contactos, onGoToContactos, onClose }) {
 
 // ─── ONBOARDING GUIADO v19 — paleta dorada ────
 function OnboardingScreen({ onComplete }) {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(1);
   const [selectedModule, setSelectedModule] = useState(null);
 
   const steps = [
@@ -3140,7 +3140,7 @@ function PoliticaPrivacidadScreen({ onBack }) {
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>1. Responsable del tratamiento de datos</h3>
             <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
-              <strong style={{ color: BRAND.white }}>Tristan Passaglia</strong>, con domicilio en Córdoba, Argentina, es el responsable del tratamiento de los datos personales recolectados a través de LEXIA. Para cualquier consulta sobre privacidad: <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span>.
+              <strong style={{ color: BRAND.white }}>LEXIA Security</strong>, con domicilio en Córdoba, Argentina, es el responsable del tratamiento de los datos personales recolectados a través de LEXIA. Para cualquier consulta sobre privacidad: <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span>.
             </p>
           </div>
 
@@ -3396,7 +3396,7 @@ function TerminosScreen({ onBack }) {
           <div className="rounded-xl p-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
             <p className="text-sm font-bold mb-1" style={{ color: BRAND.gold }}>{"\u{1F4E7}"} Contacto legal</p>
             <p className="text-sm" style={{ color: BRAND.textLight }}>
-              <strong style={{ color: BRAND.white }}>Tristan Passaglia</strong><br/>
+              <strong style={{ color: BRAND.white }}>LEXIA Security</strong><br/>
               Córdoba, Argentina<br/>
               <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span>
             </p>
@@ -3688,7 +3688,7 @@ function SobreNosotrosScreen({ onBack }) {
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>Equipo</h3>
             <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BRAND.border}` }}>
-              <p className="text-sm font-bold" style={{ color: BRAND.white }}>{RESPONSABLE_NAME}</p>
+              <p className="text-sm font-bold" style={{ color: BRAND.white }}>LEXIA Security</p>
               <p className="text-sm mt-1" style={{ color: BRAND.gold }}>Fundador y desarrollador</p>
               <p className="text-sm mt-2" style={{ color: BRAND.textLight }}>{RESPONSABLE_LOCATION}</p>
             </div>
@@ -5284,7 +5284,7 @@ function LandingScreen({ onScreen }) {
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
 
   // Unsplash: calle nocturna mojada premium
-  const BG_LANDING = "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?q=80&w=1920&auto=format&fit=crop";
+  const BG_LANDING = "https://images.unsplash.com/photo-1716908332073-c76e68c09e42?q=80&w=1920&auto=format&fit=crop";
 
   // Fotos de módulos Unsplash
   const MODULE_CARDS = [
@@ -5292,28 +5292,28 @@ function LandingScreen({ onScreen }) {
       key: "mi_escudo",
       title: "Violencia de Género",
       subtitle: "Alerta silenciosa e inmediata",
-      img: "https://images.unsplash.com/photo-1516585427167-9f4af9627e6c?q=80&w=1920&auto=format&fit=crop",
+      img: "https://images.unsplash.com/photo-1588747020648-4ff0ec1abecb?q=80&w=1920&auto=format&fit=crop",
       icon: "🛡️",
     },
     {
       key: "turno_seguro",
       title: "Noche Segura",
       subtitle: "GPS en vivo para salidas nocturnas",
-      img: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?q=80&w=1920&auto=format&fit=crop",
+      img: "https://images.unsplash.com/photo-1729704706106-d8792faa9f94?q=80&w=1920&auto=format&fit=crop",
       icon: "🌙",
     },
     {
       key: "los_cuido",
       title: "Adolescente Seguro",
       subtitle: "Protección para tus hijos",
-      img: "https://images.unsplash.com/photo-1516724562728-afc824a36e84?q=80&w=1920&auto=format&fit=crop",
+      img: "https://images.unsplash.com/photo-1620504155085-d7b152a58e77?q=80&w=1920&auto=format&fit=crop",
       icon: "👨‍👩‍👧",
     },
     {
       key: "te_cuido",
       title: "Te Cuido a Distancia",
       subtitle: "Seguimiento con consentimiento",
-      img: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=1920&auto=format&fit=crop",
+      img: "https://images.unsplash.com/photo-1739313454960-7d727159716d?q=80&w=1920&auto=format&fit=crop",
       icon: "👁️",
     },
   ];
@@ -5421,7 +5421,7 @@ function LandingScreen({ onScreen }) {
         backgroundImage: `url(${BG_LANDING})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
-        filter: "brightness(0.35)",
+        filter: "brightness(0.3) contrast(1.2)",
         zIndex: 0,
       }} />
       {/* Overlay gradiente premium */}
@@ -5582,7 +5582,7 @@ function LandingScreen({ onScreen }) {
                       backgroundImage: `url(${card.img})`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
-                      filter: "brightness(0.3) grayscale(0.4)",
+                      filter: "brightness(0.45) grayscale(0.15)",
                     }} />
                     {/* Overlay */}
                     <div style={{
@@ -5866,13 +5866,13 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
   // v19.13: Cards con fotos Unsplash cinematográficas
   const quickCards = [
     { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género",    text: "Alerta silenciosa, ubicación y grabación de entorno automática.",
-      img: "https://images.unsplash.com/photo-1516585427167-9f4af9627e6c?q=80&w=800&auto=format&fit=crop" },
+      img: "https://images.unsplash.com/photo-1588747020648-4ff0ec1abecb?q=80&w=800&auto=format&fit=crop" },
     { key: "turno_seguro", emoji: "\u{1F303}", title: "Noche Segura", text: "Para jóvenes de noche, acompañantes, repartidores y comisionistas.",
-      img: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?q=80&w=800&auto=format&fit=crop" },
+      img: "https://images.unsplash.com/photo-1729704706106-d8792faa9f94?q=80&w=800&auto=format&fit=crop" },
     { key: "los_cuido",    emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro", text: "Salidas seguras, anti-bullying y GPS para padres.",
-      img: "https://images.unsplash.com/photo-1516724562728-afc824a36e84?q=80&w=800&auto=format&fit=crop" },
+      img: "https://images.unsplash.com/photo-1620504155085-d7b152a58e77?q=80&w=800&auto=format&fit=crop" },
     { key: "te_cuido",     emoji: "\u{1F441}\u{FE0F}", title: "Te Cuido a Distancia", text: "Seguimiento con consentimiento de la persona protegida.",
-      img: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=800&auto=format&fit=crop" },
+      img: "https://images.unsplash.com/photo-1739313454960-7d727159716d?q=80&w=800&auto=format&fit=crop" },
     { key: "contactos",    emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} contactos configurados`, img: null },
     { key: "instrucciones",emoji: "\u{2139}\u{FE0F}", title: "¿Cómo funciona?", text: "Aprendé a usar la app paso a paso.", img: null },
   ];
@@ -6153,7 +6153,7 @@ async function ejecutarPanico() {
                       backgroundImage: `url(${card.img})`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
-                      filter: "brightness(0.25) grayscale(0.3)",
+                      filter: "brightness(0.4) grayscale(0.1)",
                     }} />
                   )}
                   {/* Dark overlay */}
