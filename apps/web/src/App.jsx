@@ -3875,7 +3875,8 @@ export function GpsExplainerModal({ onAceptar, onRechazar }) {
       </div>
     </div>
   );
-}   <div className="text-center mb-4">
+}  
+       <div className="text-center mb-4">
           <div className="flex justify-center mb-3">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.18), rgba(154,123,15,0.08))", border: `1px solid ${BRAND.borderStrong}` }}>
               <GoldIcon name="pin" size={36} />
