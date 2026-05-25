@@ -3856,6 +3856,7 @@ function TourDemoScreen({ onComplete, onSkip }) {
           )}
         </div>
       </div>
+      </div>
     </div>
   );
 }
