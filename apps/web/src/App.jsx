@@ -6450,16 +6450,16 @@ export default function App() {
   function handleUnlockCalc() { setModoCalc(false); checkSession(); }
   // v19.7: Onboarding → Tour Demo → Home
   function handleOnboardingComplete(selectedModule) {
-    setShowOnboarding(false);
-    // v19.13: Go directly to selected module, skip tour
+    // Store selected module before hiding onboarding
     if (selectedModule) {
       try { sessionStorage.setItem("traza360_selected_module", selectedModule); } catch(e){}
-      const mod = MODULES.find(m => m.key === selectedModule);
-      if (mod) {
-        // Store for HomeScreen to pick up
-        window.__lexia_initial_module = selectedModule;
-      }
+      window.__lexia_initial_module = selectedModule;
     }
+    try { sessionStorage.setItem("traza360_onboarding_done", "1"); } catch(e){}
+    setShowOnboarding(false);
+    setShowTour(false);
+    // Force navigation to home
+    setScreen("home");
   }
 
   function handleTourComplete() {
