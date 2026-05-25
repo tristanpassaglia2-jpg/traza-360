@@ -572,7 +572,7 @@ function OnboardingScreen({ onComplete }) {
     <div className="min-h-screen flex flex-col items-center justify-center px-5 py-8" style={{ background: "#000", color: BRAND.white, backgroundImage: "url(https://images.unsplash.com/photo-1716908332073-c76e68c09e42?q=80&w=1920&auto=format&fit=crop)", backgroundSize: "cover", backgroundPosition: "center", position: "relative" }}>
       {/* Dark overlay */}
       <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(2px)" }} />
-      <div style={{ position: "relative", zIndex: 10, width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div style={{ position: "relative", zIndex: 10, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", padding: "20px 0" }}>
       {/* Progress dots dorados */}
       <div className="flex gap-2 mb-8">
         {steps.map((_, i) => (
@@ -3771,7 +3771,7 @@ function TourDemoScreen({ onComplete, onSkip }) {
     <div className="min-h-screen flex flex-col items-center justify-center px-5 py-8" style={{ background: "#000", color: BRAND.white, backgroundImage: "url(https://images.unsplash.com/photo-1716908332073-c76e68c09e42?q=80&w=1920&auto=format&fit=crop)", backgroundSize: "cover", backgroundPosition: "center", position: "relative" }}>
       {/* Dark overlay */}
       <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(2px)" }} />
-      <div style={{ position: "relative", zIndex: 10, width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div style={{ position: "relative", zIndex: 10, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", padding: "20px 0" }}>
       {/* Progress dots */}
       <div className="flex gap-2 mb-6">
         {pasos.map((_, i) => (
