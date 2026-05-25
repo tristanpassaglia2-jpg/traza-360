@@ -5980,9 +5980,25 @@ React.useEffect(function() {
               <div className="text-xl">{"\u{1F6A8}"}</div>
               <div className="text-[11px] mt-0.5" style={{ color: BRAND.red }}>{t("sigoEnPeligro")}</div>
             </button>
-            <button onClick={function() { if(contactos.length>0) { enviarWhatsApp(contactos[0].telefono,"Estoy bien. Falsa alarma."); cerrar(); } }}
+            <button onClick={async function() {
+              try {
+                var userData = await supabase.auth.getUser();
+                var nombre = "Usuario";
+                try { nombre = userData.data.user.user_metadata.nombre || userData.data.user.user_metadata.full_name || userData.data.user.email.split("@")[0] || "Usuario"; } catch(e) {}
+                var ahora = new Date();
+                var hora = ahora.toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+                for (var i = 0; i < contactos.length; i++) {
+                  var numLimpio = contactos[i].telefono.replace(/\+/g,"").replace(/\s/g,"").replace(/-/g,"").replace(/^0+/,"");
+                  await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [nombre.substring(0,60), "✅ ESTOY BIEN — Falsa alarma. Todo bajo control. Gracias por estar.", hora, "Alerta cancelada"], alerta_id: alertaActualId })
+                  });
+                }
+              } catch(e) { console.warn("Estoy bien error:", e); }
+              cerrar();
+            }}
               className="rounded-lg py-2 text-center active:scale-95"
-              style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)" }}>
+              style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.5)" }}>
               <div className="text-xl">{"\u2705"}</div>
               <div className="text-[11px] mt-0.5 text-green-400">{t("estoyBien")}</div>
             </button>
