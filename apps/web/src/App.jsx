@@ -3863,48 +3863,65 @@ function TourDemoScreen({ onComplete, onSkip }) {
 // ═══════════════════════════════════════════════
 // MODAL EXPLICATIVO GPS (v19.7)
 // Aparece antes de pedir geolocation por primera vez
-// ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-export function GpsExplainerModal({ onAceptar, onRechazar }) {
+// ═══════════════════════════════════════════════
+function GpsExplainerModal({ onAceptar, onRechazar }) {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 px-5 backdrop-blur-sm">
-      <div 
-        className="w-full max-w-sm rounded-3xl p-6 shadow-2xl" 
-        style={{ background: "#000000", border: "2px solid #ffffff" }}
-      >
-        <div className="rounded-xl p-4 mb-4 space-y-2.5" style={{ background: "rgba(212,175,55,0.05)", border: "1px solid #d4af37" }}>
+      <div className="w-full max-w-sm rounded-3xl p-6 shadow-2xl" style={{ background: "#000000", border: `2px solid ${BRAND.borderStrong}` }}>
+        <div className="text-center mb-4">
+          <div className="flex justify-center mb-3">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.18), rgba(154,123,15,0.08))", border: `1px solid ${BRAND.borderStrong}` }}>
+              <GoldIcon name="pin" size={36} />
+            </div>
+          </div>
+          <h3 className="text-lg font-bold" style={{ color: BRAND.white }}>Necesitamos tu ubicación</h3>
+          <p className="text-sm mt-2" style={{ color: BRAND.gold }}>Para enviarte ayuda cuando la necesites</p>
+        </div>
+
+        <div className="rounded-xl p-4 mb-4 space-y-2.5" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
           <div className="flex items-start gap-2">
-            <span className="shrink-0 mt-0.5" style={{ color: "#d4af37" }}>{"\u2713"}</span>
-            <p className="text-sm" style={{ color: "#aaa" }}><strong style={{ color: "#fff" }}>Solo cuando vos lo decidís:</strong></p>
+            <span className="shrink-0 mt-0.5" style={{ color: BRAND.gold }}>{"\u2713"}</span>
+            <p className="text-sm" style={{ color: BRAND.textLight }}><strong style={{ color: BRAND.white }}>Solo cuando vos lo decidís:</strong> al tocar pánico, compartir ubicación, o cualquier alerta.</p>
           </div>
           <div className="flex items-start gap-2">
-            <span className="shrink-0 mt-0.5" style={{ color: "#d4af37" }}>{"\u2713"}</span>
-            <p className="text-sm" style={{ color: "#aaa" }}><strong style={{ color: "#fff" }}>Mayor precisión:</strong></p>
+            <span className="shrink-0 mt-0.5" style={{ color: BRAND.gold }}>{"\u2713"}</span>
+            <p className="text-sm" style={{ color: BRAND.textLight }}><strong style={{ color: BRAND.white }}>NO te seguimos:</strong> jamás recolectamos ubicación en background.</p>
           </div>
           <div className="flex items-start gap-2">
-            <span className="shrink-0 mt-0.5" style={{ color: "#d4af37" }}>{"\u2713"}</span>
-            <p className="text-sm" style={{ color: "#aaa" }}><strong style={{ color: "#fff" }}>NO te seguimos:</strong></p>
+            <span className="shrink-0 mt-0.5" style={{ color: BRAND.gold }}>{"\u2713"}</span>
+            <p className="text-sm" style={{ color: BRAND.textLight }}><strong style={{ color: BRAND.white }}>Solo tus contactos la ven:</strong> nadie más, ni nosotros la vendemos.</p>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="shrink-0 mt-0.5" style={{ color: BRAND.gold }}>{"\u2713"}</span>
+            <p className="text-sm" style={{ color: BRAND.textLight }}><strong style={{ color: BRAND.white }}>Podés revocarla cuando quieras</strong> desde la configuración de tu navegador.</p>
           </div>
         </div>
 
-        <button 
-          onClick={onAceptar}
+        <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(220,38,38,0.05)", border: `1px solid ${BRAND.red}30` }}>
+          <p className="text-[11px]" style={{ color: BRAND.textLight }}>
+            <strong style={{ color: BRAND.red }}>{"\u26A0\u{FE0F}"} Si rechazás:</strong> los contactos recibirán alertas SIN tu ubicación, lo que dificulta que te encuentren rápido.
+          </p>
+        </div>
+
+        <button onClick={onAceptar}
           className="w-full rounded-xl py-3.5 text-sm font-bold mb-2 shadow-lg"
-          style={{ background: "linear-gradient(to right, #d4af37, #f3e5ab)", color: "#000" }}
-        >
+          style={{ background: BRAND.goldGradient, color: BRAND.black }}>
           {"\u2713"} Entendido, permitir ubicación
         </button>
-
-        <button 
-          onClick={onRechazar}
-          className="w-full rounded-xl py-2.5 text-sm font-medium"
-          style={{ border: "1px solid #333", color: "#aaa" }}
-        >
+        <button onClick={onRechazar}
+          className="w-full rounded-xl py-2.5 text-sm"
+          style={{ border: `1px solid ${BRAND.border}`, color: BRAND.textLight }}>
           Ahora no
         </button>
+
+        <p className="text-[10px] text-center mt-3" style={{ color: BRAND.textMute }}>
+          Después de aceptar acá, el navegador te va a pedir confirmación una vez más.
+        </p>
       </div>
     </div>
   );
 }
+
 // ═══════════════════════════════════════════════
 // PIN DE ACCESO RÁPIDO (v19.8)
 // 4 dígitos guardados localmente. NO reemplaza al login.
