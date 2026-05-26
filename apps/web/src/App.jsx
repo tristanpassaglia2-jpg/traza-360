@@ -5404,21 +5404,22 @@ function LandingScreen({ onScreen }) {
 
             {/* MODULE CARDS */}
             <section style={{ padding: "8px 16px 40px" }}>
-              <h2 style={{ textAlign: "center", fontFamily: "'Georgia', serif", fontSize: 20, fontWeight: 900, color: "#fff", textTransform: "uppercase", letterSpacing: "4px", marginBottom: 18, textShadow: "0 2px 12px rgba(0,0,0,0.8)" }}>Elegí tu módulo</h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 440, margin: "0 auto" }}>
+              <h2 style={{ textAlign: "center", fontFamily: "'Georgia', serif", fontSize: 20, fontWeight: 900, color: "#fff", textTransform: "uppercase", letterSpacing: "4px", marginBottom: 18, textShadow: "0 2px 12px rgba(0,0,0,0.8)" }}>¿En qué te ayudamos?</h2>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, maxWidth: 440, margin: "0 auto" }}>
                 {MODULE_CARDS.map((card) => (
                   <button key={card.key} onClick={() => { try { sessionStorage.setItem("traza360_selected_module", card.key); } catch(e){} window.__lexia_initial_module = card.key; setSelectedModuleKey(card.key); setVista("register"); }}
-                    style={{ position: "relative", borderRadius: 18, overflow: "hidden", height: 96, border: `1px solid ${GOLD_BORDER}`, cursor: "pointer", textAlign: "left", display: "block", width: "100%", padding: 0 }}>
-                    <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${card.img})`, backgroundSize: "cover", backgroundPosition: card.pos, filter: "brightness(0.6) contrast(1.15) saturate(1.2)" }} />
-                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.25) 55%, rgba(0,0,0,0.05) 100%)" }} />
-                    <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: GOLD }} />
-                    <div style={{ position: "relative", zIndex: 2, padding: "0 16px 0 18px", display: "flex", alignItems: "center", gap: 14, height: "100%" }}>
-                      <span style={{ fontSize: 26, flexShrink: 0 }}>{card.icon}</span>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 16, fontWeight: 900, color: "#fff", marginBottom: 3, textShadow: "0 1px 4px rgba(0,0,0,0.9)" }}>{card.title}</div>
-                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", textShadow: "0 1px 4px rgba(0,0,0,0.9)" }}>{card.subtitle}</div>
-                      </div>
-                      <span style={{ color: GOLD_SOLID, fontSize: 18, flexShrink: 0 }}>→</span>
+                    style={{ position: "relative", borderRadius: 18, overflow: "hidden", aspectRatio: "1 / 1", border: `1px solid ${GOLD_BORDER}`, cursor: "pointer", display: "block", width: "100%", padding: 0 }}>
+                    {/* Full photo background */}
+                    <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${card.img})`, backgroundSize: "cover", backgroundPosition: card.pos, filter: "brightness(0.65) contrast(1.1) saturate(1.2)" }} />
+                    {/* Gradient overlay — only bottom third dark */}
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.75) 100%)" }} />
+                    {/* Gold bottom border accent */}
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: GOLD }} />
+                    {/* Content at bottom */}
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 2, padding: "12px 12px 14px" }}>
+                      <div style={{ fontSize: 22, marginBottom: 4 }}>{card.icon}</div>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: "#fff", lineHeight: 1.2, textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}>{card.title}</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", marginTop: 2, lineHeight: 1.3, textShadow: "0 1px 4px rgba(0,0,0,0.9)" }}>{card.subtitle}</div>
                     </div>
                   </button>
                 ))}
