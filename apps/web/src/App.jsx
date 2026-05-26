@@ -37,7 +37,7 @@ const LANG = (navigator.language || navigator.userLanguage || "es").startsWith("
 
 const T = {
   // Textos generales
-  appName:        { es: "LEXIA",                pt: "LEXIA" },
+  appName:        { es: "LEXIA 24/7",                pt: "LEXIA 24/7" },
   tagline:        { es: "Si algo pasa, alguien ya sabe.", pt: "Se algo acontecer, alguém já sabe." },
   panico:         { es: "PÁNICO",                 pt: "PÂNICO" },
   alertaEnviada:  { es: "Alerta enviada",          pt: "Alerta enviada" },
@@ -589,7 +589,7 @@ function OnboardingScreen({ onComplete }) {
           {/* Ícono: paso 1 = logo dorado completo, otros = GoldIcon */}
           <div className="mb-4 flex justify-center">
             {current.iconType === "logo" ? (
-            <img src="/preview.webp" alt="LEXIA" style={{ width: 90, height: 90, objectFit: "contain" }} />  
+            <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 90, height: 90, objectFit: "contain" }} />  
             ) : (
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.2), rgba(154,123,15,0.08))", border: `1px solid ${BRAND.borderStrong}` }}>
                 <GoldIcon name={current.iconName} size={36} />
@@ -2403,7 +2403,7 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
       <div className="rounded-2xl p-5 flex flex-col" style={{ background: BRAND.cardBg, border: `1px solid ${modColor.border}`, boxShadow: `6px 6px 18px rgba(0,0,0,0.7), 0 0 24px ${modColor.bg}` }}>
         <div className="mb-4 flex items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl" style={{ background: modColor.bg, border: `1.5px solid ${modColor.border}` }}>
-            <img src="/preview.webp" alt="LEXIA" style={{ width: 40, height: 40, objectFit: "contain" }} />
+            <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 40, height: 40, objectFit: "contain" }} />
           </div>
           <div>
             <h4 style={{ fontSize: 20, fontWeight: 800, color: BRAND.white, fontFamily: FONT_DISPLAY, lineHeight: 1.2 }}>{m.title}</h4>
@@ -2631,7 +2631,7 @@ function PinEyeLogo({ size = 80, showText = true }) {
           <>
             {/* TRAZA en dorado + 360 en rojo */}
             <text x="100" y="262" textAnchor="middle" fontSize="32" fontWeight="800" fontFamily="sans-serif" letterSpacing="1">
-              <tspan fill="#D4AF37">LEXIA</tspan>
+              <tspan fill="#D4AF37">LEXIA 24/7</tspan>
             </text>
           </>
         )}
@@ -2642,7 +2642,7 @@ function PinEyeLogo({ size = 80, showText = true }) {
 
 // Alias para mantener compatibilidad con referencias existentes
 function EagleEyeLogo({ size = 80 }) {
-  return <img src="/preview.webp" alt="LEXIA" style={{ width: 60, height: 60, objectFit: "contain" }} />;
+  return <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 60, height: 60, objectFit: "contain" }} />;
 }
 
 // ═══════════════════════════════════════════════
@@ -2915,7 +2915,7 @@ function InstruccionesScreen({ onBack }) {
       <div className="mx-auto max-w-2xl">
         <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver al panel</button>
         <div className="mb-6 text-center">
-          <img src="/preview.webp" alt="LEXIA" style={{ width: 70, height: 70, objectFit: "contain" }} />
+          <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 70, height: 70, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[3px] mt-2" style={{ color: BRAND.gold }}>Guía de uso</p>
           <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>¿Cómo funciona LEXIA?</h2>
         </div>
@@ -3134,7 +3134,7 @@ function PoliticaPrivacidadScreen({ onBack }) {
         <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver</button>
 
         <div className="mb-6 text-center">
-          <img src="/preview.webp" alt="LEXIA" style={{ width: 60, height: 60, objectFit: "contain" }} />
+          <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 60, height: 60, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[3px] mt-2" style={{ color: BRAND.gold }}>Política de Privacidad</p>
           <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>Tus datos son tuyos</h2>
           <p className="text-[11px] mt-2" style={{ color: BRAND.textMute }}>Versión 19.6 · Vigente desde Mayo 2026</p>
@@ -3277,7 +3277,7 @@ function TerminosScreen({ onBack }) {
         <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver</button>
 
         <div className="mb-6 text-center">
-          <img src="/preview.webp" alt="LEXIA" style={{ width: 60, height: 60, objectFit: "contain" }} />
+          <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 60, height: 60, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[3px] mt-2" style={{ color: BRAND.gold }}>Términos y Condiciones</p>
           <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>Acuerdo de uso</h2>
           <p className="text-[11px] mt-2" style={{ color: BRAND.textMute }}>Versión 19.6 · Vigente desde Mayo 2026</p>
@@ -3660,7 +3660,7 @@ function SobreNosotrosScreen({ onBack }) {
         <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver</button>
 
         <div className="mb-6 text-center">
-          <img src="/preview.webp" alt="LEXIA" style={{ width: 80, height: 80, objectFit: "contain" }} />
+          <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 80, height: 80, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[3px] mt-3" style={{ color: BRAND.gold }}>Sobre nosotros</p>
           <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>Quiénes somos</h2>
         </div>
@@ -3811,7 +3811,7 @@ function TourDemoScreen({ onComplete, onSkip }) {
                 <div className="absolute inset-[-6px] rounded-full" style={{ border: `2px solid ${BRAND.gold}`, animation: "panicPulseDemo 2s infinite" }} />
                 <div className="flex h-16 w-16 items-center justify-center rounded-full"
                   style={{ background: BRAND.black, border: `3px solid ${BRAND.gold}`, boxShadow: `0 0 20px ${BRAND.gold}55` }}>
-                  <img src="/preview.webp" alt="LEXIA" style={{ width: 42, height: 42, objectFit: "contain" }} />
+                  <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 42, height: 42, objectFit: "contain" }} />
                 </div>
               </div>
               <style>{`@keyframes panicPulseDemo { 0%,100%{opacity:0.4;transform:scale(1)} 50%{opacity:0.9;transform:scale(1.12)} }`}</style>
@@ -4266,7 +4266,7 @@ function PinAuthScreen({ onSuccess, onFallback, onLogout }) {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-6">
-          <img src="/preview.webp" alt="LEXIA" style={{ width: 70, height: 70, objectFit: "contain" }} />
+          <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 70, height: 70, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[3px] mt-3 font-bold" style={{ color: BRAND.gold }}>{TAGLINE}</p>
         </div>
 
@@ -4389,7 +4389,7 @@ async function registrarBiometria(nombreUsuario) {
     const credential = await navigator.credentials.create({
       publicKey: {
         challenge,
-        rp: { name: "LEXIA", id: window.location.hostname },
+        rp: { name: "LEXIA 24/7", id: window.location.hostname },
         user: {
           id: userId,
           name: nombreUsuario || "usuario",
@@ -5278,55 +5278,29 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
 // Login + Registro integrados. Sin páginas separadas.
 // Fondo: calle nocturna Unsplash. Logo LEXIA impactante.
 function LandingScreen({ onScreen }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [vista, setVista] = useState("hero"); // hero | login | register
-  const [selectedModuleKey, setSelectedModuleKey] = useState(null);
-  // Login state
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [loginError, setLoginError] = useState("");
-  // Register state
-  const [regName, setRegName] = useState("");
-  const [regEmail, setRegEmail] = useState("");
-  const [regPassword, setRegPassword] = useState("");
-  const [regLoading, setRegLoading] = useState(false);
-  const [regError, setRegError] = useState("");
-  const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  const [vista, setVista] = React.useState("hero");
+  const [selectedModuleKey, setSelectedModuleKey] = React.useState(null);
+  const [loginEmail, setLoginEmail] = React.useState("");
+  const [loginPassword, setLoginPassword] = React.useState("");
+  const [loginLoading, setLoginLoading] = React.useState(false);
+  const [loginError, setLoginError] = React.useState("");
+  const [regName, setRegName] = React.useState("");
+  const [regEmail, setRegEmail] = React.useState("");
+  const [regPassword, setRegPassword] = React.useState("");
+  const [regLoading, setRegLoading] = React.useState(false);
+  const [regError, setRegError] = React.useState("");
+  const [aceptaTerminos, setAceptaTerminos] = React.useState(false);
 
-  // Unsplash: calle nocturna mojada premium
   const BG_LANDING = "https://images.unsplash.com/photo-1716908332073-c76e68c09e42?q=80&w=1920&auto=format&fit=crop";
+  const GOLD = "linear-gradient(135deg, #8B6914 0%, #C9A84C 35%, #E8C96A 50%, #C9A84C 70%, #8B6914 100%)";
+  const GOLD_SOLID = "#C9A84C";
+  const GOLD_BORDER = "rgba(201,168,76,0.4)";
 
-  // Fotos de módulos Unsplash
   const MODULE_CARDS = [
-    {
-      key: "mi_escudo",
-      title: "Violencia de Género",
-      subtitle: "Alerta silenciosa e inmediata",
-      img: "https://images.unsplash.com/photo-1588747020648-4ff0ec1abecb?q=80&w=1920&auto=format&fit=crop",
-      icon: "🛡️",
-    },
-    {
-      key: "turno_seguro",
-      title: "Noche Segura",
-      subtitle: "GPS en vivo para salidas nocturnas",
-      img: "https://images.unsplash.com/photo-1729704706106-d8792faa9f94?q=80&w=1920&auto=format&fit=crop",
-      icon: "🌙",
-    },
-    {
-      key: "los_cuido",
-      title: "Adolescente Seguro",
-      subtitle: "Protección para tus hijos",
-      img: "https://images.unsplash.com/photo-1620504155085-d7b152a58e77?q=80&w=1920&auto=format&fit=crop",
-      icon: "👨‍👩‍👧",
-    },
-    {
-      key: "te_cuido",
-      title: "Te Cuido a Distancia",
-      subtitle: "Seguimiento con consentimiento",
-      img: "https://images.unsplash.com/photo-1739313454960-7d727159716d?q=80&w=1920&auto=format&fit=crop",
-      icon: "👁️",
-    },
+    { key: "mi_escudo", title: "Violencia de Género", subtitle: "Alerta silenciosa e inmediata", img: "https://images.unsplash.com/photo-1588747020648-4ff0ec1abecb?q=80&w=1920&auto=format&fit=crop", icon: "🛡️", pos: "center 40%" },
+    { key: "turno_seguro", title: "Noche Segura", subtitle: "GPS en vivo para salidas nocturnas", img: "https://images.unsplash.com/photo-1729704706106-d8792faa9f94?q=80&w=1920&auto=format&fit=crop", icon: "🌙", pos: "center 30%" },
+    { key: "los_cuido", title: "Adolescente Seguro", subtitle: "Protección para tus hijos", img: "https://images.unsplash.com/photo-1620504155085-d7b152a58e77?q=80&w=1920&auto=format&fit=crop", icon: "👨‍👩‍👧", pos: "center 25%" },
+    { key: "te_cuido", title: "Te Cuido a Distancia", subtitle: "Seguimiento con consentimiento", img: "https://images.unsplash.com/photo-1739313454960-7d727159716d?q=80&w=1920&auto=format&fit=crop", icon: "👁️", pos: "center 20%" },
   ];
 
   async function handleLogin() {
@@ -5341,16 +5315,16 @@ function LandingScreen({ onScreen }) {
 
   async function handleGoogle() {
     setLoginError(""); setRegError("");
-    if (vista === "register" && !aceptaTerminos) { setRegError("Aceptá los Términos y la Política de Privacidad."); return; }
+    if (vista === "register" && !aceptaTerminos) { setRegError("Aceptá los Términos primero."); return; }
     const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
-    if (error) { setLoginError("Error al conectar con Google."); }
+    if (error) setLoginError("Error al conectar con Google.");
   }
 
   async function handleRegister() {
     setRegError("");
     if (!regName.trim() || !regEmail.trim() || !regPassword.trim()) { setRegError("Completá todos los campos."); return; }
     if (regPassword.length < 6) { setRegError("Contraseña mínimo 6 caracteres."); return; }
-    if (!aceptaTerminos) { setRegError("Aceptá los Términos y la Política de Privacidad."); return; }
+    if (!aceptaTerminos) { setRegError("Aceptá los Términos primero."); return; }
     setRegLoading(true);
     try { sessionStorage.setItem("traza360_pending_name", regName.trim()); } catch(e){}
     const r = await signUp(regEmail.trim(), regPassword, regName.trim());
@@ -5359,426 +5333,177 @@ function LandingScreen({ onScreen }) {
     else setRegError(r.error?.includes("already") ? "Email ya registrado. ¿Querés ingresar?" : r.error || "Error al crear cuenta.");
   }
 
-  // ── LEXIA Logo premium ──────────────────────────────────────
-  function LexiaLogo({ size = 80 }) {
-    return (
-      <div style={{ textAlign: "center", lineHeight: 0 }}>
-        <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="shieldGold" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#1a3a6b"/>
-              <stop offset="40%" stopColor="#1e4d8c"/>
-              <stop offset="100%" stopColor="#0d2444"/>
-            </linearGradient>
-            <linearGradient id="borderGold" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#8B6914"/>
-              <stop offset="30%" stopColor="#C9A84C"/>
-              <stop offset="50%" stopColor="#E8C96A"/>
-              <stop offset="70%" stopColor="#C9A84C"/>
-              <stop offset="100%" stopColor="#8B6914"/>
-            </linearGradient>
-            <linearGradient id="pinGold" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#C9A84C"/>
-              <stop offset="100%" stopColor="#E8C96A"/>
-            </linearGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="2" result="blur"/>
-              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-            </filter>
-          </defs>
-          {/* Shield body */}
-          <path d="M50 5 L10 20 V50 C10 72 28 88 50 95 C72 88 90 72 90 50 V20 Z"
-            fill="url(#shieldGold)" stroke="url(#borderGold)" strokeWidth="2.5" filter="url(#glow)"/>
-          {/* Circuit lines */}
-          <line x1="25" y1="45" x2="40" y2="45" stroke="#C9A84C" strokeWidth="1" opacity="0.6"/>
-          <line x1="60" y1="45" x2="75" y2="45" stroke="#C9A84C" strokeWidth="1" opacity="0.6"/>
-          <line x1="50" y1="65" x2="50" y2="75" stroke="#C9A84C" strokeWidth="1" opacity="0.6"/>
-          <circle cx="25" cy="45" r="2" fill="#C9A84C" opacity="0.8"/>
-          <circle cx="75" cy="45" r="2" fill="#C9A84C" opacity="0.8"/>
-          <circle cx="50" cy="75" r="2" fill="#C9A84C" opacity="0.8"/>
-          {/* GPS Pin */}
-          <path d="M50 25 C42 25 36 31 36 39 C36 50 50 62 50 62 C50 62 64 50 64 39 C64 31 58 25 50 25 Z"
-            fill="url(#pinGold)" filter="url(#glow)"/>
-          <circle cx="50" cy="39" r="5" fill="#1a3a6b"/>
-          <circle cx="50" cy="39" r="2" fill="#E8C96A"/>
-        </svg>
-        <div style={{
-          fontFamily: "'Georgia', serif",
-          fontSize: size * 0.28,
-          fontWeight: 900,
-          letterSpacing: "4px",
-          background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 30%, #E8C96A 50%, #C9A84C 70%, #8B6914 100%)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          marginTop: 4,
-        }}>LEXIA</div>
-      </div>
-    );
-  }
+  const inputStyle = { width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(201,168,76,0.25)", borderRadius: 12, padding: "13px 14px", color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box" };
+  const btnPrimary = { width: "100%", borderRadius: 16, padding: "15px", fontSize: 16, fontWeight: 900, background: GOLD, color: "#000", border: "none", cursor: "pointer", boxShadow: "0 8px 30px rgba(201,168,76,0.35)" };
+
+  const GoogleIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+  );
+
+  const Divider = () => (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+      <div style={{ flex: 1, height: 1, background: GOLD_BORDER }}/><span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>o con email</span><div style={{ flex: 1, height: 1, background: GOLD_BORDER }}/>
+    </div>
+  );
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#000",
-      color: "#fff",
-      fontFamily: "'system-ui', sans-serif",
-      position: "relative",
-      overflowX: "hidden",
-    }}>
-      {/* Fondo: calle nocturna Unsplash */}
-      <div style={{
-        position: "fixed",
-        inset: 0,
-        backgroundImage: `url(${BG_LANDING})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        filter: "brightness(0.55) contrast(1.4) saturate(1.4)",
-        zIndex: 0,
-      }} />
-      {/* Overlay gradiente premium */}
-      <div style={{
-        position: "fixed",
-        inset: 0,
-        background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.5) 100%)",
-        zIndex: 1,
-      }} />
+    <div style={{ minHeight: "100vh", background: "#000", color: "#fff", position: "relative", overflowX: "hidden" }}>
+      <div style={{ position: "fixed", inset: 0, backgroundImage: `url(${BG_LANDING})`, backgroundSize: "cover", backgroundPosition: "center", filter: "brightness(0.38) contrast(1.2) saturate(1.2)", zIndex: 0 }} />
+      <div style={{ position: "fixed", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.6) 100%)", zIndex: 1 }} />
 
       {/* NAVBAR */}
-      <nav style={{
-        position: "sticky", top: 0, zIndex: 100,
-        background: "rgba(0,0,0,0.75)",
-        backdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(201,168,76,0.2)",
-        padding: "12px 20px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/preview.webp" alt="LEXIA" style={{ width: 36, height: 36, objectFit: "contain" }} />
+      <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(201,168,76,0.2)", padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 34, height: 34, objectFit: "contain", filter: "drop-shadow(0 0 6px rgba(201,168,76,0.5))" }} />
+          <span style={{ fontSize: 16, fontWeight: 900, letterSpacing: "2px", background: GOLD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>LEXIA 24/7</span>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={() => setVista(vista === "login" ? "hero" : "login")}
-            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", borderRadius: 12, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-            Ingresar
-          </button>
-          <button onClick={() => setVista(vista === "register" ? "hero" : "register")}
-            style={{ background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 50%, #8B6914 100%)", border: "none", color: "#000", borderRadius: 12, padding: "8px 16px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
-            Empezar gratis
-          </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => setVista(vista === "login" ? "hero" : "login")} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", borderRadius: 12, padding: "8px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Ingresar</button>
+          <button onClick={() => setVista(vista === "register" ? "hero" : "register")} style={{ background: GOLD, border: "none", color: "#000", borderRadius: 12, padding: "8px 14px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>Empezar gratis</button>
         </div>
       </nav>
 
-      {/* CONTENT */}
       <div style={{ position: "relative", zIndex: 10 }}>
 
-        {/* ── HERO ── */}
+        {/* HERO */}
         {vista === "hero" && (
           <div>
-            {/* Hero Section */}
-            <section style={{ textAlign: "center", padding: "60px 20px 40px" }}>
-              <div style={{ marginBottom: 24, display: "flex", justifyContent: "center" }}>
-                <img src="/preview.webp" alt="LEXIA" style={{ width: 100, height: 100, objectFit: "contain", filter: "drop-shadow(0 0 20px rgba(201,168,76,0.5))" }} />
+            <section style={{ textAlign: "center", padding: "48px 20px 32px" }}>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+                <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 108, height: 108, objectFit: "contain", filter: "drop-shadow(0 0 30px rgba(201,168,76,0.6))" }} />
               </div>
-
-              {/* Badge */}
-              <div style={{
-                display: "inline-block",
-                background: "rgba(201,168,76,0.1)",
-                border: "1px solid rgba(201,168,76,0.4)",
-                borderRadius: 20,
-                padding: "4px 16px",
-                fontSize: 10,
-                letterSpacing: "3px",
-                textTransform: "uppercase",
-                color: "#C9A84C",
-                marginBottom: 20,
-              }}>
-                🏆 1ra app de seguridad inteligente multimodal de Latinoamérica
+              <h1 style={{ fontSize: "clamp(38px, 10vw, 62px)", fontWeight: 900, letterSpacing: "6px", margin: "0 auto 8px", background: GOLD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontFamily: "'Georgia', serif" }}>LEXIA 24/7</h1>
+              <div style={{ display: "inline-block", background: "rgba(201,168,76,0.12)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 20, padding: "5px 14px", fontSize: 10, letterSpacing: "2px", textTransform: "uppercase", color: GOLD_SOLID, marginBottom: 18 }}>
+                🏆 1ra app de seguridad con IA multimodal de Latinoamérica
               </div>
-
-              {/* Tagline */}
-              <h1 style={{
-                fontFamily: "'Georgia', serif",
-                fontSize: "clamp(32px, 8vw, 52px)",
-                fontWeight: 900,
-                lineHeight: 1.1,
-                margin: "0 auto 12px",
-                maxWidth: 360,
-                color: "#fff",
-              }}>
-                {LANG === "pt" ? "Se algo acontecer," : "Si algo pasa,"}
-                <br/>
-                <span style={{
-                  background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 40%, #E8C96A 60%, #C9A84C 80%, #8B6914 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}>
-                  {LANG === "pt" ? "alguém já sabe." : "alguien ya sabe."}
-                </span>
-              </h1>
-
-              <p style={{ fontSize: 14, color: "rgba(245,240,232,0.7)", maxWidth: 300, margin: "0 auto 8px" }}>
-                App multimodal para protección de personas en tiempo real.
-              </p>
-              <p style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 32 }}>
-                Un botón, muchas soluciones
-              </p>
-
-              {/* Feature icons */}
-              <div style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 40 }}>
-                {[
-                  { emoji: "🗺️", label: "Ubicación" },
-                  { emoji: "🎙️", label: "Audio" },
-                  { emoji: "📷", label: "Cámara" },
-                ].map((item, i) => (
+              <h2 style={{ fontFamily: "'Georgia', serif", fontSize: "clamp(26px, 7vw, 42px)", fontWeight: 900, lineHeight: 1.15, margin: "0 auto 10px", maxWidth: 360, color: "#fff" }}>
+                Si algo pasa,<br/>
+                <span style={{ background: GOLD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>alguien ya sabe.</span>
+              </h2>
+              <p style={{ fontSize: 16, color: "#ffffff", maxWidth: 320, margin: "0 auto 6px", fontWeight: 500, lineHeight: 1.5 }}>App multimodal para protección de personas en tiempo real.</p>
+              <p style={{ fontSize: 17, fontWeight: 800, color: "#ffffff", marginBottom: 28 }}>Un botón, muchas soluciones</p>
+              <div style={{ display: "flex", justifyContent: "center", gap: 20, marginBottom: 30 }}>
+                {[{ emoji: "🗺️", label: "Ubicación" }, { emoji: "🎙️", label: "Audio" }, { emoji: "📷", label: "Cámara" }].map((item, i) => (
                   <div key={i} style={{ textAlign: "center" }}>
-                    <div style={{
-                      width: 56, height: 56,
-                      background: "rgba(201,168,76,0.12)",
-                      border: "1px solid rgba(201,168,76,0.3)",
-                      borderRadius: 16,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 24, margin: "0 auto 6px",
-                    }}>{item.emoji}</div>
-                    <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "2px", color: "#C9A84C", fontWeight: 700 }}>{item.label}</span>
+                    <div style={{ width: 56, height: 56, background: "rgba(201,168,76,0.12)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, margin: "0 auto 6px" }}>{item.emoji}</div>
+                    <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "2px", color: GOLD_SOLID, fontWeight: 700 }}>{item.label}</span>
                   </div>
                 ))}
               </div>
-
-              <p style={{ fontSize: 12, color: "rgba(245,240,232,0.5)", maxWidth: 280, margin: "0 auto 32px" }}>
-                Tus contactos seleccionados te ubican, te escuchan y te miran con tu propia cámara.
-              </p>
-
-              {/* CTAs */}
-              <div style={{ maxWidth: 360, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12, padding: "0 20px" }}>
-                <button onClick={() => setVista("register")}
-                  style={{ width: "100%", borderRadius: 16, padding: "16px", fontSize: 18, fontWeight: 900, background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 50%, #8B6914 100%)", color: "#000", border: "none", cursor: "pointer", boxShadow: "0 8px 30px rgba(212,175,55,0.4)", fontFamily: "'Georgia', serif", letterSpacing: "1px" }}>
-                  Comenzar →
-                </button>
-                <button onClick={() => setVista("login")}
-                  style={{ width: "100%", borderRadius: 16, padding: "14px", fontSize: 16, fontWeight: 700, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", cursor: "pointer" }}>
-                  Ya tengo cuenta → Ingresar
-                </button>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", maxWidth: 300, margin: "0 auto 28px", lineHeight: 1.6 }}>Tus contactos seleccionados te ubican, te escuchan y te miran con tu propia cámara.</p>
+              <div style={{ maxWidth: 380, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12, padding: "0 20px" }}>
+                <button onClick={() => setVista("register")} style={btnPrimary}>Comenzar gratis →</button>
+                <button onClick={() => setVista("login")} style={{ width: "100%", borderRadius: 16, padding: "14px", fontSize: 15, fontWeight: 700, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", cursor: "pointer" }}>Ya tengo cuenta → Ingresar</button>
               </div>
             </section>
 
-            {/* ── 4 MODULE CARDS ── */}
-            <section style={{ padding: "20px 16px 40px" }}>
-              <h2 style={{ textAlign: "center", fontFamily: "'Georgia', serif", fontSize: 18, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "3px", marginBottom: 20 }}>
-                Elegí tu módulo
-              </h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 420, margin: "0 auto" }}>
+            {/* MODULE CARDS */}
+            <section style={{ padding: "8px 16px 40px" }}>
+              <h2 style={{ textAlign: "center", fontFamily: "'Georgia', serif", fontSize: 20, fontWeight: 900, color: "#fff", textTransform: "uppercase", letterSpacing: "4px", marginBottom: 18, textShadow: "0 2px 12px rgba(0,0,0,0.8)" }}>Elegí tu módulo</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 440, margin: "0 auto" }}>
                 {MODULE_CARDS.map((card) => (
-                  <button key={card.key}
-                    onClick={() => {
-                      try { sessionStorage.setItem("traza360_selected_module", card.key); } catch(e){}
-                      window.__lexia_initial_module = card.key;
-                      setSelectedModuleKey(card.key);
-                      setVista("register");
-                    }}
-                    style={{
-                      position: "relative",
-                      borderRadius: 20,
-                      overflow: "hidden",
-                      height: 160,
-                      border: "1px solid rgba(201,168,76,0.35)",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      display: "block",
-                      width: "100%",
-                    }}>
-                    {/* Background photo */}
-                    <div style={{
-                      position: "absolute", inset: 0,
-                      backgroundImage: `url(${card.img})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center center",
-                      filter: "brightness(0.7) contrast(1.3) saturate(1.5)",
-                    }} />
-                    {/* Overlay */}
-                    <div style={{
-                      position: "absolute", inset: 0,
-                      background: "linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 100%)",
-                    }} />
-                    {/* Gold left border accent */}
-                    <div style={{
-                      position: "absolute", left: 0, top: 0, bottom: 0,
-                      width: 3,
-                      background: "linear-gradient(to bottom, #C9A84C, #E8C96A, #C9A84C)",
-                    }} />
-                    {/* Content */}
-                    <div style={{ position: "relative", zIndex: 2, padding: "16px 16px 16px 20px", display: "flex", alignItems: "center", gap: 14, height: "100%" }}>
-                      <span style={{ fontSize: 32, flexShrink: 0 }}>{card.icon}</span>
+                  <button key={card.key} onClick={() => { try { sessionStorage.setItem("traza360_selected_module", card.key); } catch(e){} window.__lexia_initial_module = card.key; setSelectedModuleKey(card.key); setVista("register"); }}
+                    style={{ position: "relative", borderRadius: 18, overflow: "hidden", height: 96, border: `1px solid ${GOLD_BORDER}`, cursor: "pointer", textAlign: "left", display: "block", width: "100%", padding: 0 }}>
+                    <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${card.img})`, backgroundSize: "cover", backgroundPosition: card.pos, filter: "brightness(0.6) contrast(1.15) saturate(1.2)" }} />
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.25) 55%, rgba(0,0,0,0.05) 100%)" }} />
+                    <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: GOLD }} />
+                    <div style={{ position: "relative", zIndex: 2, padding: "0 16px 0 18px", display: "flex", alignItems: "center", gap: 14, height: "100%" }}>
+                      <span style={{ fontSize: 26, flexShrink: 0 }}>{card.icon}</span>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 4 }}>{card.title}</div>
-                        <div style={{ fontSize: 12, color: "rgba(232,220,200,0.7)" }}>{card.subtitle}</div>
+                        <div style={{ fontSize: 16, fontWeight: 900, color: "#fff", marginBottom: 3, textShadow: "0 1px 4px rgba(0,0,0,0.9)" }}>{card.title}</div>
+                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", textShadow: "0 1px 4px rgba(0,0,0,0.9)" }}>{card.subtitle}</div>
                       </div>
-                      <span style={{ color: "#C9A84C", fontSize: 20, flexShrink: 0 }}>→</span>
+                      <span style={{ color: GOLD_SOLID, fontSize: 18, flexShrink: 0 }}>→</span>
                     </div>
                   </button>
                 ))}
               </div>
             </section>
 
-            {/* Footer */}
-            <div style={{ textAlign: "center", padding: "20px", borderTop: "1px solid rgba(201,168,76,0.15)" }}>
-              <div style={{ display: "flex", justifyContent: "center", gap: 16, fontSize: 12, color: "rgba(255,255,255,0.4)", flexWrap: "wrap" }}>
-                <button onClick={() => onScreen("sobre_nosotros")} style={{ color: "#C9A84C", background: "none", border: "none", cursor: "pointer", fontSize: 12 }}>Sobre nosotros</button>
-                <span>·</span>
-                <button onClick={() => onScreen("privacidad")} style={{ color: "#C9A84C", background: "none", border: "none", cursor: "pointer", fontSize: 12 }}>Privacidad</button>
-                <span>·</span>
-                <button onClick={() => onScreen("terminos")} style={{ color: "#C9A84C", background: "none", border: "none", cursor: "pointer", fontSize: 12 }}>Términos</button>
+            <div style={{ textAlign: "center", padding: "14px 20px 28px", borderTop: "1px solid rgba(201,168,76,0.15)" }}>
+              <div style={{ display: "flex", justifyContent: "center", gap: 14, fontSize: 12, flexWrap: "wrap" }}>
+                <button onClick={() => onScreen("sobre_nosotros")} style={{ color: GOLD_SOLID, background: "none", border: "none", cursor: "pointer", fontSize: 12 }}>Sobre nosotros</button>
+                <span style={{ color: "rgba(255,255,255,0.3)" }}>·</span>
+                <button onClick={() => onScreen("privacidad")} style={{ color: GOLD_SOLID, background: "none", border: "none", cursor: "pointer", fontSize: 12 }}>Privacidad</button>
+                <span style={{ color: "rgba(255,255,255,0.3)" }}>·</span>
+                <button onClick={() => onScreen("terminos")} style={{ color: GOLD_SOLID, background: "none", border: "none", cursor: "pointer", fontSize: 12 }}>Términos</button>
               </div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>
-                📧 {SUPPORT_EMAIL} · traza360.app
-              </div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>📧 {SUPPORT_EMAIL} · traza360.app</div>
             </div>
           </div>
         )}
 
-        {/* ── LOGIN INTEGRADO ── */}
+        {/* LOGIN */}
         {vista === "login" && (
-          <div style={{ minHeight: "calc(100vh - 60px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-            <div style={{ width: "100%", maxWidth: 400, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(20px)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 24, padding: "32px 24px" }}>
-              <div style={{ textAlign: "center", marginBottom: 24 }}>
-                <img src="/preview.webp" alt="LEXIA" style={{ width: 60, height: 60, objectFit: "contain" }} />
-                <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginTop: 8 }}>Ingresar</h2>
+          <div style={{ minHeight: "calc(100vh - 56px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
+            <div style={{ width: "100%", maxWidth: 400, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(20px)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 24, padding: "32px 24px" }}>
+              <div style={{ textAlign: "center", marginBottom: 22 }}>
+                <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 60, height: 60, objectFit: "contain", marginBottom: 8 }} />
+                <h2 style={{ fontSize: 22, fontWeight: 900, background: GOLD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", margin: 0 }}>LEXIA 24/7</h2>
+                <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>Ingresá a tu cuenta</p>
               </div>
-
-              {/* Google */}
-              <button onClick={handleGoogle}
-                style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 600, color: "#fff", cursor: "pointer", marginBottom: 16 }}>
-                <svg width="20" height="20" viewBox="0 0 24 24">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                </svg>
-                Continuar con Google
+              <button onClick={handleGoogle} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: "rgba(255,255,255,0.06)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 600, color: "#fff", cursor: "pointer", marginBottom: 16 }}>
+                <GoogleIcon /> Continuar con Google
               </button>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                <div style={{ flex: 1, height: 1, background: "rgba(201,168,76,0.2)" }}/>
-                <span style={{ fontSize: 12, color: "rgba(232,220,200,0.5)" }}>o con email</span>
-                <div style={{ flex: 1, height: 1, background: "rgba(201,168,76,0.2)" }}/>
+              <Divider />
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
+                <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder="tu@email.com" style={inputStyle} />
+                <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder="Contraseña" style={inputStyle} onKeyDown={e => e.key === "Enter" && handleLogin()} />
               </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
-                <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
-                  placeholder="tu@email.com"
-                  style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
-                <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
-                  placeholder="Contraseña"
-                  style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+              <div style={{ textAlign: "right", marginBottom: 14 }}>
+                <button onClick={() => onScreen("recuperar")} style={{ background: "none", border: "none", color: GOLD_SOLID, fontSize: 12, cursor: "pointer" }}>¿Olvidaste tu contraseña?</button>
               </div>
-
-              <div style={{ textAlign: "right", marginBottom: 16 }}>
-                <button onClick={() => onScreen("recuperar")} style={{ background: "none", border: "none", color: "#C9A84C", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>
-                  ¿Olvidaste tu contraseña?
-                </button>
-              </div>
-
               {loginError && <p style={{ color: "#fca5a5", fontSize: 13, textAlign: "center", marginBottom: 12 }}>{loginError}</p>}
-
-              <button onClick={handleLogin} disabled={loginLoading}
-                style={{ width: "100%", borderRadius: 14, padding: "14px", fontSize: 15, fontWeight: 800, background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 50%, #8B6914 100%)", color: "#000", border: "none", cursor: "pointer", opacity: loginLoading ? 0.6 : 1 }}>
-                {loginLoading ? "Ingresando..." : "Ingresar"}
-              </button>
-
-              <p style={{ textAlign: "center", marginTop: 16, fontSize: 13, color: "rgba(232,220,200,0.6)" }}>
-                ¿No tenés cuenta?{" "}
-                <button onClick={() => { setVista("register"); setLoginError(""); }}
-                  style={{ background: "none", border: "none", color: "#C9A84C", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>
-                  Registrate gratis
-                </button>
-              </p>
-
-              <button onClick={() => setVista("hero")} style={{ width: "100%", marginTop: 8, background: "none", border: "none", color: "rgba(232,220,200,0.4)", fontSize: 12, cursor: "pointer" }}>
-                ← Volver
-              </button>
+              <button onClick={handleLogin} disabled={loginLoading} style={{ ...btnPrimary, opacity: loginLoading ? 0.6 : 1 }}>{loginLoading ? "Ingresando..." : "Ingresar"}</button>
+              <p style={{ textAlign: "center", marginTop: 14, fontSize: 13, color: "rgba(255,255,255,0.55)" }}>¿No tenés cuenta?{" "}<button onClick={() => { setVista("register"); setLoginError(""); }} style={{ background: "none", border: "none", color: GOLD_SOLID, fontWeight: 700, cursor: "pointer", fontSize: 13 }}>Registrate gratis</button></p>
+              <button onClick={() => setVista("hero")} style={{ width: "100%", marginTop: 8, background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 12, cursor: "pointer" }}>← Volver</button>
             </div>
           </div>
         )}
 
-        {/* ── REGISTRO INTEGRADO ── */}
+        {/* REGISTER */}
         {vista === "register" && (
-          <div style={{ minHeight: "calc(100vh - 60px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-            <div style={{ width: "100%", maxWidth: 400, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(20px)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 24, padding: "32px 24px" }}>
-              <div style={{ textAlign: "center", marginBottom: 24 }}>
-                <img src="/preview.webp" alt="LEXIA" style={{ width: 60, height: 60, objectFit: "contain" }} />
-                <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginTop: 8 }}>Crear cuenta</h2>
+          <div style={{ minHeight: "calc(100vh - 56px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
+            <div style={{ width: "100%", maxWidth: 400, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(20px)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 24, padding: "32px 24px" }}>
+              <div style={{ textAlign: "center", marginBottom: 18 }}>
+                <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 60, height: 60, objectFit: "contain", marginBottom: 8 }} />
+                <h2 style={{ fontSize: 22, fontWeight: 900, background: GOLD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", margin: 0 }}>LEXIA 24/7</h2>
+                <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>Crear cuenta gratis</p>
+                {selectedModuleKey && (
+                  <div style={{ marginTop: 8, background: "rgba(201,168,76,0.1)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 10, padding: "5px 12px", fontSize: 12, color: GOLD_SOLID }}>
+                    ✓ {{ mi_escudo: "Violencia de Género", turno_seguro: "Noche Segura", los_cuido: "Adolescente Seguro", te_cuido: "Te Cuido a Distancia" }[selectedModuleKey]}
+                  </div>
+                )}
               </div>
-
-              {/* Google */}
-              <button onClick={handleGoogle}
-                style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 600, color: "#fff", cursor: "pointer", marginBottom: 16, opacity: !aceptaTerminos ? 0.5 : 1 }}>
-                <svg width="20" height="20" viewBox="0 0 24 24">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                </svg>
-                Continuar con Google
+              <button onClick={handleGoogle} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: "rgba(255,255,255,0.06)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 600, color: "#fff", cursor: "pointer", marginBottom: 16, opacity: !aceptaTerminos ? 0.45 : 1 }}>
+                <GoogleIcon /> Registrarme con Google
               </button>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                <div style={{ flex: 1, height: 1, background: "rgba(201,168,76,0.2)" }}/>
-                <span style={{ fontSize: 12, color: "rgba(232,220,200,0.5)" }}>o con email</span>
-                <div style={{ flex: 1, height: 1, background: "rgba(201,168,76,0.2)" }}/>
+              <Divider />
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
+                <input type="text" value={regName} onChange={e => setRegName(e.target.value)} placeholder="Nombre completo" style={inputStyle} />
+                <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} placeholder="tu@email.com" style={inputStyle} />
+                <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} placeholder="Mínimo 6 caracteres" style={inputStyle} />
               </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
-                <input type="text" value={regName} onChange={e => setRegName(e.target.value)}
-                  placeholder="Nombre completo"
-                  style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
-                <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)}
-                  placeholder="tu@email.com"
-                  style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
-                <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                  style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
-              </div>
-
-              {/* Términos */}
-              <div style={{ background: "rgba(201,168,76,0.05)", border: `1px solid ${aceptaTerminos ? "rgba(201,168,76,0.5)" : "rgba(201,168,76,0.2)"}`, borderRadius: 12, padding: 12, marginBottom: 16 }}>
-                <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}
-                  onClick={() => setAceptaTerminos(!aceptaTerminos)}>
-                  <div style={{
-                    width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 1,
-                    background: aceptaTerminos ? "linear-gradient(135deg, #8B6914, #C9A84C)" : "transparent",
-                    border: `2px solid ${aceptaTerminos ? "#C9A84C" : "rgba(255,255,255,0.3)"}`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>
+              <div style={{ background: "rgba(201,168,76,0.05)", border: `1px solid ${aceptaTerminos ? "rgba(201,168,76,0.5)" : GOLD_BORDER}`, borderRadius: 12, padding: 12, marginBottom: 14 }}>
+                <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }} onClick={() => setAceptaTerminos(!aceptaTerminos)}>
+                  <div style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 1, background: aceptaTerminos ? GOLD : "transparent", border: `2px solid ${aceptaTerminos ? GOLD_SOLID : "rgba(255,255,255,0.3)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     {aceptaTerminos && <span style={{ color: "#000", fontSize: 12, fontWeight: 900 }}>✓</span>}
                   </div>
                   <div style={{ fontSize: 12, color: "rgba(232,220,200,0.8)", lineHeight: 1.6 }}>
-                    Acepto los{" "}
-                    <span style={{ color: "#C9A84C", fontWeight: 700 }}>Términos y Privacidad</span>.
-                    <br/><span style={{ fontSize: 10, color: "rgba(201,168,76,0.6)" }}>Ver en: traza360.app/terminos</span>
-                    <p style={{ marginTop: 4, fontSize: 10, color: "rgba(232,220,200,0.5)" }}>LEXIA no reemplaza al 911 ni a servicios de emergencia.</p>
+                    Acepto los <span style={{ color: GOLD_SOLID, fontWeight: 700 }}>Términos y Privacidad</span> de LEXIA 24/7.
+                    <br/><span style={{ fontSize: 10, color: "rgba(201,168,76,0.5)" }}>LEXIA 24/7 no reemplaza al 911 ni a servicios de emergencia.</span>
                   </div>
                 </label>
               </div>
-
               {regError && <p style={{ color: "#fca5a5", fontSize: 13, textAlign: "center", marginBottom: 12 }}>{regError}</p>}
-
-              <button onClick={handleRegister} disabled={regLoading || !aceptaTerminos}
-                style={{ width: "100%", borderRadius: 14, padding: "14px", fontSize: 15, fontWeight: 800, background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 50%, #8B6914 100%)", color: "#000", border: "none", cursor: "pointer", opacity: (regLoading || !aceptaTerminos) ? 0.4 : 1 }}>
-                {regLoading ? "Creando cuenta..." : "Crear cuenta"}
-              </button>
-
-              <p style={{ textAlign: "center", marginTop: 16, fontSize: 13, color: "rgba(232,220,200,0.6)" }}>
-                ¿Ya tenés cuenta?{" "}
-                <button onClick={() => { setVista("login"); setRegError(""); }}
-                  style={{ background: "none", border: "none", color: "#C9A84C", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>
-                  Ingresar
-                </button>
-              </p>
-
-              <button onClick={() => setVista("hero")} style={{ width: "100%", marginTop: 8, background: "none", border: "none", color: "rgba(232,220,200,0.4)", fontSize: 12, cursor: "pointer" }}>
-                ← Volver
-              </button>
+              <button onClick={handleRegister} disabled={regLoading || !aceptaTerminos} style={{ ...btnPrimary, opacity: (regLoading || !aceptaTerminos) ? 0.4 : 1 }}>{regLoading ? "Creando cuenta..." : "Crear cuenta"}</button>
+              <p style={{ textAlign: "center", marginTop: 14, fontSize: 13, color: "rgba(255,255,255,0.55)" }}>¿Ya tenés cuenta?{" "}<button onClick={() => { setVista("login"); setRegError(""); }} style={{ background: "none", border: "none", color: GOLD_SOLID, fontWeight: 700, cursor: "pointer", fontSize: 13 }}>Ingresar</button></p>
+              <button onClick={() => setVista("hero")} style={{ width: "100%", marginTop: 8, background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 12, cursor: "pointer" }}>← Volver</button>
             </div>
           </div>
         )}
@@ -5787,87 +5512,6 @@ function LandingScreen({ onScreen }) {
     </div>
   );
 }
-
-// ─── COMPLETAR PERFIL BANNER ────────────────────────────────
-function CompletarPerfilBanner({ authUser, onComplete, onDismiss }) {
-  const [telefono, setTelefono] = React.useState("");
-  const [pais, setPais] = React.useState("AR");
-  const [saving, setSaving] = React.useState(false);
-  const [error, setError] = React.useState("");
-
-  async function guardar() {
-    if (!telefono.trim()) { setError("Ingresá tu número de WhatsApp."); return; }
-    setSaving(true);
-    try {
-      await supabase.from("usuarios").update({
-        telefono: telefono.trim(),
-        pais: pais,
-        perfil_completo: true,
-      }).eq("auth_user_id", authUser?.id);
-      onComplete();
-    } catch(e) { setError("Error al guardar. Intentá de nuevo."); }
-    setSaving(false);
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-3xl p-6" style={{ background: "#111", border: "1px solid rgba(201,168,76,0.4)" }}>
-        <div className="text-center mb-4">
-          <div style={{ fontSize: 32, marginBottom: 8 }}>👤</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Completá tu perfil</div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>Teléfono + país — para protegerte mejor</div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
-          <input
-            type="tel"
-            value={telefono}
-            onChange={e => setTelefono(e.target.value)}
-            placeholder="Tu número de WhatsApp"
-            style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }}
-          />
-          <select value={pais} onChange={e => setPais(e.target.value)}
-            style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }}>
-            <option value="AR">🇦🇷 Argentina</option>
-            <option value="CL">🇨🇱 Chile</option>
-            <option value="BR">🇧🇷 Brasil</option>
-            <option value="CO">🇨🇴 Colombia</option>
-            <option value="MX">🇲🇽 México</option>
-            <option value="UY">🇺🇾 Uruguay</option>
-            <option value="PY">🇵🇾 Paraguay</option>
-            <option value="PE">🇵🇪 Perú</option>
-            <option value="VE">🇻🇪 Venezuela</option>
-            <option value="BO">🇧🇴 Bolivia</option>
-          </select>
-        </div>
-        {error && <p style={{ color: "#fca5a5", fontSize: 13, textAlign: "center", marginBottom: 8 }}>{error}</p>}
-        <button onClick={guardar} disabled={saving}
-          style={{ width: "100%", borderRadius: 14, padding: "13px", fontSize: 15, fontWeight: 800, background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 50%, #8B6914 100%)", color: "#000", border: "none", cursor: "pointer", marginBottom: 10, opacity: saving ? 0.6 : 1 }}>
-          {saving ? "Guardando..." : "Guardar"}
-        </button>
-        <button onClick={onDismiss}
-          style={{ width: "100%", background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer" }}>
-          Ahora no
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── PERFIL INCOMPLETO BANNER MINI ──────────────────────────
-function PerfilIncompletoBannerMini({ onClick }) {
-  return (
-    <button onClick={onClick}
-      style={{ width: "100%", background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 14, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-      <span style={{ fontSize: 20 }}>👤</span>
-      <div style={{ textAlign: "left", flex: 1 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#C9A84C" }}>Completá tu perfil</div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>Teléfono + país — para protegerte mejor</div>
-      </div>
-      <span style={{ color: "#C9A84C", fontSize: 16 }}>→</span>
-    </button>
-  );
-}
-
 function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans }) {
   const [activeScreen, setActiveScreen] = useState("home");
   const [activeModule, setActiveModule] = useState(null);
@@ -6183,7 +5827,7 @@ async function ejecutarPanico() {
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-6 text-center">
-          <img src="/preview.webp" alt="LEXIA" style={{ width: 80, height: 80, objectFit: "contain" }} />
+          <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 80, height: 80, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[4px] mt-2 font-semibold" style={{ color: BRAND.gold }}>{TAGLINE}</p>
         </div>
 
@@ -6398,7 +6042,7 @@ async function ejecutarPanico() {
           <div style={{ position: "absolute", inset: "-16px", borderRadius: "50%", border: "1px solid rgba(201,168,76,0.3)", animation: "panicPulse 2.5s infinite 0.5s", pointerEvents: "none" }} />
           <button onClick={handlePanico} className="flex h-20 w-20 items-center justify-center rounded-full active:scale-95"
             style={{ background: "rgba(0,0,0,0.9)", border: "2px solid rgba(201,168,76,0.8)", boxShadow: "0 0 30px rgba(201,168,76,0.4), 0 0 60px rgba(201,168,76,0.15)", overflow: "hidden" }}>
-            <img src="/preview.webp" alt="LEXIA" style={{ width: 52, height: 52, objectFit: "contain" }} />
+            <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 52, height: 52, objectFit: "contain" }} />
           </button>
         </div>
         <div className="text-[11px] text-center mt-1.5 font-bold uppercase tracking-[2px]" style={{ color: BRAND.gold, textShadow: "0 0 10px rgba(201,168,76,0.5)" }}>{t("panico")}</div>
@@ -6599,7 +6243,7 @@ export default function App() {
   if (screen === "loading") return (
     <div className="flex min-h-screen items-center justify-center" style={{ background: BRAND.blackBg }}>
       <div className="text-center">
-        <div className="mb-4 flex items-center justify-center"><img src="/preview.webp" alt="LEXIA" style={{ width: 80, height: 80, objectFit: "contain" }} /></div>
+        <div className="mb-4 flex items-center justify-center"><img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 80, height: 80, objectFit: "contain" }} /></div>
         <div className="text-sm mt-2" style={{ color: BRAND.gold }}>Cargando...</div>
       </div>
     </div>
