@@ -5792,6 +5792,87 @@ function LandingScreen({ onScreen }) {
     </div>
   );
 }
+
+// ─── COMPLETAR PERFIL BANNER ────────────────────────────────
+function CompletarPerfilBanner({ authUser, onComplete, onDismiss }) {
+  const [telefono, setTelefono] = React.useState("");
+  const [pais, setPais] = React.useState("AR");
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState("");
+
+  async function guardar() {
+    if (!telefono.trim()) { setError("Ingresá tu número de WhatsApp."); return; }
+    setSaving(true);
+    try {
+      await supabase.from("usuarios").update({
+        telefono: telefono.trim(),
+        pais: pais,
+        perfil_completo: true,
+      }).eq("auth_user_id", authUser?.id);
+      onComplete();
+    } catch(e) { setError("Error al guardar. Intentá de nuevo."); }
+    setSaving(false);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-3xl p-6" style={{ background: "#111", border: "1px solid rgba(201,168,76,0.4)" }}>
+        <div className="text-center mb-4">
+          <div style={{ fontSize: 32, marginBottom: 8 }}>👤</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Completá tu perfil</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>Teléfono + país — para protegerte mejor</div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
+          <input
+            type="tel"
+            value={telefono}
+            onChange={e => setTelefono(e.target.value)}
+            placeholder="Tu número de WhatsApp"
+            style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+          />
+          <select value={pais} onChange={e => setPais(e.target.value)}
+            style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }}>
+            <option value="AR">🇦🇷 Argentina</option>
+            <option value="CL">🇨🇱 Chile</option>
+            <option value="BR">🇧🇷 Brasil</option>
+            <option value="CO">🇨🇴 Colombia</option>
+            <option value="MX">🇲🇽 México</option>
+            <option value="UY">🇺🇾 Uruguay</option>
+            <option value="PY">🇵🇾 Paraguay</option>
+            <option value="PE">🇵🇪 Perú</option>
+            <option value="VE">🇻🇪 Venezuela</option>
+            <option value="BO">🇧🇴 Bolivia</option>
+          </select>
+        </div>
+        {error && <p style={{ color: "#fca5a5", fontSize: 13, textAlign: "center", marginBottom: 8 }}>{error}</p>}
+        <button onClick={guardar} disabled={saving}
+          style={{ width: "100%", borderRadius: 14, padding: "13px", fontSize: 15, fontWeight: 800, background: "linear-gradient(135deg, #8B6914 0%, #C9A84C 50%, #8B6914 100%)", color: "#000", border: "none", cursor: "pointer", marginBottom: 10, opacity: saving ? 0.6 : 1 }}>
+          {saving ? "Guardando..." : "Guardar"}
+        </button>
+        <button onClick={onDismiss}
+          style={{ width: "100%", background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer" }}>
+          Ahora no
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── PERFIL INCOMPLETO BANNER MINI ──────────────────────────
+function PerfilIncompletoBannerMini({ onClick }) {
+  return (
+    <button onClick={onClick}
+      style={{ width: "100%", background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 14, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+      <span style={{ fontSize: 20 }}>👤</span>
+      <div style={{ textAlign: "left", flex: 1 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#C9A84C" }}>Completá tu perfil</div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>Teléfono + país — para protegerte mejor</div>
+      </div>
+      <span style={{ color: "#C9A84C", fontSize: 16 }}>→</span>
+    </button>
+  );
+}
+
 function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans }) {
   const [activeScreen, setActiveScreen] = useState("home");
   const [activeModule, setActiveModule] = useState(null);
