@@ -5581,7 +5581,7 @@ function LandingScreen({ onScreen }) {
                       position: "relative",
                       borderRadius: 20,
                       overflow: "hidden",
-                      height: 150,
+                      height: 160,
                       border: "1px solid rgba(201,168,76,0.35)",
                       cursor: "pointer",
                       textAlign: "left",
@@ -5592,8 +5592,8 @@ function LandingScreen({ onScreen }) {
                     <div style={{
                       position: "absolute", inset: 0,
                       backgroundImage: `url(${card.img})`,
-                      backgroundSize: "130%",
-                      backgroundPosition: "50% 30%",
+                      backgroundSize: "cover",
+                      backgroundPosition: "center center",
                       filter: "brightness(0.7) contrast(1.3) saturate(1.5)",
                     }} />
                     {/* Overlay */}
@@ -6468,40 +6468,30 @@ export default function App() {
   }, []);
 
   async function checkSession() {
-    // v19.14: Handle Google OAuth redirect (has #access_token in URL)
-    const hash = window.location.hash;
-    if (hash && hash.includes("access_token")) {
-      // Wait for Supabase to process the OAuth tokens
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      // Clean the URL
-      try { window.history.replaceState({}, document.title, window.location.pathname); } catch(e){}
-    }
-
-    const r = await getCurrentUser();
-    if (r?.authUser) {
-      setAuthUser(r.authUser); setUserProfile(r.profile);
-      if (!r.profile) await tryCreateProfile(r.authUser);
-      try { sessionStorage.setItem("traza360_pin_unlocked", "1"); } catch(e){}
-      setPinUnlocked(true);
-      const done = sessionStorage.getItem("traza360_onboarding_done");
-      if (!done) { setShowOnboarding(true); setScreen("home"); }
-      else setScreen("home");
-    } else {
-      // v19.14: If still no user after OAuth wait, try once more
-      if (hash && hash.includes("access_token")) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        const r2 = await getCurrentUser();
-        if (r2?.authUser) {
-          setAuthUser(r2.authUser); setUserProfile(r2.profile);
-          if (!r2.profile) await tryCreateProfile(r2.authUser);
-          try { sessionStorage.setItem("traza360_pin_unlocked", "1"); } catch(e){}
-          setPinUnlocked(true);
-          const done = sessionStorage.getItem("traza360_onboarding_done");
-          if (!done) { setShowOnboarding(true); setScreen("home"); }
-          else setScreen("home");
-          return;
+    try {
+      // v19.15: Use getSession() which handles OAuth hash fragments automatically
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const user = session.user;
+        // Get or create profile
+        const { data: profile } = await supabase.from("usuarios").select("*").eq("auth_user_id", user.id).single();
+        setAuthUser(user);
+        setUserProfile(profile || null);
+        if (!profile) await tryCreateProfile(user);
+        try { sessionStorage.setItem("traza360_pin_unlocked", "1"); } catch(e){}
+        setPinUnlocked(true);
+        // Clean OAuth hash from URL
+        if (window.location.hash) {
+          try { window.history.replaceState({}, document.title, window.location.pathname); } catch(e){}
         }
+        const done = sessionStorage.getItem("traza360_onboarding_done");
+        if (!done) { setShowOnboarding(true); setScreen("home"); }
+        else setScreen("home");
+      } else {
+        setScreen("landing");
       }
+    } catch(e) {
+      console.warn("checkSession error:", e);
       setScreen("landing");
     }
   }
@@ -6515,9 +6505,19 @@ export default function App() {
   }
 
   async function handleLoginSuccess() {
-    const r = await getCurrentUser();
-    if (r?.authUser) { setAuthUser(r.authUser); setUserProfile(r.profile); if (!r.profile) await tryCreateProfile(r.authUser); }
-    // Login fresco = saltar PIN para esta sesión
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const user = session.user;
+        const { data: profile } = await supabase.from("usuarios").select("*").eq("auth_user_id", user.id).single();
+        setAuthUser(user);
+        setUserProfile(profile || null);
+        if (!profile) await tryCreateProfile(user);
+      } else {
+        const r = await getCurrentUser();
+        if (r?.authUser) { setAuthUser(r.authUser); setUserProfile(r.profile); if (!r.profile) await tryCreateProfile(r.authUser); }
+      }
+    } catch(e) { console.warn("handleLoginSuccess error:", e); }
     try { sessionStorage.setItem("traza360_pin_unlocked", "1"); } catch(e){}
     setPinUnlocked(true);
     const done = sessionStorage.getItem("traza360_onboarding_done");
