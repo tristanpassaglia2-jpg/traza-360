@@ -3363,7 +3363,7 @@ function TerminosScreen({ onBack }) {
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>7. Planes pagos (cuando se habiliten)</h3>
             <p className="text-sm mb-2" style={{ color: BRAND.textLight }}>
-              Actualmente <strong style={{ color: BRAND.gold }}>todos los planes son gratuitos durante la beta.</strong> Cuando habilitemos planes pagos:
+              Actualmente <strong style={{ color: BRAND.gold }}>todos los planes son gratuitos por tiempo limitado.</strong> Cuando habilitemos planes pagos:
             </p>
             <ul className="text-sm space-y-1.5" style={{ color: BRAND.textLight }}>
               <li><span style={{ color: BRAND.gold }}>•</span> Los precios serán los publicados en la pantalla de planes.</li>
@@ -5280,6 +5280,7 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
 function LandingScreen({ onScreen }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [vista, setVista] = useState("hero"); // hero | login | register
+  const [selectedModuleKey, setSelectedModuleKey] = useState(null);
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -5573,13 +5574,14 @@ function LandingScreen({ onScreen }) {
                     onClick={() => {
                       try { sessionStorage.setItem("traza360_selected_module", card.key); } catch(e){}
                       window.__lexia_initial_module = card.key;
+                      setSelectedModuleKey(card.key);
                       setVista("register");
                     }}
                     style={{
                       position: "relative",
                       borderRadius: 20,
                       overflow: "hidden",
-                      height: 110,
+                      height: 130,
                       border: "1px solid rgba(201,168,76,0.35)",
                       cursor: "pointer",
                       textAlign: "left",
@@ -5591,7 +5593,7 @@ function LandingScreen({ onScreen }) {
                       position: "absolute", inset: 0,
                       backgroundImage: `url(${card.img})`,
                       backgroundSize: "cover",
-                      backgroundPosition: "center",
+                      backgroundPosition: "50% 30%",
                       filter: "brightness(0.7) contrast(1.3) saturate(1.5)",
                     }} />
                     {/* Overlay */}
@@ -5752,15 +5754,8 @@ function LandingScreen({ onScreen }) {
                   </div>
                   <div style={{ fontSize: 12, color: "rgba(232,220,200,0.8)", lineHeight: 1.6 }}>
                     Acepto los{" "}
-                    <button type="button" onClick={e => { e.stopPropagation(); onScreen("terminos"); }}
-                      style={{ background: "none", border: "none", color: "#C9A84C", fontWeight: 700, cursor: "pointer", fontSize: 12, textDecoration: "underline" }}>
-                      Términos
-                    </button>
-                    {" "}y la{" "}
-                    <button type="button" onClick={e => { e.stopPropagation(); onScreen("privacidad"); }}
-                      style={{ background: "none", border: "none", color: "#C9A84C", fontWeight: 700, cursor: "pointer", fontSize: 12, textDecoration: "underline" }}>
-                      Privacidad
-                    </button>.
+                    <span style={{ color: "#C9A84C", fontWeight: 700 }}>Términos y Privacidad</span>.
+                    <br/><span style={{ fontSize: 10, color: "rgba(201,168,76,0.6)" }}>Ver en: traza360.app/terminos</span>
                     <p style={{ marginTop: 4, fontSize: 10, color: "rgba(232,220,200,0.5)" }}>LEXIA no reemplaza al 911 ni a servicios de emergencia.</p>
                   </div>
                 </label>
