@@ -1958,7 +1958,7 @@ function UpgradeBanner({ feature, onViewPlans }) {
 }
 
 // ─── CONTACTOS SCREEN ───────────────────────
-function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "" }) {
+function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "", onViewPlans }) {
   const [contactos, setContactos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [vista, setVista] = useState("lista");
@@ -2053,7 +2053,7 @@ function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "" }) {
             {contactos.length < maxContactos ? (
               <button onClick={() => setVista("agregar")} className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-sky-500 py-4 font-semibold text-white shadow-lg">+ Agregar contacto</button>
             ) : (
-              <UpgradeBanner feature="más contactos de emergencia" />
+              <UpgradeBanner feature="más contactos de emergencia" onViewPlans={onViewPlans || (() => {})} />
             )}
           </>
         )}
@@ -5387,15 +5387,98 @@ function LandingScreen({ onScreen }) {
               </h2>
               <p style={{ fontSize: 16, color: "#ffffff", maxWidth: 320, margin: "0 auto 6px", fontWeight: 500, lineHeight: 1.5 }}>App multimodal para protección de personas en tiempo real.</p>
               <p style={{ fontSize: 17, fontWeight: 800, color: "#ffffff", marginBottom: 28 }}>Un botón, muchas soluciones</p>
-              <div style={{ display: "flex", justifyContent: "center", gap: 20, marginBottom: 30 }}>
-                {[{ emoji: "🗺️", label: "Ubicación" }, { emoji: "🎙️", label: "Audio" }, { emoji: "📷", label: "Cámara" }].map((item, i) => (
-                  <div key={i} style={{ textAlign: "center" }}>
-                    <div style={{ width: 56, height: 56, background: "rgba(201,168,76,0.12)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, margin: "0 auto 6px" }}>{item.emoji}</div>
-                    <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "2px", color: GOLD_SOLID, fontWeight: 700 }}>{item.label}</span>
+              {/* Feature icons — large, realistic */}
+              <div style={{ display: "flex", justifyContent: "center", gap: 16, marginBottom: 16 }}>
+
+                {/* GPS MAP */}
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ width: 80, height: 80, borderRadius: 20, overflow: "hidden", border: "2px solid rgba(201,168,76,0.5)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)", margin: "0 auto 8px", position: "relative", background: "#1a3a2a" }}>
+                    <svg viewBox="0 0 80 80" width="80" height="80" xmlns="http://www.w3.org/2000/svg">
+                      {/* Map background */}
+                      <rect width="80" height="80" fill="#1e3a2f"/>
+                      {/* Roads */}
+                      <rect x="0" y="36" width="80" height="8" fill="#2d5a3d" opacity="0.8"/>
+                      <rect x="36" y="0" width="8" height="80" fill="#2d5a3d" opacity="0.8"/>
+                      <line x1="0" y1="40" x2="80" y2="40" stroke="#4a8c5c" strokeWidth="1.5"/>
+                      <line x1="40" y1="0" x2="40" y2="80" stroke="#4a8c5c" strokeWidth="1.5"/>
+                      {/* City blocks */}
+                      <rect x="4" y="4" width="28" height="28" rx="2" fill="#264d38" opacity="0.7"/>
+                      <rect x="48" y="4" width="28" height="28" rx="2" fill="#264d38" opacity="0.7"/>
+                      <rect x="4" y="48" width="28" height="28" rx="2" fill="#264d38" opacity="0.7"/>
+                      <rect x="48" y="48" width="28" height="28" rx="2" fill="#264d38" opacity="0.7"/>
+                      {/* GPS pin */}
+                      <circle cx="40" cy="34" r="10" fill="rgba(0,0,0,0.4)"/>
+                      <path d="M40 22 C34 22 29 27 29 33 C29 42 40 52 40 52 C40 52 51 42 51 33 C51 27 46 22 40 22 Z" fill="#C9A84C"/>
+                      <circle cx="40" cy="33" r="5" fill="#1a3a2a"/>
+                      <circle cx="40" cy="33" r="2.5" fill="#E8C96A"/>
+                      {/* Pulse ring */}
+                      <circle cx="40" cy="33" r="13" fill="none" stroke="rgba(201,168,76,0.4)" strokeWidth="1.5"/>
+                    </svg>
                   </div>
-                ))}
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "2px", color: "#C9A84C", fontWeight: 700, marginBottom: 4 }}>UBICACIÓN</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.3 }}>Tus contactos<br/>te ubican</div>
+                </div>
+
+                {/* MICROPHONE */}
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ width: 80, height: 80, borderRadius: 20, overflow: "hidden", border: "2px solid rgba(201,168,76,0.5)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)", margin: "0 auto 8px", background: "#1a1a2e" }}>
+                    <svg viewBox="0 0 80 80" width="80" height="80" xmlns="http://www.w3.org/2000/svg">
+                      <rect width="80" height="80" fill="#1a1a2e"/>
+                      {/* Sound waves bg */}
+                      <ellipse cx="40" cy="40" rx="32" ry="32" fill="rgba(201,168,76,0.05)"/>
+                      <ellipse cx="40" cy="40" rx="22" ry="22" fill="rgba(201,168,76,0.08)"/>
+                      {/* Mic body */}
+                      <rect x="32" y="16" width="16" height="26" rx="8" fill="#C9A84C"/>
+                      {/* Mic arc */}
+                      <path d="M24 38 C24 50 56 50 56 38" fill="none" stroke="#C9A84C" strokeWidth="2.5" strokeLinecap="round"/>
+                      {/* Stand */}
+                      <line x1="40" y1="50" x2="40" y2="62" stroke="#C9A84C" strokeWidth="2.5" strokeLinecap="round"/>
+                      <line x1="30" y1="62" x2="50" y2="62" stroke="#C9A84C" strokeWidth="2.5" strokeLinecap="round"/>
+                      {/* Sound waves */}
+                      <path d="M16 34 C12 37 12 43 16 46" fill="none" stroke="rgba(201,168,76,0.5)" strokeWidth="2" strokeLinecap="round"/>
+                      <path d="M64 34 C68 37 68 43 64 46" fill="none" stroke="rgba(201,168,76,0.5)" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "2px", color: "#C9A84C", fontWeight: 700, marginBottom: 4 }}>AUDIO</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.3 }}>Te escuchan<br/>en tiempo real</div>
+                </div>
+
+                {/* VIDEO CAMERA */}
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ width: 80, height: 80, borderRadius: 20, overflow: "hidden", border: "2px solid rgba(201,168,76,0.5)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)", margin: "0 auto 8px", background: "#1a1a1a" }}>
+                    <svg viewBox="0 0 80 80" width="80" height="80" xmlns="http://www.w3.org/2000/svg">
+                      <rect width="80" height="80" fill="#1a1a1a"/>
+                      {/* Camera body */}
+                      <rect x="8" y="26" width="44" height="30" rx="6" fill="#2a2a2a" stroke="#C9A84C" strokeWidth="1.5"/>
+                      {/* Lens */}
+                      <circle cx="30" cy="41" r="10" fill="#111" stroke="#C9A84C" strokeWidth="1.5"/>
+                      <circle cx="30" cy="41" r="6" fill="#0a0a0a"/>
+                      <circle cx="30" cy="41" r="3" fill="#1a1a1a"/>
+                      <circle cx="27" cy="38" r="1.5" fill="rgba(255,255,255,0.3)"/>
+                      {/* Video triangle */}
+                      <polygon points="26,37 26,45 34,41" fill="#C9A84C" opacity="0.9"/>
+                      {/* Video arm */}
+                      <path d="M52 32 L72 26 L72 56 L52 50 Z" fill="#333" stroke="#C9A84C" strokeWidth="1.5"/>
+                      {/* REC dot */}
+                      <circle cx="58" cy="22" r="4" fill="#ff3333"/>
+                      <text x="64" y="26" fill="#ff3333" fontSize="8" fontFamily="sans-serif" fontWeight="bold">REC</text>
+                    </svg>
+                  </div>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "2px", color: "#C9A84C", fontWeight: 700, marginBottom: 4 }}>CÁMARA</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.3 }}>Te observan<br/>con tu cámara</div>
+                </div>
+
               </div>
-              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", maxWidth: 300, margin: "0 auto 28px", lineHeight: 1.6 }}>Tus contactos seleccionados te ubican, te escuchan y te miran con tu propia cámara.</p>
+
+              {/* Contacts line */}
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginBottom: 24 }}>
+                <div style={{ display: "flex" }}>
+                  {["👤","👤","👤"].map((u,i) => (
+                    <div key={i} style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(201,168,76,0.2)", border: "2px solid rgba(201,168,76,0.5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, marginLeft: i > 0 ? -8 : 0 }}>{u}</div>
+                  ))}
+                </div>
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", fontWeight: 600 }}>Tus contactos de confianza están alertas</span>
+              </div>
               <div style={{ maxWidth: 380, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12, padding: "0 20px" }}>
                 <button onClick={() => setVista("register")} style={btnPrimary}>Comenzar gratis →</button>
                 <button onClick={() => setVista("login")} style={{ width: "100%", borderRadius: 16, padding: "14px", fontSize: 15, fontWeight: 700, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", cursor: "pointer" }}>Ya tengo cuenta → Ingresar</button>
@@ -5576,7 +5659,7 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
     setLoggingOut(true); try { sessionStorage.removeItem("traza360_pending_name"); } catch(e){} await signOut(); setLoggingOut(false); onLogout();
   }
 
-  if (activeScreen === "contactos") return <ContactosScreen onBack={() => { setActiveScreen("home"); cargarContactos(); }} userPlan={userPlan} nombreUsuario={nombreUsuario} />;
+  if (activeScreen === "contactos") return <ContactosScreen onBack={() => { setActiveScreen("home"); cargarContactos(); }} userPlan={userPlan} nombreUsuario={nombreUsuario} onViewPlans={onViewPlans} />;
   if (activeScreen === "evidencias") return <EvidenciasScreen onBack={() => setActiveScreen("home")} />;
   if (activeScreen === "te_cuido") return <TeCuidoScreen onBack={() => setActiveScreen("home")} contactos={contactos} />;
   if (activeScreen === "instrucciones") return <InstruccionesScreen onBack={() => setActiveScreen("home")} />;
@@ -5957,6 +6040,21 @@ async function ejecutarPanico() {
                   className="rounded-lg px-3 py-1.5"
                   style={{ background: "rgba(212,175,55,0.08)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>
                   {"\u{1F39B}\u{FE0F}"} Tour demo
+                </button>
+                <button onClick={() => {
+                  if (hasPin) {
+                    if (window.confirm("¿Ocultar app ahora?\n\nLa app se verá como una calculadora. Para volver, ingresá tu PIN en la calculadora.")) {
+                      setScreen("calculadora");
+                    }
+                  } else {
+                    if (window.confirm("¿Ocultar app como calculadora?\n\nPrimero configurá un PIN para poder volver a VIGÍA 24. ¿Querés configurarlo ahora?")) {
+                      setActiveScreen("pin_setup");
+                    }
+                  }
+                }}
+                  className="rounded-lg px-3 py-1.5"
+                  style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.35)", color: "#a5b4fc" }}>
+                  {"\u{1F9EE}"} Ocultar app
                 </button>
               </div>
 
