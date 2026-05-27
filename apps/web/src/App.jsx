@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { signUp, signIn, signOut, getCurrentUser, supabase, getContactos, addContacto, deleteContacto, getMedicamentos, addMedicamento, deleteMedicamento, getTomasHoy, getTomasSemana, marcarTomado, crearTomasDelDia } from "./lib/supabase";
 
 /* ═══════════════════════════════════════════════════════════════
-   LEXIA — App completa v19.12
+   VIGÍA 24 — App completa v19.12
    Versión: 19.12 · Mayo 2026
    ═══════════════════════════════════════════════════════════════
    CAMBIOS v19.11:
@@ -27,7 +27,7 @@ const HOME_ADDRESS_DEFAULT = "Mi casa";
 
 // v19.7: Email de soporte centralizado (cambialo acá para que se actualice en TODA la app)
 const SUPPORT_EMAIL = "vigia24app@gmail.com"; // ⚠️ Tristan: cambiá este string por tu Gmail nuevo cuando lo crees
-const RESPONSABLE_NAME = "LEXIA Security";
+const RESPONSABLE_NAME = "VIGÍA 24";
 const RESPONSABLE_LOCATION = "Córdoba, Argentina";
 const APP_VERSION = "19.12";
 
@@ -37,7 +37,7 @@ const LANG = (navigator.language || navigator.userLanguage || "es").startsWith("
 
 const T = {
   // Textos generales
-  appName:        { es: "LEXIA 24/7",                pt: "LEXIA 24/7" },
+  appName:        { es: "VIGÍA 24",                pt: "VIGÍA 24" },
   tagline:        { es: "Si algo pasa, alguien ya sabe.", pt: "Se algo acontecer, alguém já sabe." },
   panico:         { es: "PÁNICO",                 pt: "PÂNICO" },
   alertaEnviada:  { es: "Alerta enviada",          pt: "Alerta enviada" },
@@ -499,7 +499,7 @@ function SystemStatusPanel({ contactos, onGoToContactos, onClose }) {
             label="Ubicación GPS"
             detalleFalla="Tu dispositivo bloqueó la ubicación. Sin GPS, tus contactos recibirán alertas sin ubicación."
             accion="Cómo activarlo"
-            onAccion={() => alert("Para activar el GPS:\n\n📱 Android: Configuración → Privacidad → Permisos de ubicación → LEXIA → Permitir\n\n🍎 iPhone: Configuración → Safari → Ubicación → Permitir\n\nDespués de activarlo, recargá la app.")}
+            onAccion={() => alert("Para activar el GPS:\n\n📱 Android: Configuración → Privacidad → Permisos de ubicación → VIGÍA 24 → Permitir\n\n🍎 iPhone: Configuración → Safari → Ubicación → Permitir\n\nDespués de activarlo, recargá la app.")}
           />
           <Indicador
             ok={contactosOk}
@@ -537,7 +537,7 @@ function OnboardingScreen({ onComplete }) {
   const steps = [
     {
       iconType: "logo",
-      title: "Bienvenido/a a LEXIA",
+      title: "Bienvenido/a a VIGÍA 24",
       subtitle: "Alguien cuida de vos.",
       desc: "Esta app te protege a vos y a quienes querés. Con un solo botón podés alertar a tu gente de confianza, compartir tu ubicación y grabar evidencia.",
       cta: "Comenzar →",
@@ -589,7 +589,7 @@ function OnboardingScreen({ onComplete }) {
           {/* Ícono: paso 1 = logo dorado completo, otros = GoldIcon */}
           <div className="mb-4 flex justify-center">
             {current.iconType === "logo" ? (
-            <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 90, height: 90, objectFit: "contain" }} />  
+            <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 90, height: 90, objectFit: "contain" }} />  
             ) : (
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(212,175,55,0.2), rgba(154,123,15,0.08))", border: `1px solid ${BRAND.borderStrong}` }}>
                 <GoldIcon name={current.iconName} size={36} />
@@ -676,7 +676,7 @@ function OnboardingScreen({ onComplete }) {
 
 // ─── VERIFICACIÓN CONTACTO (Safety Check) ───
 async function verificarContacto(telefono, nombreContacto, nombreUsuario) {
-  const msg = `Hola ${nombreContacto} 👋 Soy ${nombreUsuario} y te agregué como contacto de confianza en LEXIA, una app de seguridad personal.\n\n✅ Si recibís este mensaje, todo funciona correctamente.\n\nRespondé "OK" para confirmar que lo recibiste.\n\n🛡️ LEXIA — traza360.app`;
+  const msg = `Hola ${nombreContacto} 👋 Soy ${nombreUsuario} y te agregué como contacto de confianza en VIGÍA 24, una app de seguridad personal.\n\n✅ Si recibís este mensaje, todo funciona correctamente.\n\nRespondé "OK" para confirmar que lo recibiste.\n\n🛡️ LEXIA — traza360.app`;
   return await sendWhatsAppAPI(telefono, msg);
 }
 
@@ -1191,7 +1191,7 @@ function CheckInModal({ onClose, contactos, titulo = "Botón de ingreso" }) {
       setTiempoRestante(t => {
         if (t <= 1) {
           clearInterval(timerRef.current);
-          enviarNotificacion("ALERTA LEXIA", "No confirmaste que estás bien.");
+          enviarNotificacion("ALERTA VIGÍA 24", "No confirmaste que estás bien.");
           reproducirSonido();
           // Alerta automática con template
           (async function() {
@@ -1789,7 +1789,7 @@ function PlanesScreen({ onBack, currentPlan = "gratis" }) {
       sessionStorage.setItem("traza360_lista_espera", JSON.stringify(lista));
 
       // Avisar a Tristan por WhatsApp para que tenga el lead
-      const mensaje = `Nueva inscripción a lista de espera LEXIA:\nPlan: ${plan.name} (${plan.priceARS}${plan.period})\nEmail: ${emailWaitlist.trim()}\nFecha: ${new Date().toLocaleString('es-AR')}`;
+      const mensaje = `Nueva inscripción a lista de espera VIGÍA 24:\nPlan: ${plan.name} (${plan.priceARS}${plan.period})\nEmail: ${emailWaitlist.trim()}\nFecha: ${new Date().toLocaleString('es-AR')}`;
       try {
         await sendWhatsAppAPI(WHATSAPP_NUMBER_DEFAULT, mensaje);
       } catch(e) { console.warn("No se pudo notificar a admin:", e); }
@@ -1987,7 +1987,7 @@ function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "" }) {
     if (r.success) {
       // Safety Check automático
       setVerificando(true);
-      await verificarContacto(numCompleto, nombre.trim(), nombreUsuario || "Tu contacto de LEXIA");
+      await verificarContacto(numCompleto, nombre.trim(), nombreUsuario || "Tu contacto de VIGÍA 24");
       setVerificando(false);
       setVista("lista"); setNombre(""); setTelefono(""); cargar();
     } else setError(r.error || "Error al guardar.");
@@ -2403,7 +2403,7 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
       <div className="rounded-2xl p-5 flex flex-col" style={{ background: BRAND.cardBg, border: `1px solid ${modColor.border}`, boxShadow: `6px 6px 18px rgba(0,0,0,0.7), 0 0 24px ${modColor.bg}` }}>
         <div className="mb-4 flex items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl" style={{ background: modColor.bg, border: `1.5px solid ${modColor.border}` }}>
-            <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 40, height: 40, objectFit: "contain" }} />
+            <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 40, height: 40, objectFit: "contain" }} />
           </div>
           <div>
             <h4 style={{ fontSize: 20, fontWeight: 800, color: BRAND.white, fontFamily: FONT_DISPLAY, lineHeight: 1.2 }}>{m.title}</h4>
@@ -2542,7 +2542,7 @@ function RegisterScreen({ onBack, onSuccess, setPendingName, onScreen }) {
             <button type="button" onClick={(e) => { e.stopPropagation(); onScreen && onScreen("privacidad"); }} className="underline font-semibold" style={{ color: BRAND.gold }}>
               Política de Privacidad
             </button>.
-            <p className="mt-1.5 text-[11px]" style={{ color: BRAND.textMute }}>Importante: LEXIA no reemplaza al 911 ni a servicios oficiales de emergencia.</p>
+            <p className="mt-1.5 text-[11px]" style={{ color: BRAND.textMute }}>Importante: VIGÍA 24 no reemplaza al 911 ni a servicios oficiales de emergencia.</p>
           </div>
         </label>
       </div>
@@ -2631,7 +2631,7 @@ function PinEyeLogo({ size = 80, showText = true }) {
           <>
             {/* TRAZA en dorado + 360 en rojo */}
             <text x="100" y="262" textAnchor="middle" fontSize="32" fontWeight="800" fontFamily="sans-serif" letterSpacing="1">
-              <tspan fill="#D4AF37">LEXIA 24/7</tspan>
+              <tspan fill="#D4AF37">VIGÍA 24</tspan>
             </text>
           </>
         )}
@@ -2642,7 +2642,7 @@ function PinEyeLogo({ size = 80, showText = true }) {
 
 // Alias para mantener compatibilidad con referencias existentes
 function EagleEyeLogo({ size = 80 }) {
-  return <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 60, height: 60, objectFit: "contain" }} />;
+  return <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 60, height: 60, objectFit: "contain" }} />;
 }
 
 // ═══════════════════════════════════════════════
@@ -2677,7 +2677,7 @@ function TeCuidoScreen({ onBack, contactos = [] }) {
     const newPin = generarPin();
     setPin(newPin);
     const link = `${window.location.origin}/cuidar/aceptar/${newPin}`;
-    const msg = `👁️ *LEXIA — Solicitud de cuidado*\n\n[Tu nombre] quiere seguirte en tiempo real para protegerte.\n\n✅ *Aceptar:* ${link}\n❌ Si no querés, ignorá este mensaje.\n\n_Para cancelar en cualquier momento, usá tu PIN de seguridad en la app._`;
+    const msg = `👁️ *VIGÍA 24 — Solicitud de cuidado*\n\n[Tu nombre] quiere seguirte en tiempo real para protegerte.\n\n✅ *Aceptar:* ${link}\n❌ Si no querés, ignorá este mensaje.\n\n_Para cancelar en cualquier momento, usá tu PIN de seguridad en la app._`;
     try {
       await sendWhatsAppAPI(tel, msg);
       setEnviado(true);
@@ -2795,7 +2795,7 @@ function TeCuidoScreen({ onBack, contactos = [] }) {
             </p>
             <div className="rounded-xl p-3 mb-5" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BRAND.border}` }}>
               <p className="text-sm" style={{ color: BRAND.textLight }}>
-                ⏳ Si no recibe el mensaje, pedile que abra LEXIA y vaya a "Alguien me está cuidando".
+                ⏳ Si no recibe el mensaje, pedile que abra VIGÍA 24 y vaya a "Alguien me está cuidando".
               </p>
             </div>
             <button onClick={() => { setEnviado(false); setModo("elegir"); }}
@@ -2915,9 +2915,9 @@ function InstruccionesScreen({ onBack }) {
       <div className="mx-auto max-w-2xl">
         <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver al panel</button>
         <div className="mb-6 text-center">
-          <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 70, height: 70, objectFit: "contain" }} />
+          <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 70, height: 70, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[3px] mt-2" style={{ color: BRAND.gold }}>Guía de uso</p>
-          <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>¿Cómo funciona LEXIA?</h2>
+          <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>¿Cómo funciona VIGÍA 24?</h2>
         </div>
 
         {/* Tabs */}
@@ -2985,11 +2985,11 @@ function InstruccionesScreen({ onBack }) {
           {seccion === "acceso" && (
             <>
               <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>Acceso rápido y oculto</h3>
-              <p className="text-sm mb-4" style={{ color: BRAND.textLight }}>Tres formas de tener LEXIA a mano sin que se note.</p>
+              <p className="text-sm mb-4" style={{ color: BRAND.textLight }}>Tres formas de tener VIGÍA 24 a mano sin que se note.</p>
 
               {/* OPCIÓN 1: Agregar al inicio del celular (sin la palabra PWA) */}
               <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BRAND.border}` }}>
-                <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F4F2}"} 1. Agregar LEXIA al inicio de tu celular</p>
+                <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F4F2}"} 1. Agregar VIGÍA 24 al inicio de tu celular</p>
                 <p className="text-sm mb-3" style={{ color: BRAND.textLight }}>Para abrir la app de un toque, como una app descargada (pero sin descargarla).</p>
 
                 <div className="space-y-2.5">
@@ -3012,7 +3012,7 @@ function InstruccionesScreen({ onBack }) {
                   </div>
                 </div>
 
-                <p className="text-[11px] mt-3" style={{ color: BRAND.gold }}>{"\u2713"} El ícono de LEXIA aparece como cualquier otra app del celular.</p>
+                <p className="text-[11px] mt-3" style={{ color: BRAND.gold }}>{"\u2713"} El ícono de VIGÍA 24 aparece como cualquier otra app del celular.</p>
               </div>
 
               {/* OPCIÓN 2: Modo Calculadora con PIN CONFIGURABLE */}
@@ -3065,7 +3065,7 @@ function InstruccionesScreen({ onBack }) {
                     <li>1. Abrís el link oculto en tu navegador</li>
                     <li>2. Te aparece una calculadora normal</li>
                     <li>3. Escribís tu PIN ({mostrarPin ? pin : "••••"}) y tocás <strong style={{ color: BRAND.white }}>"="</strong></li>
-                    <li>4. Se abre LEXIA</li>
+                    <li>4. Se abre VIGÍA 24</li>
                   </ol>
                   <p className="text-[11px] mt-2 italic" style={{ color: BRAND.textMute }}>Si alguien mira tu pantalla, solo ve una calculadora.</p>
                 </div>
@@ -3134,7 +3134,7 @@ function PoliticaPrivacidadScreen({ onBack }) {
         <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver</button>
 
         <div className="mb-6 text-center">
-          <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 60, height: 60, objectFit: "contain" }} />
+          <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 60, height: 60, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[3px] mt-2" style={{ color: BRAND.gold }}>Política de Privacidad</p>
           <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>Tus datos son tuyos</h2>
           <p className="text-[11px] mt-2" style={{ color: BRAND.textMute }}>Versión 19.6 · Vigente desde Mayo 2026</p>
@@ -3146,7 +3146,7 @@ function PoliticaPrivacidadScreen({ onBack }) {
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>1. Responsable del tratamiento de datos</h3>
             <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
-              <strong style={{ color: BRAND.white }}>LEXIA Security</strong>, con domicilio en Córdoba, Argentina, es el responsable del tratamiento de los datos personales recolectados a través de LEXIA. Para cualquier consulta sobre privacidad: <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span>.
+              <strong style={{ color: BRAND.white }}>VIGÍA 24</strong>, con domicilio en Córdoba, Argentina, es el responsable del tratamiento de los datos personales recolectados a través de VIGÍA 24. Para cualquier consulta sobre privacidad: <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span>.
             </p>
           </div>
 
@@ -3241,7 +3241,7 @@ function PoliticaPrivacidadScreen({ onBack }) {
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>9. Edad mínima</h3>
             <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
-              LEXIA está pensada para personas de <strong style={{ color: BRAND.white }}>13 años o más</strong>. Si sos menor de 18 años, necesitás autorización de tu padre, madre o tutor legal. No recolectamos datos a sabiendas de menores de 13 años.
+              VIGÍA 24 está pensada para personas de <strong style={{ color: BRAND.white }}>13 años o más</strong>. Si sos menor de 18 años, necesitás autorización de tu padre, madre o tutor legal. No recolectamos datos a sabiendas de menores de 13 años.
             </p>
           </div>
 
@@ -3277,7 +3277,7 @@ function TerminosScreen({ onBack }) {
         <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver</button>
 
         <div className="mb-6 text-center">
-          <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 60, height: 60, objectFit: "contain" }} />
+          <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 60, height: 60, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[3px] mt-2" style={{ color: BRAND.gold }}>Términos y Condiciones</p>
           <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>Acuerdo de uso</h2>
           <p className="text-[11px] mt-2" style={{ color: BRAND.textMute }}>Versión 19.6 · Vigente desde Mayo 2026</p>
@@ -3289,7 +3289,7 @@ function TerminosScreen({ onBack }) {
           <div className="rounded-xl p-4" style={{ background: "rgba(220,38,38,0.1)", border: `2px solid ${BRAND.red}` }}>
             <p className="text-sm font-bold mb-2" style={{ color: BRAND.red }}>{"\u26A0\u{FE0F}"} IMPORTANTE — LEELO ANTES DE USAR LA APP</p>
             <p className="text-sm leading-relaxed" style={{ color: BRAND.white }}>
-              <strong>LEXIA NO es un servicio de emergencia.</strong> NO reemplaza a la policía (911, 101), bomberos, SAME (107), ni a ningún servicio oficial de emergencia. En una situación de peligro real e inminente, <strong style={{ color: BRAND.red }}>SIEMPRE llamá primero al número de emergencias de tu país.</strong>
+              <strong>VIGÍA 24 NO es un servicio de emergencia.</strong> NO reemplaza a la policía (911, 101), bomberos, SAME (107), ni a ningún servicio oficial de emergencia. En una situación de peligro real e inminente, <strong style={{ color: BRAND.red }}>SIEMPRE llamá primero al número de emergencias de tu país.</strong>
             </p>
           </div>
 
@@ -3297,15 +3297,15 @@ function TerminosScreen({ onBack }) {
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>1. Aceptación de los términos</h3>
             <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
-              Al registrarte en LEXIA aceptás estos Términos y Condiciones y la Política de Privacidad. Si no estás de acuerdo, no uses la app.
+              Al registrarte en VIGÍA 24 aceptás estos Términos y Condiciones y la Política de Privacidad. Si no estás de acuerdo, no uses la app.
             </p>
           </div>
 
           {/* 2. Qué es la app */}
           <div>
-            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>2. Qué hace LEXIA</h3>
+            <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>2. Qué hace VIGÍA 24</h3>
             <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
-              LEXIA es una herramienta de seguridad personal que te permite enviar mensajes de alerta vía WhatsApp a tus contactos de confianza, compartir tu ubicación, y grabar audio del entorno. Es una <strong style={{ color: BRAND.white }}>herramienta complementaria</strong> a los servicios de emergencia oficiales.
+              VIGÍA 24 es una herramienta de seguridad personal que te permite enviar mensajes de alerta vía WhatsApp a tus contactos de confianza, compartir tu ubicación, y grabar audio del entorno. Es una <strong style={{ color: BRAND.white }}>herramienta complementaria</strong> a los servicios de emergencia oficiales.
             </p>
           </div>
 
@@ -3324,7 +3324,7 @@ function TerminosScreen({ onBack }) {
               <li><span style={{ color: BRAND.red }}>✗</span> La grabación de audio se complete si el navegador la corta.</li>
             </ul>
             <p className="text-sm mt-3 italic" style={{ color: BRAND.textMute }}>
-              LEXIA hace todo lo posible para que el servicio funcione, pero depende de servicios externos (internet, GPS, WhatsApp, Supabase) que pueden fallar.
+              VIGÍA 24 hace todo lo posible para que el servicio funcione, pero depende de servicios externos (internet, GPS, WhatsApp, Supabase) que pueden fallar.
             </p>
           </div>
 
@@ -3346,7 +3346,7 @@ function TerminosScreen({ onBack }) {
               <li>{"\u2713"} Sos responsable de mantener actualizados tus contactos de confianza.</li>
               <li>{"\u2713"} Sos responsable de informarles que pueden recibir alertas de WhatsApp.</li>
               <li>{"\u2713"} Sos responsable de no usar la app para acosar, espiar o grabar a otros sin consentimiento (es delito).</li>
-              <li>{"\u2713"} No podés usar LEXIA para actividades ilegales.</li>
+              <li>{"\u2713"} No podés usar VIGÍA 24 para actividades ilegales.</li>
               <li>{"\u2713"} Sos responsable de la veracidad de tus datos.</li>
             </ul>
           </div>
@@ -3378,7 +3378,7 @@ function TerminosScreen({ onBack }) {
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>8. Edad mínima</h3>
             <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
-              Debés tener al menos <strong style={{ color: BRAND.white }}>13 años</strong> para usar LEXIA. Si sos menor de 18 años, necesitás autorización de tu padre/madre/tutor.
+              Debés tener al menos <strong style={{ color: BRAND.white }}>13 años</strong> para usar VIGÍA 24. Si sos menor de 18 años, necesitás autorización de tu padre/madre/tutor.
             </p>
           </div>
 
@@ -3402,7 +3402,7 @@ function TerminosScreen({ onBack }) {
           <div className="rounded-xl p-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
             <p className="text-sm font-bold mb-1" style={{ color: BRAND.gold }}>{"\u{1F4E7}"} Contacto legal</p>
             <p className="text-sm" style={{ color: BRAND.textLight }}>
-              <strong style={{ color: BRAND.white }}>LEXIA Security</strong><br/>
+              <strong style={{ color: BRAND.white }}>VIGÍA 24</strong><br/>
               Córdoba, Argentina<br/>
               <span style={{ color: BRAND.gold }}>{SUPPORT_EMAIL}</span>
             </p>
@@ -3660,7 +3660,7 @@ function SobreNosotrosScreen({ onBack }) {
         <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver</button>
 
         <div className="mb-6 text-center">
-          <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 80, height: 80, objectFit: "contain" }} />
+          <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 80, height: 80, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[3px] mt-3" style={{ color: BRAND.gold }}>Sobre nosotros</p>
           <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>Quiénes somos</h2>
         </div>
@@ -3671,7 +3671,7 @@ function SobreNosotrosScreen({ onBack }) {
           <div>
             <h3 className="font-bold mb-3" style={{ color: BRAND.gold }}>Nuestra misión</h3>
             <p className="text-sm leading-relaxed" style={{ color: BRAND.textLight }}>
-              LEXIA es una empresa pensada para el <strong style={{ color: BRAND.white }}>cuidado, soporte, seguimiento y acompañamiento</strong> de personas expuestas a situaciones de riesgo.
+              VIGÍA 24 es una empresa pensada para el <strong style={{ color: BRAND.white }}>cuidado, soporte, seguimiento y acompañamiento</strong> de personas expuestas a situaciones de riesgo.
             </p>
             <p className="text-sm leading-relaxed mt-3" style={{ color: BRAND.textLight }}>
               Creemos que la tecnología debe estar al servicio de quienes más la necesitan. Por eso construimos una herramienta que conecta a las personas con su gente de confianza cuando más importa.
@@ -3694,7 +3694,7 @@ function SobreNosotrosScreen({ onBack }) {
           <div>
             <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>Equipo</h3>
             <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BRAND.border}` }}>
-              <p className="text-sm font-bold" style={{ color: BRAND.white }}>LEXIA Security</p>
+              <p className="text-sm font-bold" style={{ color: BRAND.white }}>VIGÍA 24</p>
               <p className="text-sm mt-1" style={{ color: BRAND.gold }}>Fundador y desarrollador</p>
               <p className="text-sm mt-2" style={{ color: BRAND.textLight }}>{RESPONSABLE_LOCATION}</p>
             </div>
@@ -3729,7 +3729,7 @@ function TourDemoScreen({ onComplete, onSkip }) {
       titulo: "Vamos a hacer una prueba",
       subtitulo: "Sin enviar nada real",
       icono: "panic",
-      texto: "Antes de que necesites usar LEXIA en una emergencia real, te mostramos cómo funciona en 4 pasos rápidos. Esto es una simulación: NO se va a enviar ningún mensaje a nadie.",
+      texto: "Antes de que necesites usar VIGÍA 24 en una emergencia real, te mostramos cómo funciona en 4 pasos rápidos. Esto es una simulación: NO se va a enviar ningún mensaje a nadie.",
       ctaText: "Empezar prueba",
     },
     {
@@ -3811,7 +3811,7 @@ function TourDemoScreen({ onComplete, onSkip }) {
                 <div className="absolute inset-[-6px] rounded-full" style={{ border: `2px solid ${BRAND.gold}`, animation: "panicPulseDemo 2s infinite" }} />
                 <div className="flex h-16 w-16 items-center justify-center rounded-full"
                   style={{ background: BRAND.black, border: `3px solid ${BRAND.gold}`, boxShadow: `0 0 20px ${BRAND.gold}55` }}>
-                  <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 42, height: 42, objectFit: "contain" }} />
+                  <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 42, height: 42, objectFit: "contain" }} />
                 </div>
               </div>
               <style>{`@keyframes panicPulseDemo { 0%,100%{opacity:0.4;transform:scale(1)} 50%{opacity:0.9;transform:scale(1.12)} }`}</style>
@@ -4266,7 +4266,7 @@ function PinAuthScreen({ onSuccess, onFallback, onLogout }) {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-6">
-          <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 70, height: 70, objectFit: "contain" }} />
+          <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 70, height: 70, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[3px] mt-3 font-bold" style={{ color: BRAND.gold }}>{TAGLINE}</p>
         </div>
 
@@ -4389,11 +4389,11 @@ async function registrarBiometria(nombreUsuario) {
     const credential = await navigator.credentials.create({
       publicKey: {
         challenge,
-        rp: { name: "LEXIA 24/7", id: window.location.hostname },
+        rp: { name: "VIGÍA 24", id: window.location.hostname },
         user: {
           id: userId,
           name: nombreUsuario || "usuario",
-          displayName: nombreUsuario || "Usuario LEXIA",
+          displayName: nombreUsuario || "Usuario VIGÍA 24",
         },
         pubKeyCredParams: [
           { alg: -7,   type: "public-key" }, // ES256
@@ -5060,12 +5060,12 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
         }
       }
       if (emailExtra.trim()) {
-        const asunto = encodeURIComponent(`LEXIA — ${nombreUsuario} compartió su ubicación`);
+        const asunto = encodeURIComponent(`VIGÍA 24 — ${nombreUsuario} compartió su ubicación`);
         const cuerpo = encodeURIComponent(`${nombreUsuario} activó seguimiento en vivo.\n\nVer mapa: ${urlPublica}\n\n${msgBase}`);
         window.open(`mailto:${emailExtra.trim()}?subject=${asunto}&body=${cuerpo}`, "_blank");
       }
       if (smsExtra.trim()) {
-        const msgSMS = encodeURIComponent(`LEXIA: ${nombreUsuario} compartió su ubicación. Ver mapa: ${urlPublica}`);
+        const msgSMS = encodeURIComponent(`VIGÍA 24: ${nombreUsuario} compartió su ubicación. Ver mapa: ${urlPublica}`);
         window.open(`sms:${smsExtra.trim()}?body=${msgSMS}`, "_blank");
       }
       setPaso(2);
@@ -5204,7 +5204,7 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
             <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
               <p className="text-[11px] uppercase tracking-wider font-bold mb-2" style={{ color: BRAND.gold }}>📱 Van a recibir por WhatsApp:</p>
               <p className="text-sm leading-relaxed font-mono" style={{ color: BRAND.textLight }}>
-                🛡️ LEXIA — Movimiento en Vivo<br/><br/>
+                🛡️ VIGÍA 24 — Movimiento en Vivo<br/><br/>
                 {nombreUsuario} compartió su ubicación.<br/>
                 📍 <span style={{ color: BRAND.gold }}>traza360.app/live/abc1234</span><br/>
                 ⏱️ Si no cancela antes de las [hora], necesita ayuda.
@@ -5359,8 +5359,8 @@ function LandingScreen({ onScreen }) {
       {/* NAVBAR */}
       <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(201,168,76,0.2)", padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 34, height: 34, objectFit: "contain", filter: "drop-shadow(0 0 6px rgba(201,168,76,0.5))" }} />
-          <span style={{ fontSize: 16, fontWeight: 900, letterSpacing: "2px", background: GOLD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>LEXIA 24/7</span>
+          <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 34, height: 34, objectFit: "contain", filter: "drop-shadow(0 0 6px rgba(201,168,76,0.5))" }} />
+          <span style={{ fontSize: 16, fontWeight: 900, letterSpacing: "2px", background: GOLD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>VIGÍA 24</span>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={() => setVista(vista === "login" ? "hero" : "login")} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", borderRadius: 12, padding: "8px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Ingresar</button>
@@ -5375,9 +5375,9 @@ function LandingScreen({ onScreen }) {
           <div>
             <section style={{ textAlign: "center", padding: "48px 20px 32px" }}>
               <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-                <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 108, height: 108, objectFit: "contain", filter: "drop-shadow(0 0 30px rgba(201,168,76,0.6))" }} />
+                <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 108, height: 108, objectFit: "contain", filter: "drop-shadow(0 0 30px rgba(201,168,76,0.6))" }} />
               </div>
-              <h1 style={{ fontSize: "clamp(38px, 10vw, 62px)", fontWeight: 900, letterSpacing: "6px", margin: "0 auto 8px", background: GOLD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontFamily: "'Georgia', serif" }}>LEXIA 24/7</h1>
+              <h1 style={{ fontSize: "clamp(38px, 10vw, 62px)", fontWeight: 900, letterSpacing: "6px", margin: "0 auto 8px", background: GOLD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontFamily: "'Georgia', serif" }}>VIGÍA 24</h1>
               <div style={{ display: "inline-block", background: "rgba(201,168,76,0.12)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 20, padding: "5px 14px", fontSize: 10, letterSpacing: "2px", textTransform: "uppercase", color: GOLD_SOLID, marginBottom: 18 }}>
                 🏆 1ra app de seguridad con IA multimodal de Latinoamérica
               </div>
@@ -5408,11 +5408,11 @@ function LandingScreen({ onScreen }) {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, maxWidth: 440, margin: "0 auto" }}>
                 {MODULE_CARDS.map((card) => (
                   <button key={card.key} onClick={() => { try { sessionStorage.setItem("traza360_selected_module", card.key); } catch(e){} window.__lexia_initial_module = card.key; setSelectedModuleKey(card.key); setVista("register"); }}
-                    style={{ position: "relative", borderRadius: 18, overflow: "hidden", aspectRatio: "1 / 1", border: `1px solid ${GOLD_BORDER}`, cursor: "pointer", display: "block", width: "100%", padding: 0 }}>
-                    {/* Full photo background */}
-                    <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${card.img})`, backgroundSize: "cover", backgroundPosition: card.pos, filter: "brightness(0.65) contrast(1.1) saturate(1.2)" }} />
+                    style={{ position: "relative", borderRadius: 18, overflow: "hidden", aspectRatio: "4 / 3", border: `1px solid ${GOLD_BORDER}`, cursor: "pointer", display: "block", width: "100%", padding: 0 }}>
+                    {/* Full photo background — contain so full image shows */}
+                    <div style={{ position: "absolute", inset: 0, background: "#0a0a0a", backgroundImage: `url(${card.img})`, backgroundSize: "cover", backgroundPosition: "center center", filter: "brightness(0.7) contrast(1.1) saturate(1.2)" }} />
                     {/* Gradient overlay — only bottom third dark */}
-                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.75) 100%)" }} />
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.05) 45%, rgba(0,0,0,0.8) 100%)" }} />
                     {/* Gold bottom border accent */}
                     <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: GOLD }} />
                     {/* Content at bottom */}
@@ -5444,8 +5444,8 @@ function LandingScreen({ onScreen }) {
           <div style={{ minHeight: "calc(100vh - 56px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
             <div style={{ width: "100%", maxWidth: 400, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(20px)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 24, padding: "32px 24px" }}>
               <div style={{ textAlign: "center", marginBottom: 22 }}>
-                <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 60, height: 60, objectFit: "contain", marginBottom: 8 }} />
-                <h2 style={{ fontSize: 22, fontWeight: 900, background: GOLD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", margin: 0 }}>LEXIA 24/7</h2>
+                <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 60, height: 60, objectFit: "contain", marginBottom: 8 }} />
+                <h2 style={{ fontSize: 22, fontWeight: 900, background: GOLD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", margin: 0 }}>VIGÍA 24</h2>
                 <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>Ingresá a tu cuenta</p>
               </div>
               <button onClick={handleGoogle} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: "rgba(255,255,255,0.06)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 600, color: "#fff", cursor: "pointer", marginBottom: 16 }}>
@@ -5472,8 +5472,8 @@ function LandingScreen({ onScreen }) {
           <div style={{ minHeight: "calc(100vh - 56px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
             <div style={{ width: "100%", maxWidth: 400, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(20px)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 24, padding: "32px 24px" }}>
               <div style={{ textAlign: "center", marginBottom: 18 }}>
-                <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 60, height: 60, objectFit: "contain", marginBottom: 8 }} />
-                <h2 style={{ fontSize: 22, fontWeight: 900, background: GOLD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", margin: 0 }}>LEXIA 24/7</h2>
+                <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 60, height: 60, objectFit: "contain", marginBottom: 8 }} />
+                <h2 style={{ fontSize: 22, fontWeight: 900, background: GOLD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", margin: 0 }}>VIGÍA 24</h2>
                 <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>Crear cuenta gratis</p>
                 {selectedModuleKey && (
                   <div style={{ marginTop: 8, background: "rgba(201,168,76,0.1)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 10, padding: "5px 12px", fontSize: 12, color: GOLD_SOLID }}>
@@ -5496,8 +5496,8 @@ function LandingScreen({ onScreen }) {
                     {aceptaTerminos && <span style={{ color: "#000", fontSize: 12, fontWeight: 900 }}>✓</span>}
                   </div>
                   <div style={{ fontSize: 12, color: "rgba(232,220,200,0.8)", lineHeight: 1.6 }}>
-                    Acepto los <span style={{ color: GOLD_SOLID, fontWeight: 700 }}>Términos y Privacidad</span> de LEXIA 24/7.
-                    <br/><span style={{ fontSize: 10, color: "rgba(201,168,76,0.5)" }}>LEXIA 24/7 no reemplaza al 911 ni a servicios de emergencia.</span>
+                    Acepto los <span style={{ color: GOLD_SOLID, fontWeight: 700 }}>Términos y Privacidad</span> de VIGÍA 24.
+                    <br/><span style={{ fontSize: 10, color: "rgba(201,168,76,0.5)" }}>VIGÍA 24 no reemplaza al 911 ni a servicios de emergencia.</span>
                   </div>
                 </label>
               </div>
@@ -5828,7 +5828,7 @@ async function ejecutarPanico() {
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-6 text-center">
-          <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 80, height: 80, objectFit: "contain" }} />
+          <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 80, height: 80, objectFit: "contain" }} />
           <p className="text-[11px] uppercase tracking-[4px] mt-2 font-semibold" style={{ color: BRAND.gold }}>{TAGLINE}</p>
         </div>
 
@@ -5932,7 +5932,7 @@ async function ejecutarPanico() {
               <div className="flex items-start gap-2">
                 <span className="text-base shrink-0">{"\u26A0\u{FE0F}"}</span>
                 <p className="text-[11px] leading-relaxed" style={{ color: BRAND.textLight }}>
-                  LEXIA <strong style={{ color: BRAND.red }}>NO reemplaza</strong> al 911 ni a los servicios oficiales de emergencia.{" "}
+                  VIGÍA 24 <strong style={{ color: BRAND.red }}>NO reemplaza</strong> al 911 ni a los servicios oficiales de emergencia.{" "}
                   <button onClick={() => setActiveScreen("terminos")} className="underline font-semibold" style={{ color: BRAND.gold }}>Ver términos</button>
                 </p>
               </div>
@@ -6043,7 +6043,7 @@ async function ejecutarPanico() {
           <div style={{ position: "absolute", inset: "-16px", borderRadius: "50%", border: "1px solid rgba(201,168,76,0.3)", animation: "panicPulse 2.5s infinite 0.5s", pointerEvents: "none" }} />
           <button onClick={handlePanico} className="flex h-20 w-20 items-center justify-center rounded-full active:scale-95"
             style={{ background: "rgba(0,0,0,0.9)", border: "2px solid rgba(201,168,76,0.8)", boxShadow: "0 0 30px rgba(201,168,76,0.4), 0 0 60px rgba(201,168,76,0.15)", overflow: "hidden" }}>
-            <img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 52, height: 52, objectFit: "contain" }} />
+            <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 52, height: 52, objectFit: "contain" }} />
           </button>
         </div>
         <div className="text-[11px] text-center mt-1.5 font-bold uppercase tracking-[2px]" style={{ color: BRAND.gold, textShadow: "0 0 10px rgba(201,168,76,0.5)" }}>{t("panico")}</div>
@@ -6244,7 +6244,7 @@ export default function App() {
   if (screen === "loading") return (
     <div className="flex min-h-screen items-center justify-center" style={{ background: BRAND.blackBg }}>
       <div className="text-center">
-        <div className="mb-4 flex items-center justify-center"><img src="/preview.webp" alt="LEXIA 24/7" style={{ width: 80, height: 80, objectFit: "contain" }} /></div>
+        <div className="mb-4 flex items-center justify-center"><img src="/preview.webp" alt="VIGÍA 24" style={{ width: 80, height: 80, objectFit: "contain" }} /></div>
         <div className="text-sm mt-2" style={{ color: BRAND.gold }}>Cargando...</div>
       </div>
     </div>
