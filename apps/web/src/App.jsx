@@ -26,7 +26,7 @@ const PIN_DEFAULT = "1234";
 const HOME_ADDRESS_DEFAULT = "Mi casa";
 
 // v19.7: Email de soporte centralizado (cambialo acá para que se actualice en TODA la app)
-const SUPPORT_EMAIL = "traza360.app@gmail.com"; // ⚠️ Tristan: cambiá este string por tu Gmail nuevo cuando lo crees
+const SUPPORT_EMAIL = "vigia24app@gmail.com"; // ⚠️ Tristan: cambiá este string por tu Gmail nuevo cuando lo crees
 const RESPONSABLE_NAME = "LEXIA Security";
 const RESPONSABLE_LOCATION = "Córdoba, Argentina";
 const APP_VERSION = "19.12";
