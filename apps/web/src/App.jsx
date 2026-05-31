@@ -557,7 +557,7 @@ function OnboardingScreen({ onComplete }) {
         { key: "mi_escudo",    iconName: "shield",   label: "Para mí — Violencia de género" },
         { key: "turno_seguro", iconName: "night",    label: "Para mí y mi entorno — Noche segura" },
         { key: "te_cuido",     iconName: "eye",      label: "Para cuidar a alguien a distancia" },
-        { key: "los_cuido",    iconName: "teen",     label: "Para adolescentes — Padres/hijos" },
+
       ],
     },
     {
@@ -2282,6 +2282,9 @@ const MODULES = [
       { key: "taxi", iconName: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono taxi.", type: "taxi" },
     ]},
 
+  /* ═══════════════════════════════════════════════════════════
+     ❌ ADOLESCENTE SEGURO — OCULTO (NO BORRADO)
+     Motivo: Foco en seguridad nocturna adulta. Guardar para producto separado.
   { key: "los_cuido", iconName: "teen", emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro", desc: "Salidas, salidas y anti-bullying.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
@@ -2296,6 +2299,7 @@ const MODULES = [
       { key: "taxi", iconName: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono taxi.", type: "taxi" },
       { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
     ]},
+  ═══════════════════════════════════════════════════════════ */
 
   /* ═══════════════════════════════════════════════════════════
      ❌ v18: ADULTO MAYOR SEGURO — COMENTADO (NO BORRADO)
@@ -2968,7 +2972,7 @@ function InstruccionesScreen({ onBack }) {
                 { icon: "shield", titulo: "Violencia de Género", desc: "Para personas en situación de riesgo. Botón de pánico, grabación silenciosa, botón de ingreso cuando entrás a un lugar desconocido, ubicación en tiempo real." },
                 { icon: "night", titulo: "Noche Segura", desc: "Para jóvenes que salen de noche, acompañantes, repartidores, comisionistas y cualquier situación de riesgo. Pánico, botón de ingreso a lugares, grabación, GPS en vivo, Uber/taxi." },
                 { icon: "eye", titulo: "Te Cuido a Distancia", desc: "Un familiar/amigo puede iniciar grabación remota CON tu aprobación. Funciona con código de vínculo de 6 dígitos." },
-                { icon: "teen", titulo: "Adolescente Seguro", desc: "Para que un adolescente avise a sus padres: AYUDA, bullying con evidencia, buscarlo del cole, llegar a casa con GPS, llamar taxi/Uber." },
+
               ].map((m, i) => (
                 <div key={i} className="flex gap-3 rounded-xl p-3" style={{ background: "rgba(255,255,255,0.02)" }}>
                   <div className="shrink-0 mt-0.5"><GoldIcon name={m.icon} size={24} /></div>
@@ -3702,7 +3706,6 @@ function SobreNosotrosScreen({ onBack }) {
             <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F6E1}\u{FE0F}"} ¿Para quién?</p>
             <ul className="text-sm space-y-1.5" style={{ color: BRAND.textLight }}>
               <li>{"\u2713"} Mujeres en situación de violencia de género</li>
-              <li>{"\u2713"} Padres y madres con hijos adolescentes</li>
               <li>{"\u2713"} Jóvenes que salen de noche</li>
               <li>{"\u2713"} Trabajadores nocturnos (acompañantes, repartidores)</li>
               <li>{"\u2713"} Familiares que cuidan a alguien a distancia</li>
@@ -5318,7 +5321,7 @@ function LandingScreen({ onScreen }) {
   const MODULE_CARDS = [
     { key: "mi_escudo", title: "Violencia de Género", subtitle: "Alerta silenciosa e inmediata", img: "https://images.unsplash.com/photo-1588747020648-4ff0ec1abecb?q=80&w=1920&auto=format&fit=crop", icon: "🛡️", pos: "center 40%" },
     { key: "turno_seguro", title: "Noche Segura", subtitle: "GPS en vivo para salidas nocturnas", img: "https://images.unsplash.com/photo-1729704706106-d8792faa9f94?q=80&w=1920&auto=format&fit=crop", icon: "🌙", pos: "center 30%" },
-    { key: "los_cuido", title: "Adolescente Seguro", subtitle: "Protección para tus hijos", img: "https://images.unsplash.com/photo-1620504155085-d7b152a58e77?q=80&w=1920&auto=format&fit=crop", icon: "👨‍👩‍👧", pos: "center 25%" },
+
     { key: "te_cuido", title: "Te Cuido a Distancia", subtitle: "Seguimiento con consentimiento", img: "https://images.unsplash.com/photo-1739313454960-7d727159716d?q=80&w=1920&auto=format&fit=crop", icon: "👁️", pos: "center 20%" },
   ];
 
@@ -5698,8 +5701,7 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
       img: "https://images.unsplash.com/photo-1588747020648-4ff0ec1abecb?q=80&w=800&auto=format&fit=crop" },
     { key: "turno_seguro", emoji: "\u{1F303}", title: "Noche Segura", text: "Para jóvenes de noche, acompañantes, repartidores y comisionistas.",
       img: "https://images.unsplash.com/photo-1729704706106-d8792faa9f94?q=80&w=800&auto=format&fit=crop" },
-    { key: "los_cuido",    emoji: "\u{1F9D1}\u200D\u{1F393}", title: "Adolescente Seguro", text: "Salidas seguras, anti-bullying y GPS para padres.",
-      img: "https://images.unsplash.com/photo-1620504155085-d7b152a58e77?q=80&w=800&auto=format&fit=crop" },
+
     { key: "te_cuido",     emoji: "\u{1F441}\u{FE0F}", title: "Te Cuido a Distancia", text: "Seguimiento con consentimiento de la persona protegida.",
       img: "https://images.unsplash.com/photo-1739313454960-7d727159716d?q=80&w=800&auto=format&fit=crop" },
     { key: "contactos",    emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} contactos configurados`, img: null },
