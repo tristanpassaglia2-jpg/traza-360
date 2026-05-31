@@ -6178,7 +6178,7 @@ function CalculadoraScreen({ onUnlock }) {
           </button>
         ))}
       </div>
-      <div className="mt-6 text-center"><p className="text-[12px] text-slate-700">Ingresá {pin} y tocá = para acceder</p></div>
+      
     </div>
   );
 }
