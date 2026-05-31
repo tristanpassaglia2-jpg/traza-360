@@ -82,7 +82,7 @@ const T = {
 // Helper: t("clave") devuelve el texto en el idioma actual
 function t(key) { return T[key] ? T[key][LANG] || T[key].es : key; }
 
-// ─── PALETA DE MARCA LEXIA (v19) ────────
+// ─── PALETA DE MARCA VIGÍA 24 (v19) ────────
 // Según logo oficial: pin dorado + ojo central rojo sobre negro
 const BRAND = {
   // Paleta DGR-inspired — dorado envejecido, negro profundo, cálido
@@ -390,22 +390,26 @@ function SystemStatusPanel({ contactos, onGoToContactos, onClose }) {
   const contactosOk = cantContactos >= 1;
 
   useEffect(() => {
+    // WhatsApp: listo si hay conexión a internet (el envío real depende de eso)
+    setWaOk(navigator.onLine);
+    const onUp = () => setWaOk(true);
+    const onDown = () => setWaOk(false);
+    window.addEventListener("online", onUp);
+    window.addEventListener("offline", onDown);
     // Chequear GPS
-    if (!navigator.geolocation) { setGpsOk(false); return; }
-    navigator.geolocation.getCurrentPosition(
-      () => setGpsOk(true),
-      () => setGpsOk(false),
-      { timeout: 5000, maximumAge: 60000 }
-    );
-    // Chequear WhatsApp API
-    fetch("/api/send-whatsapp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: "test", message: "ping", test: true })
-    })
-      .then(r => r.json())
-      .then(d => setWaOk(d.active === true))
-      .catch(() => setWaOk(false));
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        () => setGpsOk(true),
+        () => setGpsOk(false),
+        { timeout: 5000, maximumAge: 60000 }
+      );
+    } else {
+      setGpsOk(false);
+    }
+    return () => {
+      window.removeEventListener("online", onUp);
+      window.removeEventListener("offline", onDown);
+    };
   }, []);
 
   const todoOk = gpsOk === true && waOk === true && contactosOk;
@@ -676,7 +680,7 @@ function OnboardingScreen({ onComplete }) {
 
 // ─── VERIFICACIÓN CONTACTO (Safety Check) ───
 async function verificarContacto(telefono, nombreContacto, nombreUsuario) {
-  const msg = `Hola ${nombreContacto} 👋 Soy ${nombreUsuario} y te agregué como contacto de confianza en VIGÍA 24, una app de seguridad personal.\n\n✅ Si recibís este mensaje, todo funciona correctamente.\n\nRespondé "OK" para confirmar que lo recibiste.\n\n🛡️ LEXIA — traza360.app`;
+  const msg = `Hola ${nombreContacto} 👋 Soy ${nombreUsuario} y te agregué como contacto de confianza en VIGÍA 24, una app de seguridad personal.\n\n✅ Si recibís este mensaje, todo funciona correctamente.\n\nRespondé "OK" para confirmar que lo recibiste.\n\n🛡️ VIGÍA 24 — traza360.app`;
   return await sendWhatsAppAPI(telefono, msg);
 }
 
@@ -2123,7 +2127,7 @@ function SelectorContactoModal({ contactos, mensaje, onClose, onAlertaSent, modu
     try {
       await supabase.from("alertas").insert({
         id: alertaId,
-        usuario_id: authUser?.id || null,
+        usuario_id: userData?.data?.user?.id || null,
         tipo: "alerta_emergencia",
         modulo: moduloKey || "modulo",
         mensaje: msgFinal,
@@ -2356,8 +2360,22 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
         if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza primero."); return; }
         setCurrentMessage(action.message); setSelectorOpen(true); return;
       case "record_audio": setShowGrabacion(true); return;
-      case "maps": openMapsTo(action.destination); return;
-      case "uber": openUber(action.destination); return;
+      case "maps": {
+        let casa = localStorage.getItem("vigia24_casa") || "";
+        if (!casa) {
+          const d = prompt("Escribí tu dirección de casa (calle y número, ciudad):");
+          if (d && d.trim()) { casa = d.trim(); localStorage.setItem("vigia24_casa", casa); } else return;
+        }
+        openMapsTo(casa); return;
+      }
+      case "uber": {
+        let casa = localStorage.getItem("vigia24_casa") || "";
+        if (!casa) {
+          const d = prompt("Escribí tu dirección de casa (calle y número, ciudad):");
+          if (d && d.trim()) { casa = d.trim(); localStorage.setItem("vigia24_casa", casa); } else return;
+        }
+        openUber(casa); return;
+      }
       case "pastillero": if (onOpenPastillero) onOpenPastillero(); return;
       case "evidencias": if (onOpenEvidencias) onOpenEvidencias(); return;
       case "checkin":
@@ -2867,7 +2885,7 @@ function InstruccionesScreen({ onBack }) {
   const [seccion, setSeccion] = useState("modulos");
   // v19.4: PIN configurable para modo calculadora
   const [pin, setPin] = useState(() => {
-    try { return sessionStorage.getItem("traza360_pin") || "1234"; } catch(e) { return "1234"; }
+    try { return localStorage.getItem("traza360_pin") || sessionStorage.getItem("traza360_pin") || "1234"; } catch(e) { return "1234"; }
   });
   const [nuevoPin, setNuevoPin] = useState("");
   const [mostrarPin, setMostrarPin] = useState(false);
@@ -2883,6 +2901,7 @@ function InstruccionesScreen({ onBack }) {
       return;
     }
     try {
+      localStorage.setItem("traza360_pin", nuevoPin);
       sessionStorage.setItem("traza360_pin", nuevoPin);
       setPin(nuevoPin);
       setNuevoPin("");
@@ -3018,7 +3037,7 @@ function InstruccionesScreen({ onBack }) {
               {/* OPCIÓN 2: Modo Calculadora con PIN CONFIGURABLE */}
               <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
                 <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F522}"} 2. Modo Calculadora (acceso oculto total)</p>
-                <p className="text-sm mb-3" style={{ color: BRAND.textLight }}>La app se ve como una calculadora normal. Solo vos sabés que es LEXIA.</p>
+                <p className="text-sm mb-3" style={{ color: BRAND.textLight }}>La app se ve como una calculadora normal. Solo vos sabés que es VIGÍA 24.</p>
 
                 {/* PIN ACTUAL */}
                 <div className="rounded-lg p-3 mb-3" style={{ background: "rgba(0,0,0,0.4)", border: `1px solid ${BRAND.border}` }}>
@@ -3092,7 +3111,7 @@ function InstruccionesScreen({ onBack }) {
               {/* OPCIÓN 3: Emergencia real */}
               <div className="rounded-xl p-4" style={{ background: "rgba(220,38,38,0.05)", border: `1px solid ${BRAND.red}30` }}>
                 <p className="text-sm font-bold mb-2" style={{ color: BRAND.red }}>{"\u26A0\u{FE0F}"} 3. En una emergencia REAL</p>
-                <p className="text-sm" style={{ color: BRAND.textLight }}>Si tu vida o la de alguien está en peligro inminente, llamá <strong style={{ color: BRAND.red }}>primero</strong> al 911 (o al número de emergencias de tu país). LEXIA te ayuda a avisar a tus contactos, pero NO reemplaza a la policía ni a los servicios médicos.</p>
+                <p className="text-sm" style={{ color: BRAND.textLight }}>Si tu vida o la de alguien está en peligro inminente, llamá <strong style={{ color: BRAND.red }}>primero</strong> al 911 (o al número de emergencias de tu país). VIGÍA 24 te ayuda a avisar a tus contactos, pero NO reemplaza a la policía ni a los servicios médicos.</p>
               </div>
             </>
           )}
@@ -5274,9 +5293,9 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
 }
 
 // ─── LANDING SCREEN (v19 — rebrand dorado) ───
-// ─── LANDING SCREEN v19.13 — LEXIA Premium ───────────────────
+// ─── LANDING SCREEN v19.13 — VIGÍA 24 Premium ───────────────────
 // Login + Registro integrados. Sin páginas separadas.
-// Fondo: calle nocturna Unsplash. Logo LEXIA impactante.
+// Fondo: calle nocturna Unsplash. Logo VIGÍA 24 impactante.
 function LandingScreen({ onScreen }) {
   const [vista, setVista] = React.useState("hero");
   const [selectedModuleKey, setSelectedModuleKey] = React.useState(null);
@@ -5440,32 +5459,28 @@ function LandingScreen({ onScreen }) {
                     </svg>
                   </div>
                   <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "2px", color: "#C9A84C", fontWeight: 700, marginBottom: 4 }}>AUDIO</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.3 }}>Te escuchan<br/>en tiempo real</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.3 }}>Graba el sonido<br/>de tu entorno</div>
                 </div>
 
-                {/* VIDEO CAMERA */}
+                {/* PHOTOS */}
                 <div style={{ textAlign: "center" }}>
                   <div style={{ width: 80, height: 80, borderRadius: 20, overflow: "hidden", border: "2px solid rgba(201,168,76,0.5)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)", margin: "0 auto 8px", background: "#1a1a1a" }}>
                     <svg viewBox="0 0 80 80" width="80" height="80" xmlns="http://www.w3.org/2000/svg">
                       <rect width="80" height="80" fill="#1a1a1a"/>
+                      {/* Top viewfinder bump */}
+                      <path d="M30 28 L34 22 L46 22 L50 28 Z" fill="#2a2a2a" stroke="#C9A84C" strokeWidth="1.5"/>
                       {/* Camera body */}
-                      <rect x="8" y="26" width="44" height="30" rx="6" fill="#2a2a2a" stroke="#C9A84C" strokeWidth="1.5"/>
+                      <rect x="14" y="28" width="52" height="34" rx="6" fill="#2a2a2a" stroke="#C9A84C" strokeWidth="1.5"/>
                       {/* Lens */}
-                      <circle cx="30" cy="41" r="10" fill="#111" stroke="#C9A84C" strokeWidth="1.5"/>
-                      <circle cx="30" cy="41" r="6" fill="#0a0a0a"/>
-                      <circle cx="30" cy="41" r="3" fill="#1a1a1a"/>
-                      <circle cx="27" cy="38" r="1.5" fill="rgba(255,255,255,0.3)"/>
-                      {/* Video triangle */}
-                      <polygon points="26,37 26,45 34,41" fill="#C9A84C" opacity="0.9"/>
-                      {/* Video arm */}
-                      <path d="M52 32 L72 26 L72 56 L52 50 Z" fill="#333" stroke="#C9A84C" strokeWidth="1.5"/>
-                      {/* REC dot */}
-                      <circle cx="58" cy="22" r="4" fill="#ff3333"/>
-                      <text x="64" y="26" fill="#ff3333" fontSize="8" fontFamily="sans-serif" fontWeight="bold">REC</text>
+                      <circle cx="40" cy="46" r="11" fill="#111" stroke="#C9A84C" strokeWidth="1.5"/>
+                      <circle cx="40" cy="46" r="6" fill="#0a0a0a"/>
+                      <circle cx="37" cy="43" r="1.8" fill="rgba(255,255,255,0.35)"/>
+                      {/* Flash */}
+                      <rect x="56" y="32" width="6" height="4" rx="1" fill="#C9A84C" opacity="0.9"/>
                     </svg>
                   </div>
-                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "2px", color: "#C9A84C", fontWeight: 700, marginBottom: 4 }}>CÁMARA</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.3 }}>Te observan<br/>con tu cámara</div>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "2px", color: "#C9A84C", fontWeight: 700, marginBottom: 4 }}>FOTOS</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.3 }}>Fotos automáticas<br/>cada 30 seg</div>
                 </div>
 
               </div>
@@ -6154,11 +6169,18 @@ async function ejecutarPanico() {
 // ─── CALCULADORA FALSA ───────────────────────
 function CalculadoraScreen({ onUnlock }) {
   const [display, setDisplay] = useState("0");
-  const [pin] = useState(() => sessionStorage.getItem("traza360_pin") || "1234");
+  const [pins] = useState(() => {
+    const list = [];
+    try { const a = localStorage.getItem("traza360_quick_pin"); if (a) list.push(a); } catch(e){}
+    try { const b = localStorage.getItem("traza360_pin"); if (b) list.push(b); } catch(e){}
+    try { const c = sessionStorage.getItem("traza360_pin"); if (c) list.push(c); } catch(e){}
+    if (list.length === 0) list.push("1234");
+    return list;
+  });
   function handleKey(key) {
     if (key === "C") { setDisplay("0"); return; }
     if (key === "=") {
-      if (display === pin || display.endsWith(pin)) { onUnlock(); return; }
+      if (pins.some(p => display === p || display.endsWith(p))) { onUnlock(); return; }
       try { const result = Function('"use strict"; return (' + display.replace(/×/g,"*").replace(/÷/g,"/") + ')')(); setDisplay(String(result)); }
       catch(e) { setDisplay("Error"); }
       return;
