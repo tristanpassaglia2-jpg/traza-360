@@ -5,9 +5,9 @@
 // ═══════════════════════════════════════════════════════════════
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://vzqxxkxdxcmaucubufpz.supabase.co";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "sb_publishable_9F-HmxFnQMhc_vPNSgM10g_L9EC_YfR";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase     = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const G = {
