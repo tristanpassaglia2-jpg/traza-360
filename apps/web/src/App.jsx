@@ -6044,7 +6044,7 @@ async function ejecutarPanico() {
                 <button onClick={() => {
                   if (hasPin) {
                     if (window.confirm("¿Ocultar app ahora?\n\nLa app se verá como una calculadora. Para volver, ingresá tu PIN en la calculadora.")) {
-                      setScreen("calculadora");
+                      window.location.href = window.location.origin + "/?modo=calc";
                     }
                   } else {
                     if (window.confirm("¿Ocultar app como calculadora?\n\nPrimero configurá un PIN para poder volver a VIGÍA 24. ¿Querés configurarlo ahora?")) {
