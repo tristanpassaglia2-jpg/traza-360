@@ -5300,9 +5300,8 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
 // Fondo: calle nocturna Unsplash. Logo VIGÍA 24 impactante.
 function InstallButton() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showIos, setShowIos] = useState(false);
+  const [modal, setModal] = useState(null); // null | "ios" | "android"
   const [installed, setInstalled] = useState(false);
-
   useEffect(() => {
     const onPrompt = (e) => { e.preventDefault(); setDeferredPrompt(e); };
     const onInstalled = () => setInstalled(true);
@@ -5313,6 +5312,60 @@ function InstallButton() {
       window.removeEventListener("appinstalled", onInstalled);
     };
   }, []);
+  // Si ya está instalada / abierta como app, no mostrar nada
+  let isStandalone = false;
+  try { isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true; } catch(e){}
+  if (installed || isStandalone) return null;
+
+  async function handleAndroid() {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      try { await deferredPrompt.userChoice; } catch(e){}
+      setDeferredPrompt(null);
+    } else {
+      setModal("android"); // Android sin prompt nativo → instrucciones
+    }
+  }
+  function handleIos() { setModal("ios"); }
+
+  const btnBase = { flex: 1, borderRadius: 16, padding: "14px 10px", fontSize: 15, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 };
+
+  return (
+    <>
+      <div style={{ display: "flex", gap: 10, width: "100%" }}>
+        <button onClick={handleIos} style={{ ...btnBase, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff" }}>
+          {"\u{1F34E}"} iPhone
+        </button>
+        <button onClick={handleAndroid} style={{ ...btnBase, background: "rgba(201,168,76,0.14)", border: "1px solid rgba(201,168,76,0.6)", color: "#C9A84C" }}>
+          {"\u{1F916}"} Android
+        </button>
+      </div>
+
+      {modal && (
+        <div onClick={() => setModal(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#11131a", border: "1px solid rgba(201,168,76,0.4)", borderRadius: 20, padding: 24, maxWidth: 340 }}>
+            <h3 style={{ color: "#C9A84C", fontSize: 18, fontWeight: 800, marginBottom: 12 }}>{modal === "ios" ? "📲 Instalar en tu iPhone" : "📲 Instalar en Android"}</h3>
+            {modal === "ios" ? (
+              <ol style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, lineHeight: 1.7, paddingLeft: 18, margin: 0 }}>
+                <li>Tocá el botón <b>Compartir</b> {"\u2191"} (abajo, en el centro de Safari)</li>
+                <li>Bajá y tocá <b>"Agregar a inicio"</b></li>
+                <li>Tocá <b>"Agregar"</b> arriba a la derecha</li>
+              </ol>
+            ) : (
+              <ol style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, lineHeight: 1.7, paddingLeft: 18, margin: 0 }}>
+                <li>Abrí el menú del navegador (los <b>3 puntos</b> {"\u22EE"})</li>
+                <li>Tocá <b>"Instalar app"</b> o <b>"Agregar a pantalla de inicio"</b></li>
+                <li>Confirmá <b>"Instalar"</b></li>
+              </ol>
+            )}
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 14 }}>Listo: VIGÍA 24 queda en tu pantalla como una app normal.</p>
+            <button onClick={() => setModal(null)} style={{ marginTop: 16, width: "100%", borderRadius: 12, padding: "12px", background: "#C9A84C", border: "none", color: "#000", fontWeight: 800, cursor: "pointer" }}>Entendido</button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
   // Si ya está instalada / abierta como app, no mostrar el botón
   let isStandalone = false;
