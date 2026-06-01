@@ -5323,7 +5323,7 @@ function InstallButton() {
       try { await deferredPrompt.userChoice; } catch(e){}
       setDeferredPrompt(null);
     } else {
-      setModal("android"); // Android sin prompt nativo → instrucciones
+      setModal("android");
     }
   }
   function handleIos() { setModal("ios"); }
@@ -5360,54 +5360,6 @@ function InstallButton() {
             )}
             <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 14 }}>Listo: VIGÍA 24 queda en tu pantalla como una app normal.</p>
             <button onClick={() => setModal(null)} style={{ marginTop: 16, width: "100%", borderRadius: 12, padding: "12px", background: "#C9A84C", border: "none", color: "#000", fontWeight: 800, cursor: "pointer" }}>Entendido</button>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
-  // Si ya está instalada / abierta como app, no mostrar el botón
-  let isStandalone = false;
-  try { isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true; } catch(e){}
-  if (installed || isStandalone) return null;
-
-  const isIos = typeof navigator !== "undefined" && /iphone|ipad|ipod/i.test(navigator.userAgent);
-
-  async function handleClick() {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      try { await deferredPrompt.userChoice; } catch(e){}
-      setDeferredPrompt(null);
-    } else {
-      setShowIos(true); // iPhone o navegador sin prompt automático → instrucciones
-    }
-  }
-
-  return (
-    <>
-      <button onClick={handleClick} style={{ width: "100%", borderRadius: 16, padding: "14px", fontSize: 15, fontWeight: 800, background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.5)", color: "#C9A84C", cursor: "pointer" }}>
-        {"\u{1F4F2}"} Instalar app en mi celular
-      </button>
-      {showIos && (
-        <div onClick={() => setShowIos(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: "#11131a", border: "1px solid rgba(201,168,76,0.4)", borderRadius: 20, padding: 24, maxWidth: 340 }}>
-            <h3 style={{ color: "#C9A84C", fontSize: 18, fontWeight: 800, marginBottom: 12 }}>{isIos ? "📲 Instalar en tu iPhone" : "📲 Instalar la app"}</h3>
-            {isIos ? (
-              <ol style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, lineHeight: 1.7, paddingLeft: 18, margin: 0 }}>
-                <li>Tocá el botón <b>Compartir</b> {"\u2191"} (abajo, en el centro de Safari)</li>
-                <li>Bajá y tocá <b>"Agregar a inicio"</b></li>
-                <li>Tocá <b>"Agregar"</b> arriba a la derecha</li>
-              </ol>
-            ) : (
-              <ol style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, lineHeight: 1.7, paddingLeft: 18, margin: 0 }}>
-                <li>Abrí el menú del navegador (los <b>3 puntos</b> {"\u22EE"})</li>
-                <li>Tocá <b>"Instalar app"</b> o <b>"Agregar a pantalla de inicio"</b></li>
-                <li>Confirmá <b>"Instalar"</b></li>
-              </ol>
-            )}
-            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 14 }}>Listo: VIGÍA 24 queda en tu pantalla como una app normal.</p>
-            <button onClick={() => setShowIos(false)} style={{ marginTop: 16, width: "100%", borderRadius: 12, padding: "12px", background: "#C9A84C", border: "none", color: "#000", fontWeight: 800, cursor: "pointer" }}>Entendido</button>
           </div>
         </div>
       )}
