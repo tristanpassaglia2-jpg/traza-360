@@ -5393,6 +5393,125 @@ function InstallButton() {
     </>
   );
 }
+
+// ═══ CITA SEGURA — Componente aislado (timer de seguridad preventivo) ═══
+function CitaSeguraTimer({ onExpire, noContacts }) {
+  var [activo, setActivo] = useState(false);
+  var [endTime, setEndTime] = useState(null);
+  var [duracion, setDuracion] = useState(0);
+  var [restante, setRestante] = useState(0);
+  var [checkIn, setCheckIn] = useState(false);
+  var [setup, setSetup] = useState(false);
+
+  useEffect(function() {
+    try {
+      var saved = localStorage.getItem("vigia_timer");
+      if (saved) {
+        var d = JSON.parse(saved);
+        var r = Math.floor((d.endTime - Date.now()) / 1000);
+        if (r > 0) { setEndTime(d.endTime); setDuracion(d.duracion); setRestante(r); setActivo(true); }
+        else { localStorage.removeItem("vigia_timer"); if (r > -1800 && onExpire) onExpire(); }
+      }
+    } catch(e) {}
+  }, []);
+
+  useEffect(function() {
+    if (!activo || !endTime) return;
+    var fired = false;
+    function tick() {
+      var r = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+      setRestante(r);
+      if (r <= 120 && r > 0) setCheckIn(true);
+      if (r <= 0 && !fired) { fired = true; setActivo(false); try { localStorage.removeItem("vigia_timer"); } catch(e) {} if (onExpire) onExpire(); }
+    }
+    tick();
+    var id = setInterval(tick, 1000);
+    window.addEventListener("focus", tick);
+    document.addEventListener("visibilitychange", tick);
+    return function() { clearInterval(id); window.removeEventListener("focus", tick); document.removeEventListener("visibilitychange", tick); };
+  }, [activo, endTime]);
+
+  function iniciar(seg) {
+    var et = Date.now() + seg * 1000;
+    setEndTime(et); setDuracion(seg); setRestante(seg); setActivo(true); setSetup(false); setCheckIn(false);
+    try { localStorage.setItem("vigia_timer", JSON.stringify({ endTime: et, duracion: seg })); } catch(e) {}
+  }
+  function cancelar() { setActivo(false); setEndTime(null); setRestante(0); setDuracion(0); setCheckIn(false); try { localStorage.removeItem("vigia_timer"); } catch(e) {} }
+  function extender() {
+    var ne = (endTime || Date.now()) + 1800000; var nd = duracion + 1800;
+    setEndTime(ne); setDuracion(nd); setRestante(Math.floor((ne - Date.now()) / 1000)); setCheckIn(false);
+    try { localStorage.setItem("vigia_timer", JSON.stringify({ endTime: ne, duracion: nd })); } catch(e) {}
+  }
+  function fmt(s) { if (!s || s < 0) s = 0; var h = Math.floor(s/3600); var m = Math.floor((s%3600)/60); var ss = s%60; return h > 0 ? h+":"+String(m).padStart(2,"0")+":"+String(ss).padStart(2,"0") : String(m).padStart(2,"0")+":"+String(ss).padStart(2,"0"); }
+
+  return (
+    <>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20, margin: "24px 0" }}>
+        {!activo ? (
+          <button onClick={function() { noContacts ? alert("Primero agregá un contacto de confianza") : setSetup(true); }} style={{
+            width: "100%", borderRadius: 20, padding: "20px",
+            background: "linear-gradient(145deg, rgba(201,168,76,0.08), rgba(201,168,76,0.02))",
+            border: "1px solid rgba(201,168,76,0.35)",
+            cursor: "pointer", display: "flex", alignItems: "center", gap: 16, textAlign: "left"
+          }}>
+            <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, flexShrink: 0 }}>{"\u{1F550}"}</div>
+            <div>
+              <p style={{ color: "#C9A84C", fontSize: 16, fontWeight: 800, margin: 0 }}>Cita Segura</p>
+              <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, margin: "4px 0 0", lineHeight: 1.4 }}>Activá un timer. Si no avisás que llegaste, alertamos a tus contactos.</p>
+            </div>
+          </button>
+        ) : (
+          <div style={{ width: "100%", borderRadius: 20, padding: "24px 20px", background: "linear-gradient(145deg, rgba(201,168,76,0.1), rgba(201,168,76,0.02))", border: "1px solid rgba(201,168,76,0.4)", textAlign: "center" }}>
+            <p style={{ color: "#C9A84C", fontSize: 12, fontWeight: 700, letterSpacing: 3, margin: "0 0 16px", textTransform: "uppercase" }}>{"\u23F1\uFE0F"} Cita Segura activa</p>
+            <div style={{ position: "relative", width: 140, height: 140, margin: "0 auto 16px" }}>
+              <svg width="140" height="140" style={{ transform: "rotate(-90deg)" }}>
+                <circle cx="70" cy="70" r="54" fill="none" stroke="rgba(201,168,76,0.15)" strokeWidth="8" />
+                <circle cx="70" cy="70" r="54" fill="none" stroke={restante <= 120 ? "#ff4444" : "#C9A84C"} strokeWidth="8" strokeLinecap="round" strokeDasharray={339.292} strokeDashoffset={339.292 * (1 - (duracion > 0 ? restante / duracion : 0))} style={{ transition: "stroke-dashoffset 1s linear, stroke 0.5s ease" }} />
+              </svg>
+              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: 28, fontWeight: 900, fontVariantNumeric: "tabular-nums", color: restante <= 120 ? "#ff4444" : "#fff" }}>{fmt(restante)}</span>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={cancelar} style={{ flex: 1, borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 800, background: "rgba(76,175,80,0.15)", border: "1px solid rgba(76,175,80,0.4)", color: "#66bb6a", cursor: "pointer" }}>{"\u2705"} Llegué bien</button>
+              <button onClick={extender} style={{ flex: 1, borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 800, background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.35)", color: "#C9A84C", cursor: "pointer" }}>+30 min</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {setup && (
+        <div onClick={function() { setSetup(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "#11131a", border: "1px solid rgba(201,168,76,0.4)", borderRadius: 20, padding: 24, maxWidth: 340, width: "100%" }}>
+            <h3 style={{ color: "#C9A84C", fontSize: 18, fontWeight: 800, marginBottom: 6, textAlign: "center" }}>{"\u23F1\uFE0F"} Cita Segura</h3>
+            <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, marginBottom: 20, textAlign: "center", lineHeight: 1.4 }}>Elegí cuánto tiempo. Si no cancelás antes, tus contactos reciben alerta automática con tu ubicación.</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {[{l:"30 min",s:1800},{l:"1 hora",s:3600},{l:"2 horas",s:7200},{l:"3 horas",s:10800}].map(function(o) {
+                return <button key={o.s} onClick={function(){iniciar(o.s);}} style={{ borderRadius: 14, padding: "16px 10px", fontSize: 16, fontWeight: 800, background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.35)", color: "#C9A84C", cursor: "pointer" }}>{o.l}</button>;
+              })}
+            </div>
+            <button onClick={function() { setSetup(false); }} style={{ marginTop: 14, width: "100%", borderRadius: 14, padding: "12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.5)", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {checkIn && activo && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000, padding: 20 }}>
+          <div style={{ background: "#11131a", border: "2px solid #ff4444", borderRadius: 20, padding: 28, maxWidth: 340, width: "100%", textAlign: "center" }}>
+            <p style={{ fontSize: 48, margin: "0 0 8px" }}>{"\u26A0\uFE0F"}</p>
+            <h3 style={{ color: "#ff4444", fontSize: 20, fontWeight: 900, marginBottom: 8 }}>¿Estás bien?</h3>
+            <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>Tu timer vence en <b style={{ color: "#ff4444" }}>{fmt(restante)}</b>.<br/>Si no respondés, alertamos a tus contactos.</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <button onClick={cancelar} style={{ borderRadius: 14, padding: "16px", fontSize: 16, fontWeight: 800, background: "#C9A84C", border: "none", color: "#000", cursor: "pointer" }}>{"\u2705"} Llegué bien — cancelar timer</button>
+              <button onClick={extender} style={{ borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 800, background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.35)", color: "#C9A84C", cursor: "pointer" }}>Necesito +30 minutos</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function LandingScreen({ onScreen }) {
   const [vista, setVista] = React.useState("hero");
   const [selectedModuleKey, setSelectedModuleKey] = React.useState(null);
@@ -5999,6 +6118,29 @@ async function ejecutarPanico() {
     reproducirSonido();
     setPanicoEnviado(true);
   }
+
+  async function ejecutarAlertaTimer() {
+    var contactosParaEnviar = contactos;
+    if (!contactosParaEnviar || contactosParaEnviar.length === 0) {
+      try { var resC = await supabase.from("contactos").select("*").eq("usuario_id", authUser?.id); if (resC.data && resC.data.length > 0) contactosParaEnviar = resC.data; } catch(e) {}
+    }
+    if (!contactosParaEnviar || contactosParaEnviar.length === 0) return;
+    var loc = await getCurrentLocationWithFallback(); var location = loc.location;
+    var alertaId = crypto.randomUUID(); setAlertaActualId(alertaId); setRespuestasPanico({});
+    var userData = await supabase.auth.getUser(); var nombre = "Usuario";
+    try { nombre = userData.data.user.user_metadata.nombre || userData.data.user.user_metadata.full_name || userData.data.user.email.split("@")[0] || "Usuario"; } catch(e) {}
+    var hora = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+    try { await supabase.from("alertas").insert({ id: alertaId, usuario_id: authUser?.id || null, tipo: "timer_cita_segura", modulo: "cita_segura", mensaje: "ALERTA - Timer de seguridad expirado. No respondió. Verificar situación urgente.", latitud: location?.lat || null, longitud: location?.lng || null, link_mapa: location?.lat ? "https://maps.google.com/?q=" + location.lat + "," + location.lng : null, enviado_a: contactosParaEnviar.map(function(c) { return c.telefono; }), creado_en: new Date().toISOString() }); } catch(e) {}
+    for (var i = 0; i < contactosParaEnviar.length; i++) {
+      try {
+        var numLimpio = contactosParaEnviar[i].telefono.replace(/\+/g,"").replace(/\s/g,"").replace(/-/g,"").replace(/^0+/,"");
+        var response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [nombre.substring(0,60), "Timer de seguridad expirado - No respondió - Ver: traza360.app/alerta/" + alertaId, hora, "Cita Segura"], alerta_id: alertaId }) });
+        var data = await response.json();
+        if (data.messages && data.messages[0]) { try { await supabase.from("alertas").update({ wamid: data.messages[0].id }).eq("id", alertaId); } catch(e) {} }
+      } catch(e) {}
+    }
+    reproducirSonido(); setPanicoEnviado(true);
+  }
   function aceptarGps() {
     try { localStorage.setItem("traza360_gps_consent", new Date().toISOString()); } catch(e){}
     setShowGpsModal(false);
@@ -6046,137 +6188,6 @@ async function ejecutarPanico() {
               {"\u26A0\u{FE0F}"} Agregá un contacto para activar la protección →
             </button>
           )}
-{/* ═══ ZONA PRINCIPAL: PÁNICO + CITA SEGURA ═══ */}
-        <style>{"\
-          @keyframes pulsePanico {\
-            0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(255,0,0,0.2); }\
-            50% { transform: scale(1.04); box-shadow: 0 0 50px rgba(255,0,0,0.35); }\
-          }\
-        "}</style>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20, margin: "24px 0" }}>
-
-          {/* BOTÓN PÁNICO — Rediseñado circular premium */}
-          <button onClick={handlePanico} style={{
-            width: 140, height: 140, borderRadius: "50%",
-            background: "radial-gradient(circle at 35% 35%, #ff4444, #cc0000, #880000)",
-            border: "4px solid rgba(255,100,100,0.3)",
-            boxShadow: "0 0 30px rgba(255,0,0,0.2), inset 0 -4px 12px rgba(0,0,0,0.3)",
-            color: "#fff", fontSize: 15, fontWeight: 900, letterSpacing: 3,
-            cursor: "pointer", display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center", gap: 2,
-            animation: "pulsePanico 2.5s ease-in-out infinite",
-            textTransform: "uppercase"
-          }}>
-            <span style={{ fontSize: 32 }}>{"\u{1F6A8}"}</span>
-            <span>PÁNICO</span>
-          </button>
-
-          {/* CITA SEGURA — Card / Timer activo */}
-          {!timerActivo ? (
-            <button onClick={function() { contactos.length === 0 ? alert("Primero agregá un contacto de confianza") : setShowTimerSetup(true); }} style={{
-              width: "100%", borderRadius: 20, padding: "20px",
-              background: "linear-gradient(145deg, rgba(201,168,76,0.08), rgba(201,168,76,0.02))",
-              border: "1px solid rgba(201,168,76,0.35)",
-              cursor: "pointer", display: "flex", alignItems: "center", gap: 16, textAlign: "left"
-            }}>
-              <div style={{
-                width: 56, height: 56, borderRadius: "50%",
-                background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.3)",
-                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, flexShrink: 0
-              }}>{"\u{1F550}"}</div>
-              <div>
-                <p style={{ color: BRAND.gold, fontSize: 16, fontWeight: 800, margin: 0 }}>Cita Segura</p>
-                <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, margin: "4px 0 0", lineHeight: 1.4 }}>
-                  Activá un timer. Si no avisás que llegaste, alertamos a tus contactos.
-                </p>
-              </div>
-            </button>
-          ) : (
-            <div style={{
-              width: "100%", borderRadius: 20, padding: "24px 20px",
-              background: "linear-gradient(145deg, rgba(201,168,76,0.1), rgba(201,168,76,0.02))",
-              border: "1px solid rgba(201,168,76,0.4)", textAlign: "center"
-            }}>
-              <p style={{ color: BRAND.gold, fontSize: 12, fontWeight: 700, letterSpacing: 3, margin: "0 0 16px", textTransform: "uppercase" }}>{"\u23F1\uFE0F"} Cita Segura activa</p>
-              <div style={{ position: "relative", width: 140, height: 140, margin: "0 auto 16px" }}>
-                <svg width="140" height="140" style={{ transform: "rotate(-90deg)" }}>
-                  <circle cx="70" cy="70" r="54" fill="none" stroke="rgba(201,168,76,0.15)" strokeWidth="8" />
-                  <circle cx="70" cy="70" r="54" fill="none"
-                    stroke={timerRestante <= 120 ? "#ff4444" : "#C9A84C"} strokeWidth="8"
-                    strokeLinecap="round" strokeDasharray={339.292}
-                    strokeDashoffset={339.292 * (1 - (timerDuracion > 0 ? timerRestante / timerDuracion : 0))}
-                    style={{ transition: "stroke-dashoffset 1s linear, stroke 0.5s ease" }} />
-                </svg>
-                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: 28, fontWeight: 900, fontVariantNumeric: "tabular-nums", color: timerRestante <= 120 ? "#ff4444" : "#fff" }}>
-                    {formatTimer(timerRestante)}
-                  </span>
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={cancelarTimer} style={{
-                  flex: 1, borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 800,
-                  background: "rgba(76,175,80,0.15)", border: "1px solid rgba(76,175,80,0.4)",
-                  color: "#66bb6a", cursor: "pointer"
-                }}>{"\u2705"} Llegué bien</button>
-                <button onClick={extenderTimer} style={{
-                  flex: 1, borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 800,
-                  background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.35)",
-                  color: BRAND.gold, cursor: "pointer"
-                }}>+30 min</button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Modal: Elegir duración del timer */}
-        {showTimerSetup && (
-          <div onClick={function() { setShowTimerSetup(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
-            <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "#11131a", border: "1px solid rgba(201,168,76,0.4)", borderRadius: 20, padding: 24, maxWidth: 340, width: "100%" }}>
-              <h3 style={{ color: BRAND.gold, fontSize: 18, fontWeight: 800, marginBottom: 6, textAlign: "center" }}>{"\u23F1\uFE0F"} Cita Segura</h3>
-              <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, marginBottom: 20, textAlign: "center", lineHeight: 1.4 }}>
-                Elegí cuánto tiempo. Si no cancelás antes, tus contactos reciben alerta automática con tu ubicación.
-              </p>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {[{l:"30 min",s:1800},{l:"1 hora",s:3600},{l:"2 horas",s:7200},{l:"3 horas",s:10800}].map(function(opt) {
-                  return <button key={opt.s} onClick={function(){iniciarTimer(opt.s);}} style={{
-                    borderRadius: 14, padding: "16px 10px", fontSize: 16, fontWeight: 800,
-                    background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.35)",
-                    color: BRAND.gold, cursor: "pointer"
-                  }}>{opt.l}</button>;
-                })}
-              </div>
-              <button onClick={function() { setShowTimerSetup(false); }} style={{ marginTop: 14, width: "100%", borderRadius: 14, padding: "12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.5)", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
-                Cancelar
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Modal: Check-In — 2 minutos antes de expirar (NO se puede cerrar sin actuar) */}
-        {showCheckIn && timerActivo && (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000, padding: 20 }}>
-            <div style={{ background: "#11131a", border: "2px solid #ff4444", borderRadius: 20, padding: 28, maxWidth: 340, width: "100%", textAlign: "center" }}>
-              <p style={{ fontSize: 48, margin: "0 0 8px" }}>{"\u26A0\uFE0F"}</p>
-              <h3 style={{ color: "#ff4444", fontSize: 20, fontWeight: 900, marginBottom: 8 }}>¿Estás bien?</h3>
-              <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
-                Tu timer vence en <b style={{ color: "#ff4444" }}>{formatTimer(timerRestante)}</b>.<br/>Si no respondés, alertamos a tus contactos.
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <button onClick={cancelarTimer} style={{
-                  borderRadius: 14, padding: "16px", fontSize: 16, fontWeight: 800,
-                  background: "#C9A84C", border: "none", color: "#000", cursor: "pointer"
-                }}>{"\u2705"} Llegué bien — cancelar timer</button>
-                <button onClick={extenderTimer} style={{
-                  borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 800,
-                  background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.35)",
-                  color: BRAND.gold, cursor: "pointer"
-                }}>Necesito +30 minutos</button>
-              </div>
-            </div>
-          </div>
-        )}
-        {/* ═══ FIN ZONA PÁNICO + CITA SEGURA ═══ */}
           <div className="mt-3 flex gap-2 flex-wrap">
             <button onClick={handleLogout} disabled={loggingOut} className="rounded-xl px-3 py-1.5 text-sm disabled:opacity-50" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.textLight }}>
               {loggingOut ? "Saliendo..." : "Cerrar sesión"}
@@ -6194,6 +6205,7 @@ async function ejecutarPanico() {
           </div>
         ) : (
           <>
+            <CitaSeguraTimer onExpire={ejecutarAlertaTimer} noContacts={contactos.length === 0} />
             <h3 className="mb-4 text-base font-bold uppercase tracking-[2px]" style={{ color: BRAND.white }}>¿Qué necesitás hoy?</h3>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {quickCards.map(card => {
