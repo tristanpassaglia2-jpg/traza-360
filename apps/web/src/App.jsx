@@ -2147,7 +2147,7 @@ function SelectorContactoModal({ contactos, mensaje, onClose, onAlertaSent, modu
           body: JSON.stringify({
             to: numLimpio,
             template: "alerta_emergencia",
-            params: [nombre.substring(0,60), msgFinal.substring(0,200) + " - Ver: traza360.app/alerta/" + alertaId, hora, moduloKey === "mi_escudo" ? "Violencia de Género" : moduloKey === "turno_seguro" ? "Noche Segura" : moduloKey === "los_cuido" ? "Adolescente" : "Seguridad"],
+            params: [nombre.substring(0,60), msgFinal.substring(0,130) + (location && location.lat ? " - Mapa con su ubicacion: https://maps.google.com/?q=" + location.lat + "," + location.lng : " - GPS no disponible") + " - Responder: traza360.app/alerta/" + alertaId, hora, moduloKey === "mi_escudo" ? "Violencia de Género" : moduloKey === "turno_seguro" ? "Noche Segura" : moduloKey === "los_cuido" ? "Adolescente" : "Seguridad"],
             alerta_id: alertaId
           })
         });
@@ -6104,7 +6104,7 @@ async function ejecutarPanico() {
           body: JSON.stringify({
             to: numLimpio,
             template: "alerta_emergencia",
-            params: [nombre.substring(0,60), "Alerta activada - necesito ayuda - Ver: traza360.app/alerta/" + alertaId, hora, "Seguridad"],
+            params: [nombre.substring(0,60), "Alerta de panico - necesito ayuda urgente" + (location && location.lat ? " - Mapa: https://maps.google.com/?q=" + location.lat + "," + location.lng : "") + " - Responder: traza360.app/alerta/" + alertaId, hora, "Seguridad"],
             alerta_id: alertaId
           })
         });
@@ -6134,7 +6134,7 @@ async function ejecutarPanico() {
     for (var i = 0; i < contactosParaEnviar.length; i++) {
       try {
         var numLimpio = contactosParaEnviar[i].telefono.replace(/\+/g,"").replace(/\s/g,"").replace(/-/g,"").replace(/^0+/,"");
-        var response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [nombre.substring(0,60), "Timer de seguridad expirado - No respondió - Ver: traza360.app/alerta/" + alertaId, hora, "Cita Segura"], alerta_id: alertaId }) });
+        var response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [nombre.substring(0,60), "Timer de seguridad vencido - No respondio - verificar urgente" + (location && location.lat ? " - Mapa: https://maps.google.com/?q=" + location.lat + "," + location.lng : "") + " - Responder: traza360.app/alerta/" + alertaId, hora, "Cita Segura"], alerta_id: alertaId }) });
         var data = await response.json();
         if (data.messages && data.messages[0]) { try { await supabase.from("alertas").update({ wamid: data.messages[0].id }).eq("id", alertaId); } catch(e) {} }
       } catch(e) {}
