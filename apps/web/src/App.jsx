@@ -5900,7 +5900,7 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
   if (activeScreen === "borrar_cuenta") return <BorrarCuentaScreen onBack={() => setActiveScreen("home")} onAccountDeleted={onLogout} />;
   // v19.7+: Nuevas pantallas Nivel 2
   if (activeScreen === "sobre_nosotros") return <SobreNosotrosScreen onBack={() => setActiveScreen("home")} />;
-  if (activeScreen === "pin_setup") return <PinSetupScreen onBack={() => setActiveScreen("home")} onComplete={() => setActiveScreen("home")} modo={localStorage.getItem("traza360_quick_pin") ? "cambiar" : "crear"} />;
+  if (activeScreen === "pin_setup") return <PinSetupScreen onBack={() => setActiveScreen("home")} onComplete={() => { setHasPin(true); setActiveScreen("home"); }} modo={localStorage.getItem("traza360_quick_pin") ? "cambiar" : "crear"} />;
   if (activeScreen === "pin_eliminar") return <PinSetupScreen onBack={() => setActiveScreen("home")} onComplete={() => setActiveScreen("home")} modo="eliminar" />;
   if (activeScreen === "tour_demo") return <TourDemoScreen onComplete={() => setActiveScreen("home")} onSkip={() => setActiveScreen("home")} />;
 
@@ -6205,6 +6205,23 @@ async function ejecutarPanico() {
           </div>
         ) : (
           <>
+            {/* BOTÓN PÁNICO GRANDE CENTRAL */}
+            <style>{`@keyframes pulsePanicoBig { 0%,100%{transform:scale(1);box-shadow:0 0 30px rgba(255,0,0,0.25)} 50%{transform:scale(1.04);box-shadow:0 0 55px rgba(255,0,0,0.4)} }`}</style>
+            <div style={{ display: "flex", justifyContent: "center", margin: "8px 0 24px" }}>
+              <button onClick={handlePanico} style={{
+                width: 150, height: 150, borderRadius: "50%",
+                background: "radial-gradient(circle at 35% 35%, #ff4d4d, #cc0000, #7a0000)",
+                border: "4px solid rgba(255,120,120,0.35)",
+                boxShadow: "0 0 30px rgba(255,0,0,0.25), inset 0 -4px 14px rgba(0,0,0,0.35)",
+                color: "#fff", fontSize: 16, fontWeight: 900, letterSpacing: 3,
+                cursor: "pointer", display: "flex", flexDirection: "column",
+                alignItems: "center", justifyContent: "center", gap: 4,
+                animation: "pulsePanicoBig 2.5s ease-in-out infinite", textTransform: "uppercase"
+              }}>
+                <span style={{ fontSize: 36 }}>{"\u{1F6A8}"}</span>
+                <span>PÁNICO</span>
+              </button>
+            </div>
             <CitaSeguraTimer onExpire={ejecutarAlertaTimer} noContacts={contactos.length === 0} />
             <h3 className="mb-4 text-base font-bold uppercase tracking-[2px]" style={{ color: BRAND.white }}>¿Qué necesitás hoy?</h3>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
