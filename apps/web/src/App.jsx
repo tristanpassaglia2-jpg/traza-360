@@ -6421,6 +6421,115 @@ async function ejecutarPanico() {
 }
 
 // ─── CALCULADORA FALSA ───────────────────────
+// ═══ PÁGINA PÚBLICA DEL MAPA EN VIVO — /live/{token} ═══
+function LiveScreen({ token }) {
+  const [session, setSession] = useState(null);
+  const [loc, setLoc] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [ahora, setAhora] = useState(Date.now());
+
+  useEffect(function() {
+    var alive = true;
+    async function cargarSesion() {
+      try {
+        var r = await supabase.from("live_sessions").select("*").eq("token", token).maybeSingle();
+        if (!alive) return;
+        if (!r.data) { setNotFound(true); setLoading(false); return; }
+        setSession(r.data);
+      } catch(e) { if (alive) { setNotFound(true); } }
+      setLoading(false);
+    }
+    async function cargarUbicacion() {
+      try {
+        var r = await supabase.from("live_locations").select("*").eq("session_token", token).maybeSingle();
+        if (alive && r.data) setLoc(r.data);
+      } catch(e) {}
+    }
+    cargarSesion();
+    cargarUbicacion();
+    var id = setInterval(function() { cargarUbicacion(); cargarSesion(); setAhora(Date.now()); }, 5000);
+    var idClock = setInterval(function() { setAhora(Date.now()); }, 1000);
+    return function() { alive = false; clearInterval(id); clearInterval(idClock); };
+  }, [token]);
+
+  function fmtRestante(ms) {
+    if (ms <= 0) return "0:00";
+    var s = Math.floor(ms / 1000); var h = Math.floor(s / 3600); var m = Math.floor((s % 3600) / 60); var ss = s % 60;
+    return h > 0 ? h + "h " + m + "m" : m + ":" + String(ss).padStart(2, "0");
+  }
+
+  var bg = { minHeight: "100vh", background: "#080808", color: "#F5F0E8", display: "flex", flexDirection: "column", fontFamily: "system-ui, sans-serif" };
+
+  if (loading) return (<div style={{ ...bg, alignItems: "center", justifyContent: "center" }}><p style={{ color: "#C9A84C" }}>Cargando ubicación...</p></div>);
+
+  if (notFound || !session) return (
+    <div style={{ ...bg, alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center" }}>
+      <div>
+        <p style={{ fontSize: 44, margin: "0 0 12px" }}>{"\u{1F50D}"}</p>
+        <h2 style={{ color: "#C9A84C", fontSize: 20, fontWeight: 800, margin: "0 0 8px" }}>Enlace no encontrado</h2>
+        <p style={{ color: "rgba(245,240,232,0.6)", fontSize: 14 }}>Este seguimiento no existe o ya finalizó.</p>
+      </div>
+    </div>
+  );
+
+  var cancelado = !!session.cancelado_at;
+  var vencido = session.expires_at && new Date(session.expires_at).getTime() < ahora;
+  var restanteMs = session.expires_at ? new Date(session.expires_at).getTime() - ahora : 0;
+
+  return (
+    <div style={bg}>
+      <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(201,168,76,0.2)", display: "flex", alignItems: "center", gap: 12 }}>
+        <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 38, height: 38, objectFit: "contain" }} />
+        <div>
+          <p style={{ color: "#C9A84C", fontSize: 11, letterSpacing: 2, textTransform: "uppercase", fontWeight: 700, margin: 0 }}>Seguimiento en vivo</p>
+          <p style={{ fontSize: 15, fontWeight: 800, margin: "2px 0 0" }}>{session.nombre_usuario || "Usuario"}</p>
+        </div>
+      </div>
+
+      {cancelado ? (
+        <div style={{ padding: 16, background: "rgba(76,175,80,0.15)", borderBottom: "1px solid rgba(76,175,80,0.4)", textAlign: "center" }}>
+          <p style={{ color: "#66bb6a", fontWeight: 800, margin: 0 }}>{"\u2705"} Llegó bien — seguimiento finalizado</p>
+        </div>
+      ) : vencido ? (
+        <div style={{ padding: 16, background: "rgba(255,68,68,0.15)", borderBottom: "1px solid rgba(255,68,68,0.5)", textAlign: "center" }}>
+          <p style={{ color: "#ff4444", fontWeight: 800, margin: "0 0 4px" }}>{"\u26A0\uFE0F"} Tiempo vencido — no canceló</p>
+          <p style={{ color: "rgba(245,240,232,0.7)", fontSize: 13, margin: 0 }}>Última ubicación conocida abajo. Contactá a {session.nombre_usuario || "la persona"}.</p>
+        </div>
+      ) : (
+        <div style={{ padding: 16, background: "rgba(201,168,76,0.08)", borderBottom: "1px solid rgba(201,168,76,0.25)", textAlign: "center" }}>
+          <p style={{ color: "#C9A84C", fontWeight: 800, margin: "0 0 4px" }}>{"\u{1F7E2}"} Activo · Vence en {fmtRestante(restanteMs)}</p>
+          {session.mensaje && <p style={{ color: "rgba(245,240,232,0.7)", fontSize: 13, margin: 0 }}>{session.mensaje}</p>}
+        </div>
+      )}
+
+      <div style={{ flex: 1, position: "relative", minHeight: 360 }}>
+        {loc ? (
+          <iframe title="Mapa en vivo" width="100%" height="100%" style={{ border: 0, position: "absolute", inset: 0 }}
+            src={"https://www.openstreetmap.org/export/embed.html?bbox=" + (loc.lng - 0.004) + "," + (loc.lat - 0.004) + "," + (loc.lng + 0.004) + "," + (loc.lat + 0.004) + "&layer=mapnik&marker=" + loc.lat + "," + loc.lng} />
+        ) : (
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24 }}>
+            <p style={{ color: "rgba(245,240,232,0.6)", fontSize: 14 }}>{"\u{1F4F6}"} Esperando la primera ubicación...<br/>(puede tardar unos segundos)</p>
+          </div>
+        )}
+      </div>
+
+      {loc && (
+        <div style={{ padding: 16, borderTop: "1px solid rgba(201,168,76,0.2)" }}>
+          <a href={"https://maps.google.com/?q=" + loc.lat + "," + loc.lng} target="_blank" rel="noreferrer"
+            style={{ display: "block", textAlign: "center", borderRadius: 14, padding: "14px", background: "#C9A84C", color: "#000", fontWeight: 800, textDecoration: "none", fontSize: 15 }}>
+            {"\u{1F5FA}\uFE0F"} Abrir en Google Maps (cómo llegar)
+          </a>
+          <p style={{ color: "rgba(245,240,232,0.45)", fontSize: 12, textAlign: "center", margin: "10px 0 0" }}>
+            Actualizado: {loc.updated_at ? new Date(loc.updated_at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }) : "—"}
+            {loc.battery != null ? "  ·  \u{1F50B} " + loc.battery + "%" : ""}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CalculadoraScreen({ onUnlock }) {
   const [display, setDisplay] = useState("0");
   const [pins] = useState(() => {
@@ -6471,9 +6580,13 @@ export default function App() {
   // v19.7: Tour demo, GPS explainer
   const [showTour, setShowTour] = useState(false);
   const [showGpsModal, setShowGpsModal] = useState(false);
+  const [liveToken, setLiveToken] = useState(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    // Página pública del mapa en vivo: traza360.app/live/{token}
+    const liveMatch = window.location.pathname.match(/\/live\/([^\/?#]+)/);
+    if (liveMatch && liveMatch[1]) { setLiveToken(liveMatch[1]); setScreen("live"); return; }
     if (params.get("modo") === "calc") { setModoCalc(true); setScreen("calculadora"); return; }
     checkSession();
     // v19.7: pedir GPS con explicación primero
@@ -6613,6 +6726,7 @@ export default function App() {
     try { sessionStorage.setItem("traza360_gps_asked", "1"); } catch(e){}
   }
 
+  if (screen === "live") return <LiveScreen token={liveToken} />;
   if (screen === "calculadora") return <CalculadoraScreen onUnlock={handleUnlockCalc} />;
 
   if (screen === "loading") return (
