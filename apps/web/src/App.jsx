@@ -5300,22 +5300,34 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
 // Fondo: calle nocturna Unsplash. Logo VIGÍA 24 impactante.
 function InstallButton() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [modal, setModal] = useState(null); // null | "ios" | "android"
+  const [modal, setModal] = useState(null);
   const [installed, setInstalled] = useState(false);
+  const [showBanner, setShowBanner] = useState(false);
+
+  const isIos = typeof navigator !== "undefined" && /iphone|ipad|ipod/i.test(navigator.userAgent);
+  let isStandalone = false;
+  try { isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true; } catch(e){}
+
   useEffect(() => {
     const onPrompt = (e) => { e.preventDefault(); setDeferredPrompt(e); };
     const onInstalled = () => setInstalled(true);
     window.addEventListener("beforeinstallprompt", onPrompt);
     window.addEventListener("appinstalled", onInstalled);
+    if (isIos && !isStandalone) {
+      try { if (!localStorage.getItem("vigia_banner_dismissed")) setShowBanner(true); } catch(e){ setShowBanner(true); }
+    }
     return () => {
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);
     };
   }, []);
-  // Si ya está instalada / abierta como app, no mostrar nada
-  let isStandalone = false;
-  try { isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true; } catch(e){}
+
   if (installed || isStandalone) return null;
+
+  function dismissBanner() {
+    setShowBanner(false);
+    try { localStorage.setItem("vigia_banner_dismissed", "1"); } catch(e){}
+  }
 
   async function handleAndroid() {
     if (deferredPrompt) {
@@ -5340,6 +5352,21 @@ function InstallButton() {
           {"\u{1F916}"} Android
         </button>
       </div>
+
+      {showBanner && (
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#11131a", borderTop: "2px solid rgba(201,168,76,0.7)", padding: "14px 20px", paddingBottom: "calc(20px + env(safe-area-inset-bottom))", zIndex: 9998, display: "flex", alignItems: "flex-start", gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ color: "#C9A84C", fontWeight: 800, fontSize: 15, margin: "0 0 5px" }}>📲 Instalá VIGÍA 24 en tu iPhone</p>
+            <p style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, margin: 0, lineHeight: 1.5 }}>
+              Tocá <b style={{ color: "#fff" }}>Compartir</b> {"\u2191"} (centro abajo) → <b style={{ color: "#fff" }}>"Agregar a inicio"</b>
+            </p>
+            <button onClick={handleIos} style={{ marginTop: 10, padding: "8px 18px", borderRadius: 10, background: "#C9A84C", border: "none", color: "#000", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
+              Ver pasos detallados
+            </button>
+          </div>
+          <button onClick={dismissBanner} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.45)", fontSize: 24, cursor: "pointer", padding: "0 4px", lineHeight: 1, flexShrink: 0 }}>✕</button>
+        </div>
+      )}
 
       {modal && (
         <div onClick={() => setModal(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
@@ -5366,7 +5393,6 @@ function InstallButton() {
     </>
   );
 }
-
 function LandingScreen({ onScreen }) {
   const [vista, setVista] = React.useState("hero");
   const [selectedModuleKey, setSelectedModuleKey] = React.useState(null);
