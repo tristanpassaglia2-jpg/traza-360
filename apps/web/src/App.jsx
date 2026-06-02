@@ -6303,21 +6303,6 @@ async function ejecutarPanico() {
           </div>
         </div>
       )}
-{/* v19.12: Banner completar perfil (overlay) */}
-      {showCompletarPerfil && (
-        <CompletarPerfilBanner
-          authUser={authUser}
-          onComplete={function() { setShowCompletarPerfil(false); setPerfilCompleto(true); }}
-          onDismiss={function() { setShowCompletarPerfil(false); try { sessionStorage.setItem("traza360_perfil_dismissed", "1"); } catch(e){} }}
-        />
-      )}
-
-      {/* v19.12: Banner mini si perfil incompleto y cerró el overlay */}
-      {!perfilCompleto && !showCompletarPerfil && !activeModule && (
-        <div className="fixed bottom-28 left-5 right-5 z-40" style={{ maxWidth: "400px", margin: "0 auto" }}>
-          <PerfilIncompletoBannerMini onClick={function() { setShowCompletarPerfil(true); }} />
-        </div>
-      )}
       {/* PANEL POST-PÁNICO */}
  {panicoEnviado && (
   <PanelPostPanico
