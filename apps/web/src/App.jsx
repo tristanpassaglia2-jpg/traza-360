@@ -57,8 +57,8 @@ const T = {
   continuar:      { es: "Continuar →",             pt: "Continuar →" },
   empezar:        { es: "Empezar a usar la app →", pt: "Começar a usar o app →" },
   // Módulos
-  violenciaGenero:{ es: "Violencia de Género",     pt: "Violência de Gênero" },
-  nocheSegura:    { es: "Noche Segura",            pt: "Noite Segura" },
+  violenciaGenero:{ es: "Noche de Alerta",     pt: "Noite de Alerta" },
+  nocheSegura:    { es: "Cita Segura",            pt: "Encontro Seguro" },
   adolescenteSeguro: { es: "Adolescente Seguro",   pt: "Adolescente Seguro" },
   // Botones
   comenzar:       { es: "Comenzar →",              pt: "Começar →" },
@@ -106,8 +106,8 @@ const BRAND = {
   goldGradient: "linear-gradient(135deg, #8B6914 0%, #C9A84C 30%, #E8C96A 50%, #C9A84C 70%, #8B6914 100%)",
   cardBg:      "linear-gradient(145deg, #111008, #080808)",
   // Colores por módulo
-  modViolencia:  { bg: "rgba(192,57,43,0.12)",  border: "rgba(192,57,43,0.4)",  accent: "#E74C3C", label: "Violencia de Género" },
-  modNoche:      { bg: "rgba(52,73,94,0.18)",   border: "rgba(93,173,226,0.3)", accent: "#5DADE2", label: "Noche Segura" },
+  modViolencia:  { bg: "rgba(192,57,43,0.12)",  border: "rgba(192,57,43,0.4)",  accent: "#E74C3C", label: "Noche de Alerta" },
+  modNoche:      { bg: "rgba(52,73,94,0.18)",   border: "rgba(93,173,226,0.3)", accent: "#5DADE2", label: "Cita Segura" },
   modAdolescente:{ bg: "rgba(39,174,96,0.12)",  border: "rgba(39,174,96,0.35)", accent: "#2ECC71", label: "Adolescente Seguro" },
 };
 const TAGLINE = "Alguien cuida de vos.";
@@ -2147,7 +2147,7 @@ function SelectorContactoModal({ contactos, mensaje, onClose, onAlertaSent, modu
           body: JSON.stringify({
             to: numLimpio,
             template: "alerta_emergencia",
-            params: [nombre.substring(0,60), msgFinal.substring(0,130) + (location && location.lat ? " - Mapa con su ubicacion: https://maps.google.com/?q=" + location.lat + "," + location.lng : " - GPS no disponible") + " - Responder: traza360.app/alerta/" + alertaId, hora, moduloKey === "mi_escudo" ? "Violencia de Género" : moduloKey === "turno_seguro" ? "Noche Segura" : moduloKey === "los_cuido" ? "Adolescente" : "Seguridad"],
+            params: [nombre.substring(0,60), msgFinal.substring(0,130) + (location && location.lat ? " - Mapa con su ubicacion: https://maps.google.com/?q=" + location.lat + "," + location.lng : " - GPS no disponible") + " - Responder: traza360.app/alerta/" + alertaId, hora, moduloKey === "mi_escudo" ? "Noche de Alerta" : moduloKey === "turno_seguro" ? "Cita Segura" : moduloKey === "los_cuido" ? "Adolescente" : "Seguridad"],
             alerta_id: alertaId
           })
         });
@@ -2244,41 +2244,32 @@ function SelectorContactoModal({ contactos, mensaje, onClose, onAlertaSent, modu
 // ─── MÓDULOS (v18 — Limpieza UI) ──────────────
 // CAMBIOS v18:
 // - "Hogar Seguro" (mi_nido) y "Adulto Mayor Seguro" (los_protejo) COMENTADOS
-// - Sacado "Grabar video silencioso" de Violencia de Género y Noche Segura
+// - Sacado "Grabar video silencioso" de Mi gente alerta y Noches Seguras
 // - Sacado "Escribir" de Adolescente Seguro
 // - Fusionados "Entro a la casa de..." y "Me reúno con..." → "Estoy en..."
 const MODULES = [
-  { key: "mi_escudo", iconName: "shield", emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género", desc: "Alerta silenciosa, ubicación y grabación de entorno con descarga automática en la nube y dispositivo.",
+  { key: "mi_escudo", iconName: "shield", emoji: "\u{1F6A8}", title: "Noche de Alerta", desc: "Algo está pasando AHORA. Alertá a tu gente al instante, con tu ubicación y evidencia.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
-      { key: "testigo",  iconName: "mic", icon: "🔴", name: "Grabar evidencias modo multifunción", desc: "Audio + foto frontal y trasera → nube y dispositivo.", type: "modo_testigo" },
-      { key: "panico", iconName: "shield", icon: "🛡️", name: "Botón de pánico", desc: "Alerta inmediata + ubicación a tus contactos.", type: "alert_contacts", message: "ALERTA — Botón de pánico activado. Necesito ayuda urgente." },
-      { key: "estoy_en", iconName: "pin", icon: "\u{1F4CD}", name: "Estoy en...", desc: "Escribí el nombre de la persona con quien vas a reunirte. Envía nombre + ubicación en tiempo real a tus contactos elegidos.", type: "alert_contacts", message: "Estoy en [completar]." },
-      { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Ingreso a este lugar", desc: "Escribí el nombre del lugar donde ingresás + activá tiempo estimado de tu estadía. Si no desactivás, se da aviso automáticamente a tus contactos con tu ubicación.", type: "checkin", titulo: "Ingreso a este lugar — Violencia de Género" },
-      { key: "share", iconName: "eye", icon: "\u{1F4F2}", name: "Compartir mi movimiento en vivo", desc: "Tus contactos seleccionados ven tu mapa moviéndose en tiempo real. Ellos no instalan nada, reciben tu información cuando vos activás.", type: "ruta_segura" },
-      { key: "grabar", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación audio silenciosa → nube.", type: "record_audio" },
-      { key: "uber", iconName: "car", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber con destino.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
-      { key: "taxi", iconName: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono de taxi.", type: "taxi" },
-      { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver todas las grabaciones guardadas.", type: "evidencias" },
+      { key: "panico", iconName: "shield", icon: "🚨", name: "Botón de pánico", desc: "Alerta inmediata + ubicación en el mapa a tu gente.", type: "alert_contacts", message: "ALERTA — Necesito ayuda urgente." },
+      { key: "ubicacion_ahora", iconName: "pin", icon: "\u{1F4CD}", name: "Mandar mi ubicación ahora", desc: "Envía tu ubicación actual en el mapa a tus contactos.", type: "alert_contacts", message: "Necesito que sepas dónde estoy ahora mismo." },
+      { key: "testigo",  iconName: "mic", icon: "📸", name: "Grabar evidencias (foto + audio)", desc: "Foto frontal y trasera + audio → guardado en evidencias (nube y dispositivo).", type: "modo_testigo" },
+      { key: "grabar", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación de audio silenciosa → evidencias.", type: "record_audio" },
+      { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver todas las fotos y grabaciones guardadas.", type: "evidencias" },
     ]},
-  // v19.1: Renombrado "Noche Segura" → "Noche Segura"
+  // v19.1: Renombrado "Noches Seguras" → "Noches Seguras"
   // Motivo: Nicho mucho más grande (jóvenes que salen de noche + trabajadores nocturnos).
   // "Salí tranqui. Volvé tranqui."
-  { key: "turno_seguro", iconName: "night", emoji: "\u{1F303}", title: "Noche Segura", desc: "Para jóvenes que salen de noche, acompañantes, repartidores, comisionistas o cualquier situación de riesgo donde necesites apoyo de amigos o conocidos.",
+  { key: "turno_seguro", iconName: "night", emoji: "\u{1F550}", title: "Cita Segura", desc: "Antes y durante un encuentro. Avisá con quién vas, compartí tu ubicación en vivo y que tu gente te siga.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
-      { key: "testigo",     iconName: "mic",   icon: "🔴", name: "Grabar Evidencias", desc: "Audio + foto frontal y trasera → nube y dispositivo.", type: "modo_testigo" },
-      { key: "ruta_segura", iconName: "eye",   icon: "\u{1F4CD}", name: "Compartir mi movimiento en vivo", desc: "Tus contactos seleccionados ven tu mapa moviéndose en tiempo real. Ellos no instalan nada, reciben tu información cuando vos activás.", type: "ruta_segura" },
-      { key: "panico", iconName: "shield", icon: "🛡️", name: "Botón de pánico", desc: "Alerta inmediata + ubicación.", type: "alert_contacts", message: "SOS — Necesito ayuda urgente." },
-      { key: "sospechoso_lugar", iconName: "pin", icon: "📍", name: "Entro a lugar sospechoso", desc: "Guarda dirección + timer. Si no confirmás, alerta automática.", type: "checkin", titulo: "Lugar sospechoso — Noche Segura" },
-      { key: "desconocido", iconName: "person", icon: "\u{1F6B6}", name: "Salgo con desconocido/a", desc: "Avisa contactos + nombre + ubicación.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
-      { key: "perdido", iconName: "pin", icon: "\u{1F4CD}", name: "Me perdí", desc: "Comparte GPS en vivo a tus contactos.", type: "alert_contacts", message: "Me perdí. Compartiendo mi ubicación en vivo. Por favor ayudame a volver." },
-      { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Ingreso a este lugar", desc: "Activá tu tiempo de estadía. Si no desactivás, se envía tu ubicación en tiempo real.", type: "checkin", titulo: "Ingreso a este lugar — Noche Segura" },
-      { key: "grabar", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación silenciosa → nube.", type: "record_audio" },
-      { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver grabaciones guardadas.", type: "evidencias" },
+      { key: "ruta_segura", iconName: "eye",   icon: "\u{1F4CD}", name: "Compartir mi ubicación en vivo", desc: "Tu gente ve tu mapa moviéndose en tiempo real. No instalan nada, abren un link.", type: "ruta_segura" },
+      { key: "agenda", iconName: "pin", icon: "\u{1F4C5}", name: "Mi agenda — avisar encuentro", desc: "Avisá con quién y dónde te vas a encontrar. Envía nombre + ubicación a tu gente.", type: "alert_contacts", message: "Me voy a encontrar con [completar]. Te aviso por las dudas." },
+      { key: "desconocido", iconName: "person", icon: "\u{1F6B6}", name: "Salgo con desconocido/a", desc: "Avisa a tu gente + nombre + ubicación.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
+      { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Ingreso a este lugar", desc: "Activá tu tiempo de estadía. Si no desactivás, se avisa a tu gente con tu ubicación.", type: "checkin", titulo: "Ingreso a este lugar — Cita Segura" },
+      { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver fotos y grabaciones guardadas.", type: "evidencias" },
       { key: "maps", iconName: "home", icon: "\u{1F3E1}", name: "Llegar a casa", desc: "Activa GPS hasta llegar a casa.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
       { key: "uber", iconName: "car", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
-      { key: "taxi", iconName: "taxi", icon: "\u{1F696}", name: "Llamar taxi", desc: "Abre app/teléfono taxi.", type: "taxi" },
     ]},
 
   /* ═══════════════════════════════════════════════════════════
@@ -2302,8 +2293,8 @@ const MODULES = [
 
   /* ═══════════════════════════════════════════════════════════
      ❌ v18: ADULTO MAYOR SEGURO — COMENTADO (NO BORRADO)
-     Motivo: Decisión estratégica — foco en Violencia de Género,
-     Adolescente, Noche Segura y Te Cuido a Distancia.
+     Motivo: Decisión estratégica — foco en Mi gente alerta,
+     Adolescente, Noches Seguras y Te Cuido a Distancia.
      Este módulo se reservará para una futura app independiente.
      Para reactivarlo: descomentar el bloque de abajo.
   ═══════════════════════════════════════════════════════════ */
@@ -2322,8 +2313,8 @@ const MODULES = [
 
   /* ═══════════════════════════════════════════════════════════
      ❌ v18: HOGAR SEGURO — COMENTADO (NO BORRADO)
-     Motivo: Decisión estratégica — foco en Violencia de Género,
-     Adolescente, Noche Segura y Te Cuido a Distancia.
+     Motivo: Decisión estratégica — foco en Mi gente alerta,
+     Adolescente, Noches Seguras y Te Cuido a Distancia.
      Este módulo se reservará para una futura app independiente.
      Para reactivarlo: descomentar el bloque de abajo.
   ═══════════════════════════════════════════════════════════ */
@@ -2968,8 +2959,8 @@ function InstruccionesScreen({ onBack }) {
             <>
               <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>Los 4 módulos de protección</h3>
               {[
-                { icon: "shield", titulo: "Violencia de Género", desc: "Para personas en situación de riesgo. Botón de pánico, grabación silenciosa, botón de ingreso cuando entrás a un lugar desconocido, ubicación en tiempo real." },
-                { icon: "night", titulo: "Noche Segura", desc: "Para jóvenes que salen de noche, acompañantes, repartidores, comisionistas y cualquier situación de riesgo. Pánico, botón de ingreso a lugares, grabación, GPS en vivo, Uber/taxi." },
+                { icon: "shield", titulo: "Noche de Alerta", desc: "Cuando algo está pasando AHORA. Botón de pánico, mandar tu ubicación al instante, grabar evidencias (foto + audio) y grabación de entorno silenciosa." },
+                { icon: "night", titulo: "Cita Segura", desc: "Antes y durante un encuentro. Timer de cita, compartir tu ubicación en vivo, avisar con quién te encontrás, botón de ingreso a un lugar y llegar a casa." },
                 { icon: "eye", titulo: "Te Cuido a Distancia", desc: "Un familiar/amigo puede iniciar grabación remota CON tu aprobación. Funciona con código de vínculo de 6 dígitos." },
 
               ].map((m, i) => (
@@ -3037,83 +3028,9 @@ function InstruccionesScreen({ onBack }) {
                 <p className="text-[11px] mt-3" style={{ color: BRAND.gold }}>{"\u2713"} El ícono de VIGÍA 24 aparece como cualquier otra app del celular.</p>
               </div>
 
-              {/* OPCIÓN 2: Modo Calculadora con PIN CONFIGURABLE */}
-              <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.borderStrong}` }}>
-                <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F522}"} 2. Modo Calculadora (acceso oculto total)</p>
-                <p className="text-sm mb-3" style={{ color: BRAND.textLight }}>La app se ve como una calculadora normal. Solo vos sabés que es VIGÍA 24.</p>
-
-                {/* PIN ACTUAL */}
-                <div className="rounded-lg p-3 mb-3" style={{ background: "rgba(0,0,0,0.4)", border: `1px solid ${BRAND.border}` }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-[11px] uppercase tracking-wider font-bold" style={{ color: BRAND.textLight }}>Tu PIN actual</p>
-                    <button onClick={() => setMostrarPin(!mostrarPin)} className="text-[11px] font-semibold" style={{ color: BRAND.gold }}>
-                      {mostrarPin ? "Ocultar" : "Mostrar"}
-                    </button>
-                  </div>
-                  <p className="font-mono text-3xl font-bold tracking-widest text-center" style={{ color: BRAND.gold }}>
-                    {mostrarPin ? pin : "•".repeat(pin.length)}
-                  </p>
-                </div>
-
-                {/* CAMBIAR PIN */}
-                <div className="mb-3">
-                  <label className="text-[11px] uppercase tracking-wider block mb-1.5 font-bold" style={{ color: BRAND.textLight }}>
-                    Cambiar PIN (4 a 8 números)
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength="8"
-                      value={nuevoPin}
-                      onChange={e => setNuevoPin(e.target.value.replace(/\D/g, ""))}
-                      placeholder="Ej: 4567"
-                      className="flex-1 rounded-lg px-3 py-2.5 text-sm font-mono outline-none"
-                      style={{ background: "rgba(0,0,0,0.5)", border: `1px solid ${BRAND.border}`, color: BRAND.white }}
-                    />
-                    <button onClick={guardarPin} disabled={nuevoPin.length < 4}
-                      className="rounded-lg px-4 text-sm font-bold disabled:opacity-40"
-                      style={{ background: BRAND.goldGradient, color: BRAND.black }}>
-                      Guardar
-                    </button>
-                  </div>
-                  {pinGuardado && <p className="text-[11px] mt-1.5 font-semibold" style={{ color: BRAND.gold }}>{"\u2713"} PIN actualizado correctamente</p>}
-                </div>
-
-                {/* CÓMO SE USA */}
-                <div className="rounded-lg p-3 mb-3" style={{ background: "rgba(0,0,0,0.4)" }}>
-                  <p className="text-[11px] font-bold mb-1.5" style={{ color: BRAND.gold }}>¿Cómo se usa?</p>
-                  <ol className="text-sm space-y-1" style={{ color: BRAND.textLight }}>
-                    <li>1. Abrís el link oculto en tu navegador</li>
-                    <li>2. Te aparece una calculadora normal</li>
-                    <li>3. Escribís tu PIN ({mostrarPin ? pin : "••••"}) y tocás <strong style={{ color: BRAND.white }}>"="</strong></li>
-                    <li>4. Se abre VIGÍA 24</li>
-                  </ol>
-                  <p className="text-[11px] mt-2 italic" style={{ color: BRAND.textMute }}>Si alguien mira tu pantalla, solo ve una calculadora.</p>
-                </div>
-
-                {/* BOTONES DE ACCIÓN */}
-                <div className="space-y-2">
-                  <button onClick={copiarLinkOculto}
-                    className="w-full rounded-lg py-2.5 text-sm font-semibold"
-                    style={{ background: "rgba(212,175,55,0.1)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold }}>
-                    {"\u{1F4CB}"} Copiar link de acceso oculto
-                  </button>
-                  <button onClick={probarModoCalculadora}
-                    className="w-full rounded-lg py-2.5 text-sm font-bold"
-                    style={{ background: BRAND.goldGradient, color: BRAND.black }}>
-                    {"\u{1F510}"} Probar modo calculadora ahora
-                  </button>
-                </div>
-
-                <p className="text-[11px] mt-3" style={{ color: BRAND.textMute }}>
-                  💡 <strong style={{ color: BRAND.gold }}>Tip:</strong> Agregá el link oculto a tu pantalla de inicio con nombre "Calculadora". Nadie va a sospechar.
-                </p>
-              </div>
-
               {/* OPCIÓN 3: Emergencia real */}
               <div className="rounded-xl p-4" style={{ background: "rgba(220,38,38,0.05)", border: `1px solid ${BRAND.red}30` }}>
-                <p className="text-sm font-bold mb-2" style={{ color: BRAND.red }}>{"\u26A0\u{FE0F}"} 3. En una emergencia REAL</p>
+                <p className="text-sm font-bold mb-2" style={{ color: BRAND.red }}>{"\u26A0\u{FE0F}"} 2. En una emergencia REAL</p>
                 <p className="text-sm" style={{ color: BRAND.textLight }}>Si tu vida o la de alguien está en peligro inminente, llamá <strong style={{ color: BRAND.red }}>primero</strong> al 911 (o al número de emergencias de tu país). VIGÍA 24 te ayuda a avisar a tus contactos, pero NO reemplaza a la policía ni a los servicios médicos.</p>
               </div>
             </>
@@ -5532,8 +5449,8 @@ function LandingScreen({ onScreen }) {
   const GOLD_BORDER = "rgba(201,168,76,0.4)";
 
   const MODULE_CARDS = [
-    { key: "mi_escudo", title: "Violencia de Género", subtitle: "Alerta silenciosa e inmediata", img: "https://images.unsplash.com/photo-1588747020648-4ff0ec1abecb?q=80&w=1920&auto=format&fit=crop", icon: "🛡️", pos: "center 40%" },
-    { key: "turno_seguro", title: "Noche Segura", subtitle: "GPS en vivo para salidas nocturnas", img: "https://images.unsplash.com/photo-1729704706106-d8792faa9f94?q=80&w=1920&auto=format&fit=crop", icon: "🌙", pos: "center 30%" },
+    { key: "turno_seguro", title: "Cita Segura", subtitle: "Avisá con quién vas y compartí tu ubicación en vivo", img: "https://images.unsplash.com/photo-1729704706106-d8792faa9f94?q=80&w=1920&auto=format&fit=crop", icon: "🕐", pos: "center 30%" },
+    { key: "mi_escudo", title: "Noche de Alerta", subtitle: "Alertá a tu gente al instante si algo pasa", img: "https://images.unsplash.com/photo-1588747020648-4ff0ec1abecb?q=80&w=1920&auto=format&fit=crop", icon: "🚨", pos: "center 40%" },
 
   ];
 
@@ -5791,7 +5708,7 @@ function LandingScreen({ onScreen }) {
                 <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>Crear cuenta gratis</p>
                 {selectedModuleKey && (
                   <div style={{ marginTop: 8, background: "rgba(201,168,76,0.1)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 10, padding: "5px 12px", fontSize: 12, color: GOLD_SOLID }}>
-                    ✓ {{ mi_escudo: "Violencia de Género", turno_seguro: "Noche Segura", los_cuido: "Adolescente Seguro", te_cuido: "Te Cuido a Distancia" }[selectedModuleKey]}
+                    ✓ {{ mi_escudo: "Noche de Alerta", turno_seguro: "Cita Segura", los_cuido: "Adolescente Seguro", te_cuido: "Te Cuido a Distancia" }[selectedModuleKey]}
                   </div>
                 )}
               </div>
@@ -5855,12 +5772,8 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
 
   useEffect(() => {
     cargarContactos();
-    // v19.13: Auto-abrir módulo seleccionado en onboarding
-    if (window.__lexia_initial_module) {
-      const mod = MODULES.find(m => m.key === window.__lexia_initial_module);
-      if (mod) { setTimeout(() => setActiveModule(mod), 100); }
-      window.__lexia_initial_module = null;
-    }
+    // El usuario aterriza en el PANEL principal (pánico + Cita Segura + módulos), no dentro de un módulo
+    window.__lexia_initial_module = null;
      // v19.12: Detectar si perfil está completo
     async function checkPerfil() {
       try {
@@ -5910,10 +5823,10 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
   // - Renombrado "Te Cuido" → "Te Cuido a Distancia"
   // v19.13: Cards con fotos Unsplash cinematográficas
   const quickCards = [
-    { key: "mi_escudo",    emoji: "\u{1F6E1}\u{FE0F}", title: "Violencia de Género",    text: "Alerta silenciosa, ubicación y grabación de entorno automática.",
-      img: "https://images.unsplash.com/photo-1588747020648-4ff0ec1abecb?q=80&w=800&auto=format&fit=crop" },
-    { key: "turno_seguro", emoji: "\u{1F303}", title: "Noche Segura", text: "Para jóvenes de noche, acompañantes, repartidores y comisionistas.",
+    { key: "turno_seguro", emoji: "\u{1F550}", title: "Cita Segura", text: "Antes y durante un encuentro: avisá con quién vas, compartí tu ubicación en vivo y activá tu timer.",
       img: "https://images.unsplash.com/photo-1729704706106-d8792faa9f94?q=80&w=800&auto=format&fit=crop" },
+    { key: "mi_escudo",    emoji: "\u{1F6A8}", title: "Noche de Alerta",    text: "Algo está pasando ahora: alertá a tu gente al instante, con tu ubicación y evidencia.",
+      img: "https://images.unsplash.com/photo-1588747020648-4ff0ec1abecb?q=80&w=800&auto=format&fit=crop" },
 
     { key: "contactos",    emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} contactos configurados`, img: null },
     { key: "instrucciones",emoji: "\u{2139}\u{FE0F}", title: "¿Cómo funciona?", text: "Aprendé a usar la app paso a paso.", img: null },
@@ -6201,6 +6114,7 @@ async function ejecutarPanico() {
         {activeModule ? (
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-4">   <button onClick={() => setActiveModule(null)} className="rounded-xl px-5 py-3 text-sm font-bold flex items-center gap-2" style={{ color: BRAND.gold, background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.borderStrong}` }}>     {"\u2190"} Volver al panel   </button>   <span className="text-sm font-bold uppercase tracking-wider" style={{ color: BRAND.textMute }}>{activeModule?.title}</span> </div>
+            {activeModule.key === "turno_seguro" && <CitaSeguraTimer onExpire={ejecutarAlertaTimer} noContacts={contactos.length === 0} />}
             <ModuleCard m={activeModule} autoExpand={true} contactos={contactos} onOpenPastillero={() => { setActiveModule(null); setActiveScreen("pastillero"); }} onOpenEvidencias={() => { setActiveModule(null); setActiveScreen("evidencias"); }} onAlertaSent={function(aid) { setAlertaActualId(aid); setRespuestasPanico({}); setPanicoEnviado(true); }} />
           </div>
         ) : (
@@ -6222,7 +6136,6 @@ async function ejecutarPanico() {
                 <span>PÁNICO</span>
               </button>
             </div>
-            <CitaSeguraTimer onExpire={ejecutarAlertaTimer} noContacts={contactos.length === 0} />
             <h3 className="mb-4 text-base font-bold uppercase tracking-[2px]" style={{ color: BRAND.white }}>¿Qué necesitás hoy?</h3>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {quickCards.map(card => {
@@ -6309,21 +6222,6 @@ async function ejecutarPanico() {
                   className="rounded-lg px-3 py-1.5"
                   style={{ background: "rgba(212,175,55,0.08)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>
                   {"\u{1F39B}\u{FE0F}"} Tour demo
-                </button>
-                <button onClick={() => {
-                  if (hasPin) {
-                    if (window.confirm("¿Ocultar app ahora?\n\nLa app se verá como una calculadora. Para volver, ingresá tu PIN en la calculadora.")) {
-                      window.location.href = window.location.origin + "/?modo=calc";
-                    }
-                  } else {
-                    if (window.confirm("¿Ocultar app como calculadora?\n\nPrimero configurá un PIN para poder volver a VIGÍA 24. ¿Querés configurarlo ahora?")) {
-                      setActiveScreen("pin_setup");
-                    }
-                  }
-                }}
-                  className="rounded-lg px-3 py-1.5"
-                  style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.35)", color: "#a5b4fc" }}>
-                  {"\u{1F9EE}"} Ocultar app
                 </button>
               </div>
 
@@ -6587,7 +6485,6 @@ export default function App() {
     // Página pública del mapa en vivo: traza360.app/live/{token}
     const liveMatch = window.location.pathname.match(/\/live\/([^\/?#]+)/);
     if (liveMatch && liveMatch[1]) { setLiveToken(liveMatch[1]); setScreen("live"); return; }
-    if (params.get("modo") === "calc") { setModoCalc(true); setScreen("calculadora"); return; }
     checkSession();
     // v19.7: pedir GPS con explicación primero
     const gpsAsked = sessionStorage.getItem("traza360_gps_asked");
@@ -6727,7 +6624,6 @@ export default function App() {
   }
 
   if (screen === "live") return <LiveScreen token={liveToken} />;
-  if (screen === "calculadora") return <CalculadoraScreen onUnlock={handleUnlockCalc} />;
 
   if (screen === "loading") return (
     <div className="flex min-h-screen items-center justify-center" style={{ background: BRAND.blackBg }}>
