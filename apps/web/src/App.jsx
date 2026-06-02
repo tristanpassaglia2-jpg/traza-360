@@ -839,6 +839,41 @@ function ModoTestigoModal({ onClose, contactos }) {
     setEventos(prev => [{ id: Date.now(), icono, texto, hora }, ...prev.slice(0, 29)]);
   }
 
+  async function enviarUbicacionContactos() {
+    try {
+      if (!contactos || contactos.length === 0) { agregarEvento("\u26A0\uFE0F", "Sin contactos para avisar"); return; }
+      agregarEvento("\u{1F4CD}", "Obteniendo tu ubicación...");
+      var loc = await getCurrentLocationWithFallback();
+      var location = loc.location;
+      var alertaId = crypto.randomUUID();
+      var userData = await supabase.auth.getUser();
+      var nombre = "Usuario";
+      try { nombre = userData.data.user.user_metadata.nombre || userData.data.user.user_metadata.full_name || userData.data.user.email.split("@")[0] || "Usuario"; } catch(e) {}
+      var hora = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+      try {
+        await supabase.from("alertas").insert({
+          id: alertaId, usuario_id: userData?.data?.user?.id || null, tipo: "alerta_emergencia", modulo: "mi_escudo",
+          mensaje: "ALERTA - Grabando evidencias y necesito ayuda.",
+          latitud: location?.lat || null, longitud: location?.lng || null,
+          link_mapa: location?.lat ? "https://maps.google.com/?q=" + location.lat + "," + location.lng : null,
+          enviado_a: contactos.map(function(c) { return c.telefono; }), creado_en: new Date().toISOString()
+        });
+      } catch(e) {}
+      for (var i = 0; i < contactos.length; i++) {
+        try {
+          var numLimpio = contactos[i].telefono.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
+          await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia",
+              params: [nombre.substring(0,60), "Estoy grabando evidencias y necesito ayuda." + (location && location.lat ? " - Mapa con su ubicacion: https://maps.google.com/?q=" + location.lat + "," + location.lng : " - GPS no disponible") + " - Responder: traza360.app/alerta/" + alertaId, hora, "Noche de Alerta"],
+              alerta_id: alertaId })
+          });
+        } catch(e) {}
+      }
+      agregarEvento("\u{1F4CD}", location?.lat ? "Ubicación enviada a tus contactos \u2713" : "Aviso enviado (sin GPS)");
+    } catch(e) { agregarEvento("\u26A0\uFE0F", "No se pudo enviar la ubicación"); }
+  }
+
   async function activar() {
     setFase("activo");
     setTiempo(0);
@@ -858,6 +893,9 @@ function ModoTestigoModal({ onClose, contactos }) {
 
     // ── 2. Fotos inmediatas (frontal + trasera) ───────────────
     capturarYSubir();
+
+    // ── 2b. Enviar ubicación + aviso a contactos ──────────────
+    enviarUbicacionContactos();
 
     // ── 3. Timer de tiempo transcurrido ──────────────────────
     timerRef.current = setInterval(() => setTiempo(t => t + 1), 1000);
@@ -1748,197 +1786,122 @@ function PastilleroScreen({ onBack, userPlan = "gratis", contactos = [] }) {
   );
 }
 
-// ─── PLANES SCREEN (v19.5 — Lista de espera honesta) ────────────
-// MercadoPago todavía NO está integrado. En lugar de mentir o cobrar fake,
-// le pedimos al usuario su email para avisarle cuando esté listo.
-// Esto nos da una lista de espera real = validación de mercado.
-function PlanesScreen({ onBack, currentPlan = "gratis" }) {
-  const [selectedPlan, setSelectedPlan] = useState(null);
-  const [emailWaitlist, setEmailWaitlist] = useState("");
-  const [showEmailForm, setShowEmailForm] = useState(null); // null o "plan key"
-  const [enviado, setEnviado] = useState(false);
-  const [enviando, setEnviando] = useState(false);
+// ─── PLANES SCREEN (v20 — MercadoPago integrado) ────────────
+// 2 planes: Gratis y Premium. El botón llama a /api/create-preference
+// que crea el checkout de MercadoPago. El plan se activa vía /api/mp-webhook.
+function PlanesScreen({ onBack, currentPlan = "gratis", authUser }) {
+  const [loadingPlan, setLoadingPlan] = useState(false);
+  const [error, setError] = useState("");
+  const esPremium = currentPlan === "premium";
 
-  const planes = [
-    { key: "plus", name: "Plus", price: "US$2.99", priceARS: "$2.500", period: "/mes", popular: false,
-      features: ["3 módulos activos", "5 contactos", "Grabación de audio", "Botón de ingreso temporizado", "Historial 30 días"] },
-    { key: "premium", name: "Premium", price: "US$5.99", priceARS: "$5.000", period: "/mes", popular: true,
-      features: ["TODOS los módulos", "10 contactos", "Audio + Video", "Te Cuido (remoto)", "Almacenamiento ilimitado", "Soporte prioritario"] },
-    { key: "anual", name: "Premium Anual", price: "US$49.99", priceARS: "$42.000", period: "/año", popular: false, badge: "30% OFF",
-      features: ["Todo lo del Premium", "Ahorrás 30%", "2 meses gratis"] },
+  async function suscribirse() {
+    setError("");
+    setLoadingPlan(true);
+    try {
+      const email = authUser?.email || "";
+      const userId = authUser?.id || "";
+      const r = await fetch("/api/create-preference", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, email }),
+      });
+      const data = await r.json();
+      if (data && data.init_point) { window.location.href = data.init_point; return; }
+      setError("No se pudo iniciar el pago. Intentá de nuevo en un momento.");
+    } catch (e) {
+      setError("Error de conexión. Revisá tu internet e intentá de nuevo.");
+    }
+    setLoadingPlan(false);
+  }
+
+  const gratisFeatures = [
+    { ok: true,  t: "Botón de pánico" },
+    { ok: true,  t: "2 contactos de confianza" },
+    { ok: true,  t: "Alertas por WhatsApp con ubicación" },
+    { ok: true,  t: "Timer Cita Segura (1 por día)" },
+    { ok: false, t: "Ubicación en vivo (mapa en tiempo real)" },
+    { ok: false, t: "Evidencias: foto + audio" },
+    { ok: false, t: "Grabación de entorno" },
+  ];
+  const premiumFeatures = [
+    { ok: true, t: "Todo lo del plan Gratis" },
+    { ok: true, t: "Ubicación en vivo en tiempo real" },
+    { ok: true, t: "Evidencias: foto + audio ilimitadas" },
+    { ok: true, t: "Grabación de entorno" },
+    { ok: true, t: "Timer Cita Segura ilimitado" },
+    { ok: true, t: "Hasta 10 contactos" },
+    { ok: true, t: "Soporte prioritario" },
   ];
 
-  function abrirFormulario(planKey) {
-    setShowEmailForm(planKey);
-    setEnviado(false);
-    setEmailWaitlist("");
-  }
-
-  async function unirseListaEspera(plan) {
-    if (!emailWaitlist.trim() || !emailWaitlist.includes("@")) {
-      alert("Ingresá un email válido.");
-      return;
-    }
-    setEnviando(true);
-    try {
-      // Guardar en sessionStorage (en producción se guarda en Supabase tabla "lista_espera")
-      const lista = JSON.parse(sessionStorage.getItem("traza360_lista_espera") || "[]");
-      lista.push({
-        email: emailWaitlist.trim(),
-        plan: plan.key,
-        precio: plan.priceARS,
-        fecha: new Date().toISOString(),
-      });
-      sessionStorage.setItem("traza360_lista_espera", JSON.stringify(lista));
-
-      // Avisar a Tristan por WhatsApp para que tenga el lead
-      const mensaje = `Nueva inscripción a lista de espera VIGÍA 24:\nPlan: ${plan.name} (${plan.priceARS}${plan.period})\nEmail: ${emailWaitlist.trim()}\nFecha: ${new Date().toLocaleString('es-AR')}`;
-      try {
-        await sendWhatsAppAPI(WHATSAPP_NUMBER_DEFAULT, mensaje);
-      } catch(e) { console.warn("No se pudo notificar a admin:", e); }
-
-      setEnviado(true);
-      setEnviando(false);
-    } catch(e) {
-      alert("Error al guardar tu interés. Probá de nuevo.");
-      setEnviando(false);
-    }
-  }
+  const Check = ({ ok }) => (
+    <span style={{ display: "inline-flex", width: 18, height: 18, borderRadius: "50%", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0, background: ok ? "rgba(46,139,255,0.18)" : "rgba(255,255,255,0.06)", color: ok ? "#5fa8ff" : "rgba(255,255,255,0.3)", border: ok ? "1px solid rgba(46,139,255,0.5)" : "1px solid rgba(255,255,255,0.12)" }}>{ok ? "\u2713" : "\u2715"}</span>
+  );
 
   return (
-    <div className="min-h-screen px-4 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
-      <div className="w-full max-w-md mx-auto">
-        {/* Header */}
-        <div className="flex items-center mb-6">
-          <button onClick={onBack} className="text-2xl mr-3" style={{ color: BRAND.gold }}>{"\u2190"}</button>
-          <h1 className="text-xl font-bold" style={{ color: BRAND.white }}>Próximos planes</h1>
+    <div className="min-h-screen px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
+      <div className="mx-auto" style={{ maxWidth: 480 }}>
+        <button onClick={onBack} className="mb-5 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver al panel</button>
+
+        <div className="text-center mb-7">
+          <h2 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>Elegí tu plan</h2>
+          <p style={{ fontSize: 14, color: BRAND.textLight, marginTop: 6 }}>Tu seguridad, sin vueltas. Cancelás cuando quieras.</p>
         </div>
 
-        {/* AVISO HONESTO ARRIBA */}
-        <div className="rounded-2xl p-4 mb-6" style={{ background: "rgba(212,175,55,0.08)", border: `1px solid ${BRAND.borderStrong}` }}>
-          <div className="flex items-start gap-3">
-            <span className="text-2xl shrink-0">{"\u{1F6E0}\u{FE0F}"}</span>
-            <div>
-              <p className="text-sm font-bold mb-1" style={{ color: BRAND.gold }}>Estamos terminando la pasarela de pago</p>
-              <p className="text-sm" style={{ color: BRAND.textLight }}>
-                Por ahora <strong style={{ color: BRAND.white }}>toda la app es gratis</strong>. Si te interesa alguno de estos planes, dejanos tu email y te avisamos en cuanto esté lista la suscripción.
-              </p>
+        {/* PLAN GRATIS */}
+        <div style={{ borderRadius: 20, border: `1px solid ${BRAND.border}`, background: "linear-gradient(145deg,#111,#0a0a0a)", padding: 20, marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Gratis</h3>
+            <div style={{ fontSize: 22, fontWeight: 900 }}>$0</div>
+          </div>
+          <p style={{ fontSize: 12, color: BRAND.textMute, margin: "2px 0 14px" }}>Para empezar a cuidarte</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            {gratisFeatures.map((f, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 13.5, color: f.ok ? BRAND.textLight : "rgba(255,255,255,0.4)" }}>
+                <Check ok={f.ok} />{f.t}
+              </div>
+            ))}
+          </div>
+          {currentPlan === "gratis" && (
+            <div style={{ textAlign: "center", marginTop: 14, fontSize: 12, fontWeight: 700, color: BRAND.gold }}>Tu plan actual</div>
+          )}
+        </div>
+
+        {/* PLAN PREMIUM */}
+        <div style={{ position: "relative", borderRadius: 20, border: `1.5px solid ${BRAND.gold}`, background: "linear-gradient(145deg,#15130b,#0a0a0a)", padding: 20, boxShadow: "0 0 30px rgba(201,168,76,0.15)" }}>
+          <div style={{ position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)", background: BRAND.gold, color: "#000", fontSize: 11, fontWeight: 900, padding: "3px 14px", borderRadius: 20, letterSpacing: "0.5px" }}>RECOMENDADO</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 4 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: BRAND.gold }}>Premium</h3>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 24, fontWeight: 900 }}>$8.999<span style={{ fontSize: 13, fontWeight: 600, color: BRAND.textMute }}>/mes</span></div>
             </div>
           </div>
-        </div>
-
-        {/* Plan actual */}
-        <div className="rounded-xl p-3 mb-6" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}` }}>
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{"\u{1F513}"}</span>
-            <div>
-              <div className="text-sm" style={{ color: BRAND.textLight }}>Tu plan actual</div>
-              <div className="text-sm font-bold" style={{ color: BRAND.gold }}>Gratis (acceso completo durante beta)</div>
-            </div>
+          <p style={{ fontSize: 12, color: "#bcd8ff", margin: "2px 0 14px", fontWeight: 700 }}>{"\u{1F381}"} Empezás con 7 días gratis · Protección completa</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            {premiumFeatures.map((f, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 13.5, color: BRAND.textLight }}>
+                <Check ok={true} />{f.t}
+              </div>
+            ))}
           </div>
-        </div>
 
-        {/* Cards de planes */}
-        <div className="space-y-4">
-          {planes.map((plan) => (
-            <div key={plan.key} className="rounded-2xl p-5 relative"
-              style={{
-                background: "linear-gradient(145deg, #111111, #000000)",
-                border: plan.popular ? `2px solid ${BRAND.gold}` : `1px solid ${BRAND.border}`,
-              }}>
+          {error && <p style={{ color: "#fca5a5", fontSize: 13, marginTop: 12, textAlign: "center" }}>{error}</p>}
 
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-[11px] font-bold uppercase tracking-wider"
-                  style={{ background: BRAND.goldGradient, color: BRAND.black }}>
-                  Más elegido
-                </div>
-              )}
-              {plan.badge && (
-                <div className="absolute -top-3 right-4 rounded-full px-3 py-1 text-[11px] font-bold"
-                  style={{ background: BRAND.red, color: BRAND.white }}>
-                  {plan.badge}
-                </div>
-              )}
-
-              <div className="flex items-baseline gap-2 mb-1 mt-1">
-                <span className="text-2xl font-bold" style={{ color: BRAND.gold }}>{plan.price}</span>
-                <span className="text-sm" style={{ color: BRAND.textLight }}>{plan.period}</span>
-              </div>
-              <div className="text-sm mb-3" style={{ color: BRAND.textMute }}>{plan.priceARS}{plan.period}</div>
-              <div className="text-lg font-bold mb-3" style={{ color: BRAND.white }}>{plan.name}</div>
-
-              <div className="space-y-2 mb-4">
-                {plan.features.map((f, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <span className="text-sm" style={{ color: BRAND.gold }}>{"\u2713"}</span>
-                    <span className="text-sm" style={{ color: BRAND.textLight }}>{f}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* FORMULARIO DE LISTA DE ESPERA */}
-              {showEmailForm === plan.key ? (
-                enviado ? (
-                  <div className="rounded-xl p-4 text-center" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.3)" }}>
-                    <div className="text-3xl mb-2">{"\u2705"}</div>
-                    <p className="text-sm font-bold mb-1" style={{ color: "#22c55e" }}>¡Listo!</p>
-                    <p className="text-sm" style={{ color: BRAND.textLight }}>Te vamos a avisar a <strong style={{ color: BRAND.white }}>{emailWaitlist}</strong> apenas habilitemos el plan {plan.name}.</p>
-                    <button onClick={() => setShowEmailForm(null)} className="mt-3 text-[11px] font-semibold" style={{ color: BRAND.gold }}>
-                      Cerrar
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <input
-                      type="email"
-                      value={emailWaitlist}
-                      onChange={e => setEmailWaitlist(e.target.value)}
-                      placeholder="tu@email.com"
-                      className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-                      style={{ background: "rgba(0,0,0,0.5)", border: `1px solid ${BRAND.border}`, color: BRAND.white }}
-                    />
-                    <button onClick={() => unirseListaEspera(plan)} disabled={enviando}
-                      className="w-full rounded-xl py-2.5 text-sm font-bold disabled:opacity-40"
-                      style={{ background: BRAND.goldGradient, color: BRAND.black }}>
-                      {enviando ? "Guardando..." : "Avisame cuando esté listo"}
-                    </button>
-                    <button onClick={() => setShowEmailForm(null)} className="w-full text-[11px] py-1" style={{ color: BRAND.textMute }}>
-                      Cancelar
-                    </button>
-                  </div>
-                )
-              ) : (
-                <button onClick={() => abrirFormulario(plan.key)}
-                  className="w-full rounded-xl py-3 text-sm font-bold active:scale-95"
-                  style={{
-                    background: plan.popular ? BRAND.goldGradient : "rgba(212,175,55,0.1)",
-                    color: plan.popular ? BRAND.black : BRAND.gold,
-                    border: plan.popular ? "none" : `1px solid ${BRAND.borderStrong}`,
-                  }}>
-                  {"\u{1F4E7}"} Avisame cuando esté listo
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Por qué pedimos email */}
-        <div className="mt-6 rounded-xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BRAND.border}` }}>
-          <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: BRAND.gold }}>¿Por qué pedimos tu email?</p>
-          <ul className="text-sm space-y-1.5" style={{ color: BRAND.textLight }}>
-            <li>{"\u2713"} Te avisamos <strong style={{ color: BRAND.white }}>antes que a nadie</strong> cuando habilitemos los planes pagos</li>
-            <li>{"\u2713"} <strong style={{ color: BRAND.white }}>30% de descuento</strong> para los primeros 100 inscriptos</li>
-            <li>{"\u2713"} <strong style={{ color: BRAND.white }}>Cero spam.</strong> Solo te escribimos una vez, cuando esté listo</li>
-            <li>{"\u2713"} Mientras tanto seguís usando la app <strong style={{ color: BRAND.white }}>100% gratis</strong></li>
-          </ul>
-        </div>
-
-        {/* Garantía honesta */}
-        <div className="mt-4 text-center">
-          <p className="text-[11px]" style={{ color: BRAND.textMute }}>
-            Cuando habilitemos los pagos usaremos <strong style={{ color: BRAND.gold }}>MercadoPago</strong> (Argentina y LATAM). Sin permanencia, cancelás cuando quieras.
+          {esPremium ? (
+            <div style={{ textAlign: "center", marginTop: 16, padding: "14px", borderRadius: 14, background: "rgba(46,139,255,0.12)", border: "1px solid rgba(46,139,255,0.4)", color: "#5fa8ff", fontWeight: 800 }}>{"\u2705"} Ya tenés Premium activo</div>
+          ) : (
+            <button onClick={suscribirse} disabled={loadingPlan}
+              style={{ width: "100%", marginTop: 16, borderRadius: 16, padding: "16px", fontSize: 16, fontWeight: 900, background: "linear-gradient(135deg,#2E8BFF,#1466d6)", color: "#fff", border: "none", cursor: "pointer", boxShadow: "0 8px 28px rgba(46,139,255,0.4)", opacity: loadingPlan ? 0.6 : 1 }}>
+              {loadingPlan ? "Abriendo pago seguro..." : "Suscribirme a Premium"}
+            </button>
+          )}
+          <p style={{ textAlign: "center", fontSize: 11.5, color: BRAND.textMute, marginTop: 12, lineHeight: 1.5 }}>
+            {"\u{1F512}"} Pago seguro con MercadoPago · Tarjeta, débito o efectivo · Cancelás cuando quieras
           </p>
         </div>
+
+        <p style={{ textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 20 }}>
+          ¿Dudas? Escribinos a {SUPPORT_EMAIL}
+        </p>
       </div>
     </div>
   );
@@ -2004,6 +1967,27 @@ function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "", onVi
     alert(`Verificación enviada a ${c.nombre} ✓`);
   }
 
+  async function elegirDeContactos() {
+    setError("");
+    if (typeof navigator === "undefined" || !("contacts" in navigator) || !("ContactsManager" in window)) {
+      setVista("agregar");
+      setError("Tu teléfono (ej: iPhone) no deja elegir de la agenda. Cargalo a mano, es rápido 👇");
+      return;
+    }
+    try {
+      const sel = await navigator.contacts.select(["name", "tel"], { multiple: false });
+      if (!sel || !sel.length) return;
+      const c = sel[0];
+      const nom = (c.name && c.name[0]) ? c.name[0] : "";
+      let digits = ((c.tel && c.tel[0]) ? String(c.tel[0]) : "").replace(/[^0-9]/g, "").replace(/^0+/, "");
+      const prefijos = ["54", "57", "52", "56", "51", "55"];
+      for (let p of prefijos) { if (digits.startsWith(p)) { setPrefijo(p); digits = digits.slice(p.length); break; } }
+      setNombre(nom);
+      setTelefono(digits);
+      setVista("agregar");
+    } catch(e) { /* el usuario canceló */ }
+  }
+
   return (
     <div className="min-h-screen bg-[#07111f] px-5 py-8 text-white">
       <div className="mx-auto max-w-3xl">
@@ -2054,7 +2038,10 @@ function ContactosScreen({ onBack, userPlan = "gratis", nombreUsuario = "", onVi
               </div>
             )}
             {contactos.length < maxContactos ? (
-              <button onClick={() => setVista("agregar")} className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-sky-500 py-4 font-semibold text-white shadow-lg">+ Agregar contacto</button>
+              <div className="space-y-3">
+                <button onClick={elegirDeContactos} className="w-full rounded-2xl py-4 font-bold text-white" style={{ background: "linear-gradient(135deg,#2E8BFF,#1466d6)", boxShadow: "0 6px 22px rgba(46,139,255,0.4)" }}>{"\u{1F4F2}"} Elegir de mi agenda (rápido)</button>
+                <button onClick={() => setVista("agregar")} className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-sky-500 py-4 font-semibold text-white shadow-lg">+ Agregar a mano</button>
+              </div>
             ) : (
               <UpgradeBanner feature="más contactos de emergencia" onViewPlans={onViewPlans || (() => {})} />
             )}
@@ -2252,8 +2239,9 @@ const MODULES = [
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
       { key: "panico", iconName: "shield", icon: "🚨", name: "Botón de pánico", desc: "Alerta inmediata + ubicación en el mapa a tu gente.", type: "alert_contacts", message: "ALERTA — Necesito ayuda urgente." },
+      { key: "testigo",  iconName: "mic", icon: "📸", name: "Grabar evidencias + avisar", desc: "Foto frontal y trasera + audio del entorno + envía tu ubicación a tus contactos. Todo a la vez.", type: "modo_testigo" },
+      { key: "ruta_segura", iconName: "eye", icon: "\u{1F4CD}", name: "Compartir mi ubicación en vivo", desc: "Tu gente ve tu mapa moviéndose en tiempo real. No instalan nada, abren un link.", type: "ruta_segura" },
       { key: "ubicacion_ahora", iconName: "pin", icon: "\u{1F4CD}", name: "Mandar mi ubicación ahora", desc: "Envía tu ubicación actual en el mapa a tus contactos.", type: "alert_contacts", message: "Necesito que sepas dónde estoy ahora mismo." },
-      { key: "testigo",  iconName: "mic", icon: "📸", name: "Grabar evidencias (foto + audio)", desc: "Foto frontal y trasera + audio → guardado en evidencias (nube y dispositivo).", type: "modo_testigo" },
       { key: "grabar", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación de audio silenciosa → evidencias.", type: "record_audio" },
       { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver todas las fotos y grabaciones guardadas.", type: "evidencias" },
     ]},
@@ -5221,7 +5209,8 @@ function InstallButton() {
   const [installed, setInstalled] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
 
-  const isIos = typeof navigator !== "undefined" && /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  const isIos = /iphone|ipad|ipod/i.test(ua);
   let isStandalone = false;
   try { isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true; } catch(e){}
 
@@ -5246,64 +5235,72 @@ function InstallButton() {
     try { localStorage.setItem("vigia_banner_dismissed", "1"); } catch(e){}
   }
 
-  async function handleAndroid() {
+  async function instalar() {
+    // Android / Chrome con prompt nativo → 1 solo toque, sin pasos
     if (deferredPrompt) {
       deferredPrompt.prompt();
       try { await deferredPrompt.userChoice; } catch(e){}
       setDeferredPrompt(null);
-    } else {
-      setModal("android");
+      return;
     }
+    // iPhone → guía mínima (Apple obliga a hacerlo a mano)
+    if (isIos) { setModal("ios"); return; }
+    // Android sin prompt disponible → guía
+    setModal("android");
   }
-  function handleIos() { setModal("ios"); }
 
-  const btnBase = { flex: 1, borderRadius: 16, padding: "14px 10px", fontSize: 15, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 };
+  const label = isIos ? "\u{1F4F2} Agregar a mi iPhone" : "\u{1F4F2} Instalar la app (gratis)";
 
   return (
     <>
-      <div style={{ display: "flex", gap: 10, width: "100%" }}>
-        <button onClick={handleIos} style={{ ...btnBase, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff" }}>
-          {"\u{1F34E}"} iPhone
-        </button>
-        <button onClick={handleAndroid} style={{ ...btnBase, background: "rgba(201,168,76,0.14)", border: "1px solid rgba(201,168,76,0.6)", color: "#C9A84C" }}>
-          {"\u{1F916}"} Android
-        </button>
-      </div>
+      <button onClick={instalar} style={{ width: "100%", borderRadius: 16, padding: "15px", fontSize: 16, fontWeight: 900, cursor: "pointer", background: "linear-gradient(135deg,#2E8BFF,#1466d6)", color: "#fff", border: "none", boxShadow: "0 8px 26px rgba(46,139,255,0.4)" }}>
+        {label}
+      </button>
 
       {showBanner && (
-        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#11131a", borderTop: "2px solid rgba(201,168,76,0.7)", padding: "14px 20px", paddingBottom: "calc(20px + env(safe-area-inset-bottom))", zIndex: 9998, display: "flex", alignItems: "flex-start", gap: 12 }}>
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#11131a", borderTop: "2px solid rgba(46,139,255,0.7)", padding: "14px 20px", paddingBottom: "calc(20px + env(safe-area-inset-bottom))", zIndex: 9998, display: "flex", alignItems: "flex-start", gap: 12 }}>
           <div style={{ flex: 1 }}>
-            <p style={{ color: "#C9A84C", fontWeight: 800, fontSize: 15, margin: "0 0 5px" }}>📲 Instalá VIGÍA 24 en tu iPhone</p>
+            <p style={{ color: "#5fa8ff", fontWeight: 800, fontSize: 15, margin: "0 0 5px" }}>{"\u{1F4F2}"} Instalá VIGÍA 24 en tu iPhone</p>
             <p style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, margin: 0, lineHeight: 1.5 }}>
-              Tocá <b style={{ color: "#fff" }}>Compartir</b> {"\u2191"} (centro abajo) → <b style={{ color: "#fff" }}>"Agregar a inicio"</b>
+              Tocá <b style={{ color: "#fff" }}>Compartir</b> {"\u2191"} (centro abajo) {"\u2192"} <b style={{ color: "#fff" }}>"Agregar a inicio"</b>
             </p>
-            <button onClick={handleIos} style={{ marginTop: 10, padding: "8px 18px", borderRadius: 10, background: "#C9A84C", border: "none", color: "#000", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
-              Ver pasos detallados
+            <button onClick={() => setModal("ios")} style={{ marginTop: 10, padding: "8px 18px", borderRadius: 10, background: "#2E8BFF", border: "none", color: "#fff", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
+              Ver cómo (10 seg)
             </button>
           </div>
-          <button onClick={dismissBanner} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.45)", fontSize: 24, cursor: "pointer", padding: "0 4px", lineHeight: 1, flexShrink: 0 }}>✕</button>
+          <button onClick={dismissBanner} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.45)", fontSize: 24, cursor: "pointer", padding: "0 4px", lineHeight: 1, flexShrink: 0 }}>{"\u2715"}</button>
         </div>
       )}
 
       {modal && (
-        <div onClick={() => setModal(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: "#11131a", border: "1px solid rgba(201,168,76,0.4)", borderRadius: 20, padding: 24, maxWidth: 340 }}>
-            <h3 style={{ color: "#C9A84C", fontSize: 18, fontWeight: 800, marginBottom: 12 }}>{modal === "ios" ? "📲 Instalar en tu iPhone" : "📲 Instalar en Android"}</h3>
+        <div onClick={() => setModal(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#11131a", border: "1px solid rgba(46,139,255,0.4)", borderRadius: 20, padding: 24, maxWidth: 340 }}>
+            <h3 style={{ color: "#5fa8ff", fontSize: 18, fontWeight: 800, marginBottom: 14 }}>{modal === "ios" ? "\u{1F4F2} Agregar en tu iPhone" : "\u{1F4F2} Instalar en Android"}</h3>
             {modal === "ios" ? (
-              <ol style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, lineHeight: 1.7, paddingLeft: 18, margin: 0 }}>
-                <li>Tocá el botón <b>Compartir</b> {"\u2191"} (abajo, en el centro de Safari)</li>
-                <li>Bajá y tocá <b>"Agregar a inicio"</b></li>
-                <li>Tocá <b>"Agregar"</b> arriba a la derecha</li>
-              </ol>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(46,139,255,0.2)", border: "1px solid rgba(46,139,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", color: "#5fa8ff", fontWeight: 900, flexShrink: 0 }}>1</div>
+                  <div style={{ color: "rgba(255,255,255,0.9)", fontSize: 14.5, lineHeight: 1.4 }}>Tocá <b style={{ color: "#fff" }}>Compartir</b> {"\u2191"} (abajo, centro de Safari)</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(46,139,255,0.2)", border: "1px solid rgba(46,139,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", color: "#5fa8ff", fontWeight: 900, flexShrink: 0 }}>2</div>
+                  <div style={{ color: "rgba(255,255,255,0.9)", fontSize: 14.5, lineHeight: 1.4 }}>Elegí <b style={{ color: "#fff" }}>"Agregar a inicio"</b> y tocá <b style={{ color: "#fff" }}>Agregar</b></div>
+                </div>
+              </div>
             ) : (
-              <ol style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, lineHeight: 1.7, paddingLeft: 18, margin: 0 }}>
-                <li>Abrí el menú del navegador (los <b>3 puntos</b> {"\u22EE"})</li>
-                <li>Tocá <b>"Instalar app"</b> o <b>"Agregar a pantalla de inicio"</b></li>
-                <li>Confirmá <b>"Instalar"</b></li>
-              </ol>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(46,139,255,0.2)", border: "1px solid rgba(46,139,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", color: "#5fa8ff", fontWeight: 900, flexShrink: 0 }}>1</div>
+                  <div style={{ color: "rgba(255,255,255,0.9)", fontSize: 14.5, lineHeight: 1.4 }}>Abrí el menú del navegador (<b style={{ color: "#fff" }}>3 puntos</b> {"\u22EE"})</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(46,139,255,0.2)", border: "1px solid rgba(46,139,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", color: "#5fa8ff", fontWeight: 900, flexShrink: 0 }}>2</div>
+                  <div style={{ color: "rgba(255,255,255,0.9)", fontSize: 14.5, lineHeight: 1.4 }}>Tocá <b style={{ color: "#fff" }}>"Instalar app"</b> y confirmá</div>
+                </div>
+              </div>
             )}
-            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 14 }}>Listo: VIGÍA 24 queda en tu pantalla como una app normal.</p>
-            <button onClick={() => setModal(null)} style={{ marginTop: 16, width: "100%", borderRadius: 12, padding: "12px", background: "#C9A84C", border: "none", color: "#000", fontWeight: 800, cursor: "pointer" }}>Entendido</button>
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 16 }}>Listo: VIGÍA 24 queda en tu pantalla como una app normal.</p>
+            <button onClick={() => setModal(null)} style={{ marginTop: 16, width: "100%", borderRadius: 12, padding: "12px", background: "#2E8BFF", border: "none", color: "#fff", fontWeight: 800, cursor: "pointer" }}>Entendido</button>
           </div>
         </div>
       )}
@@ -5442,11 +5439,16 @@ function LandingScreen({ onScreen }) {
   const [regLoading, setRegLoading] = React.useState(false);
   const [regError, setRegError] = React.useState("");
   const [aceptaTerminos, setAceptaTerminos] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(false);
 
   const BG_LANDING = "https://images.unsplash.com/photo-1716908332073-c76e68c09e42?q=80&w=1920&auto=format&fit=crop";
   const GOLD = "linear-gradient(135deg, #8B6914 0%, #C9A84C 35%, #E8C96A 50%, #C9A84C 70%, #8B6914 100%)";
   const GOLD_SOLID = "#C9A84C";
   const GOLD_BORDER = "rgba(201,168,76,0.4)";
+  const NEON_RED = "#FF2E55";
+  const NEON_BLUE = "#2E8BFF";
+  const NEON_RED_GLOW = "0 0 4px rgba(255,46,85,0.9), 0 0 12px rgba(255,46,85,0.6), 0 0 26px rgba(255,46,85,0.35)";
+  const NEON_BLUE_GLOW = "0 0 4px rgba(46,139,255,0.9), 0 0 12px rgba(46,139,255,0.6), 0 0 26px rgba(46,139,255,0.35)";
 
   const MODULE_CARDS = [
     { key: "turno_seguro", title: "Cita Segura", subtitle: "Avisá con quién vas y compartí tu ubicación en vivo", img: "https://images.unsplash.com/photo-1729704706106-d8792faa9f94?q=80&w=1920&auto=format&fit=crop", icon: "🕐", pos: "center 30%" },
@@ -5503,19 +5505,49 @@ function LandingScreen({ onScreen }) {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "#000", color: "#fff", position: "relative", overflowX: "hidden" }}>
-      <div style={{ position: "fixed", inset: 0, backgroundImage: `url(${BG_LANDING})`, backgroundSize: "cover", backgroundPosition: "center", filter: "brightness(0.38) contrast(1.2) saturate(1.2)", zIndex: 0 }} />
-      <div style={{ position: "fixed", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.6) 100%)", zIndex: 1 }} />
+    <div style={{ minHeight: "100vh", background: "#050507", color: "#fff", position: "relative", overflowX: "hidden", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      <style>{`
+        @keyframes vigiaLights { 0%,100%{opacity:0.5} 50%{opacity:0.95} }
+        @keyframes vigiaLightsB { 0%,100%{opacity:0.95} 50%{opacity:0.45} }
+        @keyframes neonFlicker { 0%,19%,21%,23%,55%,57%,100%{opacity:1} 20%,22%,56%{opacity:0.78} }
+        @keyframes heroUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+      `}</style>
+      <div style={{ position: "fixed", inset: 0, background: "radial-gradient(circle at 50% 120%, #0c0c14 0%, #050507 62%)", zIndex: 0 }} />
+      <div style={{ position: "fixed", top: "-18%", left: "-22%", width: "72%", height: "62%", background: "radial-gradient(circle, rgba(255,46,85,0.34) 0%, rgba(255,46,85,0) 70%)", filter: "blur(34px)", zIndex: 1, animation: "vigiaLights 5s ease-in-out infinite" }} />
+      <div style={{ position: "fixed", top: "-18%", right: "-22%", width: "72%", height: "62%", background: "radial-gradient(circle, rgba(46,139,255,0.34) 0%, rgba(46,139,255,0) 70%)", filter: "blur(34px)", zIndex: 1, animation: "vigiaLightsB 5s ease-in-out infinite" }} />
+      <div style={{ position: "fixed", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px)", backgroundSize: "44px 44px", zIndex: 1, WebkitMaskImage: "radial-gradient(circle at 50% 28%, #000 0%, transparent 76%)", maskImage: "radial-gradient(circle at 50% 28%, #000 0%, transparent 76%)" }} />
 
       {/* NAVBAR */}
-      <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(201,168,76,0.2)", padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 34, height: 34, objectFit: "contain", filter: "drop-shadow(0 0 6px rgba(201,168,76,0.5))" }} />
-          <span style={{ fontSize: 16, fontWeight: 900, letterSpacing: "2px", background: GOLD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>VIGÍA 24</span>
+      <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(5,5,7,0.72)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+          <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 32, height: 32, objectFit: "contain", filter: "drop-shadow(0 0 8px rgba(46,139,255,0.6))" }} />
+          <span style={{ fontSize: 16, fontWeight: 900, letterSpacing: "2px" }}>
+            <span style={{ color: "#fff", textShadow: NEON_RED_GLOW }}>VIGÍA</span>
+            <span style={{ color: "#fff", textShadow: NEON_BLUE_GLOW, marginLeft: 5 }}>24</span>
+          </span>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={() => setVista(vista === "login" ? "hero" : "login")} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", borderRadius: 12, padding: "8px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Ingresar</button>
-          <button onClick={() => setVista(vista === "register" ? "hero" : "register")} style={{ background: GOLD, border: "none", color: "#000", borderRadius: 12, padding: "8px 14px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>Empezar gratis</button>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <button onClick={() => setVista(vista === "login" ? "hero" : "login")} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.16)", color: "#fff", borderRadius: 11, padding: "8px 13px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Ingresar</button>
+          <button onClick={() => setVista(vista === "register" ? "hero" : "register")} style={{ background: "transparent", border: `1px solid ${NEON_BLUE}`, color: "#fff", borderRadius: 11, padding: "8px 13px", fontSize: 13, fontWeight: 800, cursor: "pointer", textShadow: NEON_BLUE_GLOW, boxShadow: "0 0 14px rgba(46,139,255,0.4), inset 0 0 10px rgba(46,139,255,0.15)" }}>Empezar</button>
+          <div style={{ position: "relative" }}>
+            <button onClick={() => setMenuOpen(o => !o)} aria-label="Menú" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.16)", color: "#fff", borderRadius: 11, padding: "8px 11px", fontSize: 15, fontWeight: 700, cursor: "pointer", lineHeight: 1 }}>{"\u2630"}</button>
+            {menuOpen && (
+              <div style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", background: "rgba(10,10,14,0.97)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, padding: 6, minWidth: 200, boxShadow: "0 12px 40px rgba(0,0,0,0.6)", zIndex: 200 }}>
+                {[
+                  { l: "¿Cómo funciona?", s: "instrucciones_publico" },
+                  { l: "¿Para quién es?", s: "__scroll" },
+                  { l: "Sobre nosotros", s: "sobre_nosotros" },
+                  { l: "Política de Privacidad", s: "privacidad" },
+                  { l: "Términos y Condiciones", s: "terminos" },
+                ].map(it => (
+                  <button key={it.l} onClick={() => { setMenuOpen(false); if (it.s === "__scroll") { try { document.getElementById("para-quien").scrollIntoView({ behavior: "smooth" }); } catch(e){} } else { onScreen(it.s); } }}
+                    style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", color: "rgba(255,255,255,0.85)", padding: "11px 12px", fontSize: 14, fontWeight: 500, cursor: "pointer", borderRadius: 9 }}>
+                    {it.l}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </nav>
 
@@ -5524,148 +5556,106 @@ function LandingScreen({ onScreen }) {
         {/* HERO */}
         {vista === "hero" && (
           <div>
-            <section style={{ textAlign: "center", padding: "48px 20px 32px" }}>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-                <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 108, height: 108, objectFit: "contain", filter: "drop-shadow(0 0 30px rgba(201,168,76,0.6))" }} />
+            <section style={{ textAlign: "center", padding: "44px 20px 30px" }}>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 18, animation: "heroUp 0.6s ease both" }}>
+                <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 92, height: 92, objectFit: "contain", filter: "drop-shadow(0 0 18px rgba(255,46,85,0.55)) drop-shadow(0 0 26px rgba(46,139,255,0.45))" }} />
               </div>
-              <h1 style={{ fontSize: "clamp(38px, 10vw, 62px)", fontWeight: 900, letterSpacing: "6px", margin: "0 auto 8px", background: GOLD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontFamily: "'Georgia', serif" }}>VIGÍA 24</h1>
-              <div style={{ display: "inline-block", background: "rgba(201,168,76,0.12)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 20, padding: "5px 14px", fontSize: 10, letterSpacing: "2px", textTransform: "uppercase", color: GOLD_SOLID, marginBottom: 18 }}>
-                🏆 1ra app de seguridad con IA multimodal de Latinoamérica
+              <h1 style={{ fontSize: "clamp(46px, 13vw, 76px)", fontWeight: 900, letterSpacing: "3px", margin: "0 0 14px", lineHeight: 1, animation: "neonFlicker 7s infinite" }}>
+                <span style={{ color: "#fff", textShadow: NEON_RED_GLOW }}>VIGÍA</span>{" "}
+                <span style={{ color: "#fff", textShadow: NEON_BLUE_GLOW }}>24</span>
+              </h1>
+              <div style={{ display: "inline-block", background: "rgba(46,139,255,0.1)", border: `1px solid rgba(46,139,255,0.4)`, borderRadius: 20, padding: "5px 14px", fontSize: 10, letterSpacing: "1.5px", textTransform: "uppercase", color: "#bcd8ff", marginBottom: 20, boxShadow: "0 0 16px rgba(46,139,255,0.2)" }}>
+                1ra app de seguridad con IA multimodal de LATAM
               </div>
-              <h2 style={{ fontFamily: "'Georgia', serif", fontSize: "clamp(26px, 7vw, 42px)", fontWeight: 900, lineHeight: 1.15, margin: "0 auto 10px", maxWidth: 360, color: "#fff" }}>
+              <h2 style={{ fontSize: "clamp(28px, 8vw, 44px)", fontWeight: 800, lineHeight: 1.12, margin: "0 auto 14px", maxWidth: 360, color: "#fff" }}>
                 Si algo pasa,<br/>
-                <span style={{ background: GOLD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>alguien ya sabe.</span>
+                <span style={{ textShadow: NEON_RED_GLOW }}>alguien ya sabe.</span>
               </h2>
-              <p style={{ fontSize: 16, color: "#ffffff", maxWidth: 320, margin: "0 auto 6px", fontWeight: 500, lineHeight: 1.5 }}>App multimodal para protección de personas en tiempo real.</p>
-              <p style={{ fontSize: 17, fontWeight: 800, color: "#ffffff", marginBottom: 28 }}>Un botón, muchas soluciones</p>
-              {/* Feature icons — large, realistic */}
-              <div style={{ display: "flex", justifyContent: "center", gap: 16, marginBottom: 16 }}>
+              <p style={{ fontSize: 15.5, color: "rgba(255,255,255,0.78)", maxWidth: 330, margin: "0 auto 26px", fontWeight: 400, lineHeight: 1.55 }}>
+                Seguridad personal en tiempo real. Compartí tu ubicación, grabá evidencia y alertá a tu gente de confianza con un toque.
+              </p>
 
-                {/* GPS MAP */}
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ width: 80, height: 80, borderRadius: 20, overflow: "hidden", border: "2px solid rgba(201,168,76,0.5)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)", margin: "0 auto 8px", position: "relative", background: "#1a3a2a" }}>
-                    <svg viewBox="0 0 80 80" width="80" height="80" xmlns="http://www.w3.org/2000/svg">
-                      {/* Map background */}
-                      <rect width="80" height="80" fill="#1e3a2f"/>
-                      {/* Roads */}
-                      <rect x="0" y="36" width="80" height="8" fill="#2d5a3d" opacity="0.8"/>
-                      <rect x="36" y="0" width="8" height="80" fill="#2d5a3d" opacity="0.8"/>
-                      <line x1="0" y1="40" x2="80" y2="40" stroke="#4a8c5c" strokeWidth="1.5"/>
-                      <line x1="40" y1="0" x2="40" y2="80" stroke="#4a8c5c" strokeWidth="1.5"/>
-                      {/* City blocks */}
-                      <rect x="4" y="4" width="28" height="28" rx="2" fill="#264d38" opacity="0.7"/>
-                      <rect x="48" y="4" width="28" height="28" rx="2" fill="#264d38" opacity="0.7"/>
-                      <rect x="4" y="48" width="28" height="28" rx="2" fill="#264d38" opacity="0.7"/>
-                      <rect x="48" y="48" width="28" height="28" rx="2" fill="#264d38" opacity="0.7"/>
-                      {/* GPS pin */}
-                      <circle cx="40" cy="34" r="10" fill="rgba(0,0,0,0.4)"/>
-                      <path d="M40 22 C34 22 29 27 29 33 C29 42 40 52 40 52 C40 52 51 42 51 33 C51 27 46 22 40 22 Z" fill="#C9A84C"/>
-                      <circle cx="40" cy="33" r="5" fill="#1a3a2a"/>
-                      <circle cx="40" cy="33" r="2.5" fill="#E8C96A"/>
-                      {/* Pulse ring */}
-                      <circle cx="40" cy="33" r="13" fill="none" stroke="rgba(201,168,76,0.4)" strokeWidth="1.5"/>
-                    </svg>
+              {/* FEATURES */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, maxWidth: 400, margin: "0 auto 26px" }}>
+                {[
+                  { ico: "\u{1F4CD}", t: "Ubicación en vivo", d: "Tu mapa en tiempo real", c: NEON_BLUE, g: "rgba(46,139,255,0.45)" },
+                  { ico: "\u{1F4F8}", t: "Evidencias", d: "Foto + audio al instante", c: NEON_RED, g: "rgba(255,46,85,0.45)" },
+                  { ico: "\u{1F6A8}", t: "Alerta a tu gente", d: "Un botón y saben dónde", c: NEON_RED, g: "rgba(255,46,85,0.45)" },
+                ].map((f, i) => (
+                  <div key={i} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${f.g}`, borderRadius: 16, padding: "16px 8px", boxShadow: `0 0 18px ${f.g.replace("0.45","0.12")}` }}>
+                    <div style={{ fontSize: 28, marginBottom: 8, filter: `drop-shadow(0 0 8px ${f.g})` }}>{f.ico}</div>
+                    <div style={{ fontSize: 11.5, fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: 3 }}>{f.t}</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.6)", lineHeight: 1.3 }}>{f.d}</div>
                   </div>
-                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "2px", color: "#C9A84C", fontWeight: 700, marginBottom: 4 }}>UBICACIÓN</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.3 }}>Tus contactos<br/>te ubican</div>
-                </div>
-
-                {/* MICROPHONE */}
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ width: 80, height: 80, borderRadius: 20, overflow: "hidden", border: "2px solid rgba(201,168,76,0.5)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)", margin: "0 auto 8px", background: "#1a1a2e" }}>
-                    <svg viewBox="0 0 80 80" width="80" height="80" xmlns="http://www.w3.org/2000/svg">
-                      <rect width="80" height="80" fill="#1a1a2e"/>
-                      {/* Sound waves bg */}
-                      <ellipse cx="40" cy="40" rx="32" ry="32" fill="rgba(201,168,76,0.05)"/>
-                      <ellipse cx="40" cy="40" rx="22" ry="22" fill="rgba(201,168,76,0.08)"/>
-                      {/* Mic body */}
-                      <rect x="32" y="16" width="16" height="26" rx="8" fill="#C9A84C"/>
-                      {/* Mic arc */}
-                      <path d="M24 38 C24 50 56 50 56 38" fill="none" stroke="#C9A84C" strokeWidth="2.5" strokeLinecap="round"/>
-                      {/* Stand */}
-                      <line x1="40" y1="50" x2="40" y2="62" stroke="#C9A84C" strokeWidth="2.5" strokeLinecap="round"/>
-                      <line x1="30" y1="62" x2="50" y2="62" stroke="#C9A84C" strokeWidth="2.5" strokeLinecap="round"/>
-                      {/* Sound waves */}
-                      <path d="M16 34 C12 37 12 43 16 46" fill="none" stroke="rgba(201,168,76,0.5)" strokeWidth="2" strokeLinecap="round"/>
-                      <path d="M64 34 C68 37 68 43 64 46" fill="none" stroke="rgba(201,168,76,0.5)" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                  </div>
-                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "2px", color: "#C9A84C", fontWeight: 700, marginBottom: 4 }}>AUDIO</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.3 }}>Graba el sonido<br/>de tu entorno</div>
-                </div>
-
-                {/* PHOTOS */}
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ width: 80, height: 80, borderRadius: 20, overflow: "hidden", border: "2px solid rgba(201,168,76,0.5)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)", margin: "0 auto 8px", background: "#1a1a1a" }}>
-                    <svg viewBox="0 0 80 80" width="80" height="80" xmlns="http://www.w3.org/2000/svg">
-                      <rect width="80" height="80" fill="#1a1a1a"/>
-                      {/* Top viewfinder bump */}
-                      <path d="M30 28 L34 22 L46 22 L50 28 Z" fill="#2a2a2a" stroke="#C9A84C" strokeWidth="1.5"/>
-                      {/* Camera body */}
-                      <rect x="14" y="28" width="52" height="34" rx="6" fill="#2a2a2a" stroke="#C9A84C" strokeWidth="1.5"/>
-                      {/* Lens */}
-                      <circle cx="40" cy="46" r="11" fill="#111" stroke="#C9A84C" strokeWidth="1.5"/>
-                      <circle cx="40" cy="46" r="6" fill="#0a0a0a"/>
-                      <circle cx="37" cy="43" r="1.8" fill="rgba(255,255,255,0.35)"/>
-                      {/* Flash */}
-                      <rect x="56" y="32" width="6" height="4" rx="1" fill="#C9A84C" opacity="0.9"/>
-                    </svg>
-                  </div>
-                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "2px", color: "#C9A84C", fontWeight: 700, marginBottom: 4 }}>FOTOS</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.3 }}>Fotos automáticas<br/>cada 30 seg</div>
-                </div>
-
+                ))}
               </div>
 
               {/* Contacts line */}
               <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginBottom: 24 }}>
                 <div style={{ display: "flex" }}>
-                  {["👤","👤","👤"].map((u,i) => (
-                    <div key={i} style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(201,168,76,0.2)", border: "2px solid rgba(201,168,76,0.5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, marginLeft: i > 0 ? -8 : 0 }}>{u}</div>
+                  {[0,1,2].map((i) => (
+                    <div key={i} style={{ width: 26, height: 26, borderRadius: "50%", background: "rgba(46,139,255,0.18)", border: "2px solid rgba(46,139,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, marginLeft: i > 0 ? -8 : 0 }}>{"\u{1F464}"}</div>
                   ))}
                 </div>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", fontWeight: 600 }}>Tus contactos de confianza están alertas</span>
+                <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.75)", fontWeight: 500 }}>Tu gente de confianza, siempre alerta</span>
               </div>
-              <div style={{ maxWidth: 380, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12, padding: "0 20px" }}>
-                <button onClick={() => setVista("register")} style={btnPrimary}>Comenzar gratis →</button>
-                <button onClick={() => setVista("login")} style={{ width: "100%", borderRadius: 16, padding: "14px", fontSize: 15, fontWeight: 700, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", cursor: "pointer" }}>Ya tengo cuenta → Ingresar</button>
+
+              <div style={{ maxWidth: 380, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12, padding: "0 16px" }}>
+                <div style={{ display: "inline-block", margin: "0 auto", background: "rgba(46,139,255,0.12)", border: "1px solid rgba(46,139,255,0.45)", borderRadius: 20, padding: "7px 16px", fontSize: 13, fontWeight: 800, color: "#bcd8ff", boxShadow: "0 0 16px rgba(46,139,255,0.25)" }}>
+                  {"\u{1F381}"} Obtené Premium GRATIS por 7 días
+                </div>
+                <button onClick={() => setVista("register")} style={{ width: "100%", borderRadius: 16, padding: "16px", fontSize: 16, fontWeight: 900, background: "linear-gradient(135deg, #2E8BFF, #1466d6)", color: "#fff", border: "none", cursor: "pointer", boxShadow: "0 8px 30px rgba(46,139,255,0.45), inset 0 0 14px rgba(255,255,255,0.12)", letterSpacing: "0.5px" }}>Comenzar gratis →</button>
+                <button onClick={() => setVista("login")} style={{ width: "100%", borderRadius: 16, padding: "14px", fontSize: 15, fontWeight: 700, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", cursor: "pointer" }}>Ya tengo cuenta → Ingresar</button>
                 <InstallButton />
               </div>
             </section>
 
+            {/* ¿PARA QUIÉN ES? */}
+            <section id="para-quien" style={{ padding: "12px 20px 34px", maxWidth: 460, margin: "0 auto" }}>
+              <h2 style={{ textAlign: "center", fontSize: 18, fontWeight: 900, color: "#fff", textTransform: "uppercase", letterSpacing: "3px", marginBottom: 16, textShadow: NEON_BLUE_GLOW }}>¿Para quién es?</h2>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 9, justifyContent: "center" }}>
+                {["Salidas de noche", "Citas con desconocidos", "Volver sola/o a casa", "Trabajo nocturno", "Apps de citas", "Tu gente que te cuida"].map((chip, i) => (
+                  <span key={i} style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(255,255,255,0.85)", background: "rgba(255,255,255,0.04)", border: `1px solid ${i % 2 ? "rgba(46,139,255,0.35)" : "rgba(255,46,85,0.35)"}`, borderRadius: 20, padding: "8px 13px" }}>{chip}</span>
+                ))}
+              </div>
+              <p style={{ textAlign: "center", fontSize: 13.5, color: "rgba(255,255,255,0.6)", marginTop: 16, lineHeight: 1.5 }}>
+                Si salís y querés que alguien sepa dónde estás, esta app es para vos.
+              </p>
+            </section>
+
             {/* MODULE CARDS */}
             <section style={{ padding: "8px 16px 40px" }}>
-              <h2 style={{ textAlign: "center", fontFamily: "'Georgia', serif", fontSize: 20, fontWeight: 900, color: "#fff", textTransform: "uppercase", letterSpacing: "4px", marginBottom: 18, textShadow: "0 2px 12px rgba(0,0,0,0.8)" }}>¿En qué te ayudamos?</h2>
+              <h2 style={{ textAlign: "center", fontSize: 18, fontWeight: 900, color: "#fff", textTransform: "uppercase", letterSpacing: "3px", marginBottom: 18, textShadow: NEON_RED_GLOW }}>¿En qué te ayudamos?</h2>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, maxWidth: 440, margin: "0 auto" }}>
-                {MODULE_CARDS.map((card) => (
+                {MODULE_CARDS.map((card, idx) => {
+                  var nc = idx % 2 ? NEON_RED : NEON_BLUE;
+                  var ng = idx % 2 ? "rgba(255,46,85,0.55)" : "rgba(46,139,255,0.55)";
+                  return (
                   <button key={card.key} onClick={() => { try { sessionStorage.setItem("traza360_selected_module", card.key); } catch(e){} window.__lexia_initial_module = card.key; setSelectedModuleKey(card.key); setVista("register"); }}
-                    style={{ position: "relative", borderRadius: 18, overflow: "hidden", aspectRatio: "4 / 3", border: `1px solid ${GOLD_BORDER}`, cursor: "pointer", display: "block", width: "100%", padding: 0 }}>
-                    {/* Full photo background — contain so full image shows */}
-                    <div style={{ position: "absolute", inset: 0, background: "#0a0a0a", backgroundImage: `url(${card.img})`, backgroundSize: "cover", backgroundPosition: "center center", filter: "brightness(0.7) contrast(1.1) saturate(1.2)" }} />
-                    {/* Gradient overlay — only bottom third dark */}
-                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.05) 45%, rgba(0,0,0,0.8) 100%)" }} />
-                    {/* Gold bottom border accent */}
-                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: GOLD }} />
-                    {/* Content at bottom */}
+                    style={{ position: "relative", borderRadius: 18, overflow: "hidden", aspectRatio: "4 / 3", border: `1px solid ${ng}`, cursor: "pointer", display: "block", width: "100%", padding: 0, boxShadow: `0 0 22px ${ng.replace("0.55","0.18")}` }}>
+                    <div style={{ position: "absolute", inset: 0, background: "#0a0a0a", backgroundImage: `url(${card.img})`, backgroundSize: "cover", backgroundPosition: "center center", filter: "brightness(0.55) contrast(1.1) saturate(1.1)" }} />
+                    <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, rgba(5,5,7,0) 30%, rgba(5,5,7,0.92) 100%)` }} />
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: nc, boxShadow: `0 0 12px ${nc}` }} />
                     <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 2, padding: "12px 12px 14px" }}>
                       <div style={{ fontSize: 22, marginBottom: 4 }}>{card.icon}</div>
-                      <div style={{ fontSize: 14, fontWeight: 900, color: "#fff", lineHeight: 1.2, textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}>{card.title}</div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", marginTop: 2, lineHeight: 1.3, textShadow: "0 1px 4px rgba(0,0,0,0.9)" }}>{card.subtitle}</div>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: "#fff", lineHeight: 1.2 }}>{card.title}</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", marginTop: 2, lineHeight: 1.3 }}>{card.subtitle}</div>
                     </div>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </section>
 
-            <div style={{ textAlign: "center", padding: "14px 20px 28px", borderTop: "1px solid rgba(201,168,76,0.15)" }}>
+            <div style={{ textAlign: "center", padding: "14px 20px 30px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
               <div style={{ display: "flex", justifyContent: "center", gap: 14, fontSize: 12, flexWrap: "wrap" }}>
-                <button onClick={() => onScreen("sobre_nosotros")} style={{ color: GOLD_SOLID, background: "none", border: "none", cursor: "pointer", fontSize: 12 }}>Sobre nosotros</button>
-                <span style={{ color: "rgba(255,255,255,0.3)" }}>·</span>
-                <button onClick={() => onScreen("privacidad")} style={{ color: GOLD_SOLID, background: "none", border: "none", cursor: "pointer", fontSize: 12 }}>Privacidad</button>
-                <span style={{ color: "rgba(255,255,255,0.3)" }}>·</span>
-                <button onClick={() => onScreen("terminos")} style={{ color: GOLD_SOLID, background: "none", border: "none", cursor: "pointer", fontSize: 12 }}>Términos</button>
+                <button onClick={() => onScreen("sobre_nosotros")} style={{ color: "rgba(255,255,255,0.6)", background: "none", border: "none", cursor: "pointer", fontSize: 12 }}>Sobre nosotros</button>
+                <span style={{ color: "rgba(255,255,255,0.25)" }}>·</span>
+                <button onClick={() => onScreen("privacidad")} style={{ color: "rgba(255,255,255,0.6)", background: "none", border: "none", cursor: "pointer", fontSize: 12 }}>Privacidad</button>
+                <span style={{ color: "rgba(255,255,255,0.25)" }}>·</span>
+                <button onClick={() => onScreen("terminos")} style={{ color: "rgba(255,255,255,0.6)", background: "none", border: "none", cursor: "pointer", fontSize: 12 }}>Términos</button>
               </div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>📧 {SUPPORT_EMAIL} · traza360.app</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>{"\u{1F4E7}"} {SUPPORT_EMAIL} · traza360.app</div>
             </div>
           </div>
         )}
@@ -5760,9 +5750,13 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
    const [showCompletarPerfil, setShowCompletarPerfil] = useState(false);
   const [perfilCompleto, setPerfilCompleto] = useState(true);
   const [hasPin, setHasPin] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const nombreUsuario = userProfile?.nombre || pendingName || sessionStorage.getItem("traza360_pending_name") || authUser?.email?.split("@")[0] || "Usuario";
-  const userPlan = userProfile?.plan || "gratis";
+  const pagoPremium = userProfile?.plan === "premium";
+  const trialActivo = !!(userProfile?.trial_until && new Date(userProfile.trial_until).getTime() > Date.now());
+  const diasTrial = trialActivo ? Math.max(1, Math.ceil((new Date(userProfile.trial_until).getTime() - Date.now()) / (24 * 60 * 60 * 1000))) : 0;
+  const userPlan = (pagoPremium || trialActivo) ? "premium" : "gratis";
 
   // v19.9: exponer globalmente para RutaSeguraModal dentro de ModuleCard
   useEffect(() => {
@@ -5772,6 +5766,13 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
 
   useEffect(() => {
     cargarContactos();
+    // Retorno desde MercadoPago
+    try {
+      const p = new URLSearchParams(window.location.search).get("pago");
+      if (p === "ok") { setTimeout(() => alert("\u00A1Gracias! \u{1F389} Tu Premium se est\u00E1 activando. Puede tardar unos segundos. Si no aparece, recarg\u00E1 la app."), 400); window.history.replaceState({}, "", window.location.pathname); }
+      else if (p === "error") { setTimeout(() => alert("El pago no se complet\u00F3. Pod\u00E9s intentarlo de nuevo cuando quieras."), 400); window.history.replaceState({}, "", window.location.pathname); }
+      else if (p === "pendiente") { setTimeout(() => alert("Tu pago qued\u00F3 pendiente. Cuando se acredite, Premium se activa solo."), 400); window.history.replaceState({}, "", window.location.pathname); }
+    } catch(e){}
     // El usuario aterriza en el PANEL principal (pánico + Cita Segura + módulos), no dentro de un módulo
     window.__lexia_initial_module = null;
      // v19.12: Detectar si perfil está completo
@@ -6074,10 +6075,48 @@ async function ejecutarPanico() {
   return (
     <div className="min-h-screen px-5 py-8 pb-24" style={{ background: BRAND.blackBg, color: BRAND.white }}>
       <div className="mx-auto max-w-6xl">
-        {/* Header */}
-        <div className="mb-6 text-center">
-          <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 80, height: 80, objectFit: "contain" }} />
-          <p className="text-[11px] uppercase tracking-[4px] mt-2 font-semibold" style={{ color: BRAND.gold }}>{TAGLINE}</p>
+        {/* Header / Top bar con menú de Cuenta */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 44, height: 44, objectFit: "contain" }} />
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: "1px", color: BRAND.white }}>VIGÍA 24</div>
+              <div className="text-[9px] uppercase tracking-[3px] font-semibold" style={{ color: BRAND.gold }}>{TAGLINE}</div>
+            </div>
+          </div>
+          <div style={{ position: "relative" }}>
+            <button onClick={() => setMenuOpen(o => !o)} aria-label="Menú" className="rounded-xl" style={{ background: "linear-gradient(145deg,#1a1a1a,#0a0a0a)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold, padding: "10px 13px", fontSize: 18, lineHeight: 1, cursor: "pointer" }}>{"\u2630"}</button>
+            {menuOpen && (
+              <>
+                <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 90 }} />
+                <div style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", zIndex: 95, background: "#0d0d0d", border: `1px solid ${BRAND.borderStrong}`, borderRadius: 16, padding: 6, minWidth: 234, boxShadow: "0 16px 50px rgba(0,0,0,0.7)" }}>
+                  <div style={{ padding: "8px 12px 6px" }}>
+                    <div style={{ fontSize: 11, color: BRAND.textMute }}>Tu cuenta</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: BRAND.white }}>{nombreUsuario}</div>
+                    <div style={{ fontSize: 11, color: BRAND.gold, marginTop: 1 }}>Plan: {PLAN_PRICES[userPlan]?.name || "Gratis"}</div>
+                  </div>
+                  <div style={{ height: 1, background: BRAND.border, margin: "4px 0" }} />
+                  {[
+                    { ico: "\u{1F465}", l: "Mis contactos", fn: () => setActiveScreen("contactos") },
+                    { ico: "\u2139\uFE0F", l: "¿Cómo funciona?", fn: () => setActiveScreen("instrucciones") },
+                    { ico: "\u{1F512}", l: "Privacidad", fn: () => setActiveScreen("privacidad") },
+                    { ico: "\u{1F4C4}", l: "Términos", fn: () => setActiveScreen("terminos") },
+                  ].map(it => (
+                    <button key={it.l} onClick={() => { setMenuOpen(false); it.fn(); }} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", textAlign: "left", background: "none", border: "none", color: BRAND.textLight, padding: "11px 12px", fontSize: 14, fontWeight: 500, cursor: "pointer", borderRadius: 10 }}>
+                      <span style={{ fontSize: 16 }}>{it.ico}</span>{it.l}
+                    </button>
+                  ))}
+                  <div style={{ height: 1, background: BRAND.border, margin: "4px 0" }} />
+                  <button onClick={() => { setMenuOpen(false); handleLogout(); }} disabled={loggingOut} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", textAlign: "left", background: "none", border: "none", color: BRAND.textLight, padding: "11px 12px", fontSize: 14, fontWeight: 500, cursor: "pointer", borderRadius: 10 }}>
+                    <span style={{ fontSize: 16 }}>{"\u{1F6AA}"}</span>{loggingOut ? "Saliendo..." : "Cerrar sesión"}
+                  </button>
+                  <button onClick={() => { setMenuOpen(false); setActiveScreen("borrar_cuenta"); }} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", textAlign: "left", background: "none", border: "none", color: "#fca5a5", padding: "11px 12px", fontSize: 14, fontWeight: 500, cursor: "pointer", borderRadius: 10 }}>
+                    <span style={{ fontSize: 16 }}>{"\u{1F5D1}\uFE0F"}</span>Borrar cuenta
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Dashboard Estado del Sistema — sin nombre de usuario */}
@@ -6095,20 +6134,20 @@ async function ejecutarPanico() {
             </div>
           </div>
 
+          {/* Aviso de prueba gratis */}
+          {trialActivo && !pagoPremium && (
+            <button onClick={onViewPlans} className="mt-3 w-full rounded-xl py-3 px-3 text-sm font-semibold text-left flex items-center justify-between gap-2" style={{ background: "rgba(46,139,255,0.1)", border: "1px solid rgba(46,139,255,0.4)", color: "#bcd8ff" }}>
+              <span>{"\u{1F381}"} Premium gratis · te quedan <b style={{ color: "#fff" }}>{diasTrial} {diasTrial === 1 ? "día" : "días"}</b></span>
+              <span style={{ color: "#5fa8ff", fontWeight: 800 }}>Suscribirme →</span>
+            </button>
+          )}
+
           {/* Alerta si sin contactos */}
           {contactos.length === 0 && (
             <button onClick={() => setActiveScreen("contactos")} className="mt-3 w-full rounded-xl py-2.5 text-sm font-semibold" style={{ background: "rgba(220,38,38,0.1)", border: `1px solid ${BRAND.red}40`, color: "#fca5a5" }}>
               {"\u26A0\u{FE0F}"} Agregá un contacto para activar la protección →
             </button>
           )}
-          <div className="mt-3 flex gap-2 flex-wrap">
-            <button onClick={handleLogout} disabled={loggingOut} className="rounded-xl px-3 py-1.5 text-sm disabled:opacity-50" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.textLight }}>
-              {loggingOut ? "Saliendo..." : "Cerrar sesión"}
-            </button>
-            <button onClick={() => setActiveScreen("borrar_cuenta")} className="rounded-xl px-3 py-1.5 text-sm" style={{ background: "rgba(220,38,38,0.08)", border: `1px solid ${BRAND.red}40`, color: "#fca5a5" }}>
-              {"\u{1F5D1}\u{FE0F}"} Borrar cuenta
-            </button>
-          </div>
         </div>
 
         {activeModule ? (
@@ -6320,6 +6359,100 @@ async function ejecutarPanico() {
 
 // ─── CALCULADORA FALSA ───────────────────────
 // ═══ PÁGINA PÚBLICA DEL MAPA EN VIVO — /live/{token} ═══
+function LeafletLiveMap({ loc }) {
+  const elRef = useRef(null);
+  const mapRef = useRef(null);
+  const markerRef = useRef(null);
+  const trailRef = useRef(null);
+  const coordsRef = useRef([]);
+  const [ready, setReady] = useState(!!(typeof window !== "undefined" && window.L));
+  const [failed, setFailed] = useState(false);
+
+  // Cargar Leaflet desde CDN una sola vez
+  useEffect(function() {
+    if (typeof window === "undefined") return;
+    if (window.L) { setReady(true); return; }
+    var cancelled = false;
+    function done() { if (!cancelled) setReady(true); }
+    if (!document.getElementById("leaflet-css")) {
+      var link = document.createElement("link");
+      link.id = "leaflet-css"; link.rel = "stylesheet";
+      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+      document.head.appendChild(link);
+    }
+    var existing = document.getElementById("leaflet-js");
+    if (existing) {
+      if (window.L) { done(); } else { existing.addEventListener("load", done); existing.addEventListener("error", function(){ if(!cancelled) setFailed(true); }); }
+      return function(){ cancelled = true; };
+    }
+    var s = document.createElement("script");
+    s.id = "leaflet-js"; s.async = true;
+    s.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    s.onload = done;
+    s.onerror = function(){ if (!cancelled) setFailed(true); };
+    document.body.appendChild(s);
+    return function(){ cancelled = true; };
+  }, []);
+
+  // Inicializar mapa cuando está listo y hay ubicación
+  useEffect(function() {
+    if (!ready || mapRef.current || !elRef.current || !loc || !window.L) return;
+    var L = window.L;
+    var map = L.map(elRef.current, { zoomControl: true, attributionControl: true }).setView([loc.lat, loc.lng], 16);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      maxZoom: 19, subdomains: "abcd", attribution: "&copy; OpenStreetMap &copy; CARTO"
+    }).addTo(map);
+    var icon = L.divIcon({ className: "", html: '<div class="vigia-pin"><div class="vigia-pin-core"></div></div>', iconSize: [26,26], iconAnchor: [13,13] });
+    markerRef.current = L.marker([loc.lat, loc.lng], { icon: icon }).addTo(map);
+    trailRef.current = L.polyline([[loc.lat, loc.lng]], { color: "#C9A84C", weight: 4, opacity: 0.85, lineJoin: "round" }).addTo(map);
+    coordsRef.current = [[loc.lat, loc.lng]];
+    mapRef.current = map;
+    setTimeout(function(){ try { map.invalidateSize(); } catch(e){} }, 300);
+  }, [ready, loc]);
+
+  // Mover marcador + rastro cuando cambia la ubicación
+  useEffect(function() {
+    if (!mapRef.current || !loc || !window.L) return;
+    var last = coordsRef.current[coordsRef.current.length - 1];
+    if (last && last[0] === loc.lat && last[1] === loc.lng) return;
+    coordsRef.current.push([loc.lat, loc.lng]);
+    if (coordsRef.current.length > 800) coordsRef.current.shift();
+    try {
+      markerRef.current.setLatLng([loc.lat, loc.lng]);
+      trailRef.current.setLatLngs(coordsRef.current);
+      mapRef.current.panTo([loc.lat, loc.lng], { animate: true, duration: 0.8 });
+    } catch(e){}
+  }, [loc]);
+
+  // Limpiar al desmontar
+  useEffect(function(){ return function(){ if (mapRef.current) { try { mapRef.current.remove(); } catch(e){} mapRef.current = null; } }; }, []);
+
+  if (failed && loc) return (
+    <iframe title="Mapa en vivo" width="100%" height="100%" style={{ border: 0, position: "absolute", inset: 0 }}
+      src={"https://www.openstreetmap.org/export/embed.html?bbox=" + (loc.lng - 0.004) + "," + (loc.lat - 0.004) + "," + (loc.lng + 0.004) + "," + (loc.lat + 0.004) + "&layer=mapnik&marker=" + loc.lat + "," + loc.lng} />
+  );
+
+  return (
+    <>
+      <style>{`
+        .vigia-pin { position: relative; width: 26px; height: 26px; }
+        .vigia-pin-core { position:absolute; top:50%; left:50%; width:16px; height:16px; margin:-8px 0 0 -8px; background:#C9A84C; border:3px solid #fff; border-radius:50%; }
+        .vigia-pin-core::after { content:""; position:absolute; top:50%; left:50%; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%; background:rgba(201,168,76,0.5); animation: vigiaPulse 1.8s infinite; }
+        @keyframes vigiaPulse { 0%{transform:scale(1);opacity:0.7} 70%{transform:scale(3.2);opacity:0} 100%{transform:scale(3.2);opacity:0} }
+        .leaflet-container { background:#0a0a0a !important; font-family: system-ui, sans-serif; }
+        .leaflet-control-attribution { background: rgba(0,0,0,0.5) !important; color: rgba(245,240,232,0.5) !important; font-size: 9px !important; }
+        .leaflet-control-attribution a { color: rgba(201,168,76,0.7) !important; }
+      `}</style>
+      <div ref={elRef} style={{ position: "absolute", inset: 0 }} />
+      {!ready && (
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+          <p style={{ color: "rgba(245,240,232,0.6)", fontSize: 14 }}>{"\u{1F5FA}\uFE0F"} Cargando mapa premium...</p>
+        </div>
+      )}
+    </>
+  );
+}
+
 function LiveScreen({ token }) {
   const [session, setSession] = useState(null);
   const [loc, setLoc] = useState(null);
@@ -6403,8 +6536,7 @@ function LiveScreen({ token }) {
 
       <div style={{ flex: 1, position: "relative", minHeight: 360 }}>
         {loc ? (
-          <iframe title="Mapa en vivo" width="100%" height="100%" style={{ border: 0, position: "absolute", inset: 0 }}
-            src={"https://www.openstreetmap.org/export/embed.html?bbox=" + (loc.lng - 0.004) + "," + (loc.lat - 0.004) + "," + (loc.lng + 0.004) + "," + (loc.lat + 0.004) + "&layer=mapnik&marker=" + loc.lat + "," + loc.lng} />
+          <LeafletLiveMap loc={loc} />
         ) : (
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24 }}>
             <p style={{ color: "rgba(245,240,232,0.6)", fontSize: 14 }}>{"\u{1F4F6}"} Esperando la primera ubicación...<br/>(puede tardar unos segundos)</p>
@@ -6528,7 +6660,8 @@ export default function App() {
   async function tryCreateProfile(user) {
     try {
       const n = sessionStorage.getItem("traza360_pending_name") || user.email?.split("@")[0] || "Usuario";
-      const { data, error } = await supabase.from("usuarios").insert({ auth_user_id: user.id, nombre: n, email: user.email, plan: "gratis", modo: "me_protejo" }).select().single();
+      const trialUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase.from("usuarios").insert({ auth_user_id: user.id, nombre: n, email: user.email, plan: "gratis", modo: "me_protejo", trial_until: trialUntil }).select().single();
       if (!error && data) setUserProfile(data);
     } catch(e){}
   }
@@ -6637,9 +6770,10 @@ export default function App() {
   // v19.8: Pantalla de PIN auth (entre Supabase auth y panel home)
   if (screen === "pin_auth") return <PinAuthScreen onSuccess={handlePinSuccess} onFallback={handlePinFallback} onLogout={handleLogout} />;
 
-  // Onboarding → Tour Demo → Home
-  if (screen === "home" && showOnboarding) return <OnboardingScreen onComplete={handleOnboardingComplete} />;
-  if (screen === "home" && showTour) return <TourDemoScreen onComplete={handleTourComplete} onSkip={handleTourComplete} />;
+  // v20: Onboarding y Tour ELIMINADOS del flujo. Después de entrar → directo al panel (módulos a 1 toque).
+  // El explicador sigue disponible voluntariamente desde el menú "¿Cómo funciona?" (instrucciones_publico).
+  // if (screen === "home" && showOnboarding) return <OnboardingScreen onComplete={handleOnboardingComplete} />;
+  // if (screen === "home" && showTour) return <TourDemoScreen onComplete={handleTourComplete} onSkip={handleTourComplete} />;
 
   // v19.13: Login/Register now handled inside LandingScreen
   // These screens kept as fallback for PIN auth flow
@@ -6650,7 +6784,7 @@ export default function App() {
   if (screen === "privacidad") return <PoliticaPrivacidadScreen onBack={() => setScreen(authUser ? "home" : "landing")} />;
   if (screen === "sobre_nosotros") return <SobreNosotrosScreen onBack={() => setScreen(authUser ? "home" : "landing")} />;
   if (screen === "instrucciones_publico") return <InstruccionesScreen onBack={() => setScreen("landing")} />;
-  if (screen === "planes") return <PlanesScreen onBack={() => setScreen("home")} currentPlan={userProfile?.plan || "gratis"} />;
+  if (screen === "planes") return <PlanesScreen onBack={() => setScreen("home")} currentPlan={userProfile?.plan || "gratis"} authUser={authUser} />;
   if (screen === "home") return (
     <>
       {showGpsModal && <GpsExplainerModal onAceptar={handleGpsAceptar} onRechazar={handleGpsRechazar} />}
