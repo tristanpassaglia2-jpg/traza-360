@@ -295,8 +295,8 @@ async function sendAlertToContact(contact, baseMessage, alertaId) {
   enviarWhatsApp(contact.telefono, buildMessageWithReply(baseMessage, location, alertaId));
 }
 
-function openMapsTo(d) { window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(d)}`, "_blank", "noopener,noreferrer"); }
-function openUber(d) { window.open(`https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${encodeURIComponent(d)}`, "_blank", "noopener,noreferrer"); }
+function openMapsTo(d) { const url = (d && d.trim()) ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(d)}` : "https://www.google.com/maps"; window.open(url, "_blank", "noopener,noreferrer"); }
+function openUber(d) { const url = (d && d.trim()) ? `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${encodeURIComponent(d)}` : "https://m.uber.com/"; window.open(url, "_blank", "noopener,noreferrer"); }
 
 // ─── NOTIFICACIONES ─────────────────────────
 async function pedirPermisoNotificaciones() {
@@ -2343,20 +2343,13 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
         setCurrentMessage(action.message); setSelectorOpen(true); return;
       case "record_audio": setShowGrabacion(true); return;
       case "maps": {
-        let casa = localStorage.getItem("vigia24_casa") || "";
-        if (!casa) {
-          const d = prompt("Escribí tu dirección de casa (calle y número, ciudad):");
-          if (d && d.trim()) { casa = d.trim(); localStorage.setItem("vigia24_casa", casa); } else return;
-        }
-        openMapsTo(casa); return;
+        // Abrir DIRECTO (sin prompt) para que iOS no bloquee la apertura
+        openMapsTo(localStorage.getItem("vigia24_casa") || "");
+        return;
       }
       case "uber": {
-        let casa = localStorage.getItem("vigia24_casa") || "";
-        if (!casa) {
-          const d = prompt("Escribí tu dirección de casa (calle y número, ciudad):");
-          if (d && d.trim()) { casa = d.trim(); localStorage.setItem("vigia24_casa", casa); } else return;
-        }
-        openUber(casa); return;
+        openUber(localStorage.getItem("vigia24_casa") || "");
+        return;
       }
       case "pastillero": if (onOpenPastillero) onOpenPastillero(); return;
       case "evidencias": if (onOpenEvidencias) onOpenEvidencias(); return;
@@ -6658,12 +6651,20 @@ export default function App() {
   }
 
   async function tryCreateProfile(user) {
+    const n = sessionStorage.getItem("traza360_pending_name") || user.email?.split("@")[0] || "Usuario";
+    const trialUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     try {
-      const n = sessionStorage.getItem("traza360_pending_name") || user.email?.split("@")[0] || "Usuario";
-      const trialUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-      const { data, error } = await supabase.from("usuarios").insert({ auth_user_id: user.id, nombre: n, email: user.email, plan: "gratis", modo: "me_protejo", trial_until: trialUntil }).select().single();
-      if (!error && data) setUserProfile(data);
-    } catch(e){}
+      let { data, error } = await supabase.from("usuarios").insert({ auth_user_id: user.id, nombre: n, email: user.email, plan: "gratis", modo: "me_protejo", trial_until: trialUntil }).select().single();
+      if (error) {
+        // Reintento SIN trial_until por si la columna no existe todavía
+        const retry = await supabase.from("usuarios").insert({ auth_user_id: user.id, nombre: n, email: user.email, plan: "gratis", modo: "me_protejo" }).select().single();
+        data = retry.data;
+      }
+      // Garantiza un perfil usable aunque la base falle (evita pantalla negra)
+      setUserProfile(data || { auth_user_id: user.id, nombre: n, email: user.email, plan: "gratis", trial_until: trialUntil });
+    } catch(e) {
+      setUserProfile({ auth_user_id: user.id, nombre: n, email: user.email, plan: "gratis", trial_until: trialUntil });
+    }
   }
 
   async function handleLoginSuccess() {
