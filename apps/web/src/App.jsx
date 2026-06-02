@@ -783,12 +783,17 @@ async function capturarFoto(facingMode = "environment") {
     await new Promise(r => { video.onloadedmetadata = r; });
     await video.play();
     await new Promise(r => setTimeout(r, 300)); // pequeña espera para que el sensor se ajuste
+    // COMPRESIÓN: limitar el lado más largo a 1280px (reduce de varios MB a ~150 KB)
+    var vw = video.videoWidth || 1280;
+    var vh = video.videoHeight || 720;
+    var MAX = 1280;
+    var escala = Math.min(1, MAX / Math.max(vw, vh));
     const canvas = document.createElement("canvas");
-    canvas.width  = video.videoWidth  || 1280;
-    canvas.height = video.videoHeight || 720;
-    canvas.getContext("2d").drawImage(video, 0, 0);
+    canvas.width  = Math.round(vw * escala);
+    canvas.height = Math.round(vh * escala);
+    canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
     stream.getTracks().forEach(t => t.stop());
-    return new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.82));
+    return new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.72));
   } catch(e) {
     console.warn(`Cámara ${facingMode} no disponible:`, e.message);
     return null;
@@ -2938,12 +2943,10 @@ function InstruccionesScreen({ onBack }) {
         <div className="rounded-2xl p-6 space-y-4" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.border}` }}>
           {seccion === "modulos" && (
             <>
-              <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>Los 4 módulos de protección</h3>
+              <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>Los 2 módulos de protección</h3>
               {[
-                { icon: "shield", titulo: "Noche de Alerta", desc: "Cuando algo está pasando AHORA. Botón de pánico, mandar tu ubicación al instante, grabar evidencias (foto + audio) y grabación de entorno silenciosa." },
+                { icon: "shield", titulo: "Noche de Alerta", desc: "Cuando algo está pasando AHORA. Botón de pánico, mandar tu ubicación al instante, compartir ubicación en vivo, grabar evidencias (foto + audio) y grabación de entorno silenciosa." },
                 { icon: "night", titulo: "Cita Segura", desc: "Antes y durante un encuentro. Timer de cita, compartir tu ubicación en vivo, avisar con quién te encontrás, botón de ingreso a un lugar y llegar a casa." },
-                { icon: "eye", titulo: "Te Cuido a Distancia", desc: "Un familiar/amigo puede iniciar grabación remota CON tu aprobación. Funciona con código de vínculo de 6 dígitos." },
-
               ].map((m, i) => (
                 <div key={i} className="flex gap-3 rounded-xl p-3" style={{ background: "rgba(255,255,255,0.02)" }}>
                   <div className="shrink-0 mt-0.5"><GoldIcon name={m.icon} size={24} /></div>
@@ -3026,7 +3029,6 @@ function InstruccionesScreen({ onBack }) {
                   "Las grabaciones se guardan encriptadas en la nube.",
                   "Solo vos ves tus contactos y tus evidencias.",
                   "Podés eliminar tu cuenta y todos los datos en cualquier momento.",
-                  "Te Cuido a Distancia requiere SIEMPRE tu aprobación explícita para cada grabación.",
                 ].map((t, i) => (
                   <div key={i} className="flex gap-2 text-sm" style={{ color: BRAND.textLight }}>
                     <span style={{ color: BRAND.gold }}>{"\u2713"}</span>
@@ -5520,8 +5522,7 @@ function LandingScreen({ onScreen }) {
           </span>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button onClick={() => setVista(vista === "login" ? "hero" : "login")} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.16)", color: "#fff", borderRadius: 11, padding: "8px 13px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Ingresar</button>
-          <button onClick={() => setVista(vista === "register" ? "hero" : "register")} style={{ background: "transparent", border: `1px solid ${NEON_BLUE}`, color: "#fff", borderRadius: 11, padding: "8px 13px", fontSize: 13, fontWeight: 800, cursor: "pointer", textShadow: NEON_BLUE_GLOW, boxShadow: "0 0 14px rgba(46,139,255,0.4), inset 0 0 10px rgba(46,139,255,0.15)" }}>Empezar</button>
+          <button onClick={() => setVista(vista === "login" ? "hero" : "login")} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.16)", color: "#fff", borderRadius: 11, padding: "8px 15px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Ingresar</button>
           <div style={{ position: "relative" }}>
             <button onClick={() => setMenuOpen(o => !o)} aria-label="Menú" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.16)", color: "#fff", borderRadius: 11, padding: "8px 11px", fontSize: 15, fontWeight: 700, cursor: "pointer", lineHeight: 1 }}>{"\u2630"}</button>
             {menuOpen && (
@@ -5852,7 +5853,7 @@ React.useEffect(function() {
             console.log("POLLING: encontradas", todas.length, "respuestas");
             var nuevas = {};
             todas.forEach(function(r) {
-              nuevas[r.button_id] = { hora: new Date(r.timestamp || Date.now()) };
+              nuevas[r.button_id] = { hora: new Date(r.timestamp || Date.now()), lat: r.lat, lng: r.lng };
             });
             setRespuestasPanico(nuevas);
           }
@@ -5894,6 +5895,19 @@ React.useEffect(function() {
               : <p className="text-[12px] text-center" style={{ color: "rgba(34,197,94,0.8)" }}>✅ Tu contacto respondió</p>
             }
           </div>
+          {respuestasPanico.ubicacion && respuestasPanico.ubicacion.lat ? (
+            <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(46,139,255,0.1)", border: "1px solid rgba(46,139,255,0.5)" }}>
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <span className="text-xl">{"\u{1F698}"}</span>
+                <span className="text-sm font-extrabold" style={{ color: "#7fb4ff" }}>Tu contacto está en camino</span>
+              </div>
+              <p className="text-[12px] text-center mb-3" style={{ color: "rgba(255,255,255,0.6)" }}>Compartió su ubicación. Tocá para ver dónde está.</p>
+              <button onClick={function(){ window.open("https://www.google.com/maps?q=" + respuestasPanico.ubicacion.lat + "," + respuestasPanico.ubicacion.lng, "_blank", "noopener,noreferrer"); }}
+                className="w-full rounded-xl py-3 font-bold text-white" style={{ background: "linear-gradient(135deg,#2E8BFF,#1466d6)", boxShadow: "0 6px 20px rgba(46,139,255,0.4)" }}>
+                {"\u{1F4CD}"} Ver a tu contacto en el mapa
+              </button>
+            </div>
+          ) : null}
           <div className="grid grid-cols-2 gap-2 mt-3">
             <button onClick={async function() {
               if(contactos.length === 0) return;
@@ -6089,6 +6103,9 @@ async function ejecutarPanico() {
                     <div style={{ fontSize: 11, color: BRAND.gold, marginTop: 1 }}>Plan: {PLAN_PRICES[userPlan]?.name || "Gratis"}</div>
                   </div>
                   <div style={{ height: 1, background: BRAND.border, margin: "4px 0" }} />
+                  <button onClick={() => { setMenuOpen(false); if (onViewPlans) onViewPlans(); }} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", textAlign: "left", background: "rgba(201,168,76,0.1)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold, padding: "11px 12px", fontSize: 14, fontWeight: 800, cursor: "pointer", borderRadius: 10, marginBottom: 4 }}>
+                    <span style={{ fontSize: 16 }}>{"\u{1F48E}"}</span>{userPlan === "premium" ? "Mi plan Premium" : "Planes y Premium"}
+                  </button>
                   {[
                     { ico: "\u{1F465}", l: "Mis contactos", fn: () => setActiveScreen("contactos") },
                     { ico: "\u2139\uFE0F", l: "¿Cómo funciona?", fn: () => setActiveScreen("instrucciones") },
@@ -6577,6 +6594,69 @@ function CalculadoraScreen({ onUnlock }) {
 }
 
 // ─── APP ─────────────────────────────────────
+// ═══ PÁGINA PÚBLICA: el CONTACTO responde y comparte SU ubicación — /alerta/{id} ═══
+function AlertaResponderScreen({ alertaId }) {
+  const C = { bg: "#050507", red: "#FF2E55", blue: "#2E8BFF", green: "#22c55e", gold: "#C9A84C", white: "#fff" };
+  const [sharing, setSharing] = useState(false);
+  const [locShared, setLocShared] = useState(false);
+  const [tap, setTap] = useState({});
+  const [err, setErr] = useState("");
+
+  async function responder(buttonId) {
+    setTap(function(o){ var n = Object.assign({}, o); n[buttonId] = true; return n; });
+    try { await supabase.from("respuestas_contacto").insert({ alerta_id: alertaId, button_id: buttonId, timestamp: new Date().toISOString() }); } catch(e) {}
+  }
+
+  async function compartirUbicacion() {
+    setSharing(true); setErr("");
+    try {
+      var r = await getCurrentLocationWithFallback();
+      var loc = r && r.location;
+      if (!loc || !loc.lat) { setErr("No pudimos obtener tu ubicación. Activá el GPS del teléfono y reintentá."); setSharing(false); return; }
+      var res = await supabase.from("respuestas_contacto").insert({ alerta_id: alertaId, button_id: "ubicacion", timestamp: new Date().toISOString(), lat: loc.lat, lng: loc.lng });
+      if (res && res.error) { await supabase.from("respuestas_contacto").insert({ alerta_id: alertaId, button_id: "ubicacion", timestamp: new Date().toISOString() }); }
+      setLocShared(true);
+    } catch(e) { setErr("No se pudo compartir. Reintentá."); }
+    setSharing(false);
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", fontFamily: "system-ui, sans-serif" }}>
+      <style>{"@keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(255,46,85,0.5)}70%{box-shadow:0 0 0 22px rgba(255,46,85,0)}100%{box-shadow:0 0 0 0 rgba(255,46,85,0)}}"}</style>
+      <div style={{ width: "100%", maxWidth: 420, background: "rgba(10,10,14,0.9)", border: "1px solid rgba(255,46,85,0.4)", borderRadius: 24, padding: "28px 22px", boxShadow: "0 0 40px rgba(255,46,85,0.18)" }}>
+        <div style={{ textAlign: "center", marginBottom: 22 }}>
+          <div style={{ width: 70, height: 70, margin: "0 auto 14px", borderRadius: "50%", background: "rgba(255,46,85,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, animation: "pulseRing 2s infinite" }}>{"\u{1F6A8}"}</div>
+          <h1 style={{ fontSize: 23, fontWeight: 900, color: C.white, margin: "0 0 6px" }}>Te pidieron ayuda</h1>
+          <p style={{ fontSize: 14.5, color: "rgba(255,255,255,0.7)", margin: 0, lineHeight: 1.5 }}>Una persona activó una alerta de seguridad. Tu respuesta la tranquiliza.</p>
+        </div>
+
+        {/* BOTÓN GRANDE: compartir ubicación */}
+        {!locShared ? (
+          <button onClick={compartirUbicacion} disabled={sharing} style={{ width: "100%", borderRadius: 18, padding: "20px 16px", fontSize: 17, fontWeight: 900, background: sharing ? "rgba(46,139,255,0.4)" : "linear-gradient(135deg, #2E8BFF, #1466d6)", color: "#fff", border: "none", cursor: "pointer", boxShadow: "0 8px 28px rgba(46,139,255,0.45)", marginBottom: 10, lineHeight: 1.3 }}>
+            {sharing ? "Obteniendo tu ubicación..." : "\u{1F4CD} Compartir mi ubicación"}
+            <div style={{ fontSize: 12, fontWeight: 500, opacity: 0.85, marginTop: 4 }}>Para que sepa que vas en camino y dónde estás</div>
+          </button>
+        ) : (
+          <div style={{ width: "100%", borderRadius: 18, padding: "20px 16px", textAlign: "center", background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.5)", marginBottom: 10 }}>
+            <div style={{ fontSize: 30, marginBottom: 6 }}>{"\u2705"}</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: C.green }}>¡Listo! Ya pueden verte</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginTop: 4 }}>Tu ubicación aparece en su teléfono ahora mismo.</div>
+          </div>
+        )}
+        {err && <p style={{ color: "#fca5a5", fontSize: 13, textAlign: "center", margin: "4px 0 10px" }}>{err}</p>}
+
+        <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "16px 0" }} />
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", textAlign: "center", margin: "0 0 10px" }}>O respondé rápido:</p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <button onClick={function(){ responder("salgo"); }} style={{ borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 700, background: tap.salgo ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.05)", border: tap.salgo ? "1px solid rgba(34,197,94,0.5)" : "1px solid rgba(255,255,255,0.15)", color: tap.salgo ? C.green : "#fff", cursor: "pointer" }}>{"\u{1F697}"} {tap.salgo ? "Avisado" : "Ya voy"}</button>
+          <button onClick={function(){ responder("recibi"); }} style={{ borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 700, background: tap.recibi ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.05)", border: tap.recibi ? "1px solid rgba(34,197,94,0.5)" : "1px solid rgba(255,255,255,0.15)", color: tap.recibi ? C.green : "#fff", cursor: "pointer" }}>{"\u2705"} {tap.recibi ? "Avisado" : "Recibí"}</button>
+        </div>
+        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", textAlign: "center", marginTop: 18 }}>VIGÍA 24 · Seguridad personal</p>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [screen, setScreen] = useState("loading");
   const [userProfile, setUserProfile] = useState(null);
@@ -6589,12 +6669,16 @@ export default function App() {
   const [showTour, setShowTour] = useState(false);
   const [showGpsModal, setShowGpsModal] = useState(false);
   const [liveToken, setLiveToken] = useState(null);
+  const [alertaResponderId, setAlertaResponderId] = useState(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     // Página pública del mapa en vivo: traza360.app/live/{token}
     const liveMatch = window.location.pathname.match(/\/live\/([^\/?#]+)/);
     if (liveMatch && liveMatch[1]) { setLiveToken(liveMatch[1]); setScreen("live"); return; }
+    // Página pública para que el CONTACTO responda y comparta SU ubicación: traza360.app/alerta/{id}
+    const alertaMatch = window.location.pathname.match(/\/alerta\/([^\/?#]+)/);
+    if (alertaMatch && alertaMatch[1]) { setAlertaResponderId(alertaMatch[1]); setScreen("alerta_responder"); return; }
     checkSession();
     // v19.7: pedir GPS con explicación primero
     const gpsAsked = sessionStorage.getItem("traza360_gps_asked");
@@ -6743,6 +6827,7 @@ export default function App() {
   }
 
   if (screen === "live") return <LiveScreen token={liveToken} />;
+  if (screen === "alerta_responder") return <AlertaResponderScreen alertaId={alertaResponderId} />;
 
   if (screen === "loading") return (
     <div className="flex min-h-screen items-center justify-center" style={{ background: BRAND.blackBg }}>
