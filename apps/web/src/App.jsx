@@ -210,6 +210,17 @@ function getCurrentLocationWithFallback() {
 
 function buildMapLink(loc) { return loc ? `https://maps.google.com/?q=${loc.lat},${loc.lng}` : null; }
 
+// ─── DETECCIÓN DE PAÍS: Argentina vs resto de LATAM (por zona horaria) ───
+function esArgentina() {
+  try {
+    var tz = (Intl.DateTimeFormat().resolvedOptions().timeZone || "");
+    if (tz.indexOf("Argentina") !== -1) return true;
+    var loc = (navigator.language || "").toLowerCase();
+    if (loc.indexOf("-ar") !== -1) return true;
+    return false;
+  } catch(e) { return true; } // si falla, asumir Argentina (mercado principal)
+}
+
 // ─── WHATSAPP VÍA API ────────────────────────
 async function sendWhatsAppAPI(numero, text) {
   try {
@@ -1798,6 +1809,8 @@ function PlanesScreen({ onBack, currentPlan = "gratis", authUser }) {
   const [loadingPlan, setLoadingPlan] = useState(false);
   const [error, setError] = useState("");
   const esPremium = currentPlan === "premium";
+  const esAR = esArgentina();
+  const esFundador = !esAR; // fuera de Argentina = Premium fundador gratis
 
   async function suscribirse() {
     setError("");
@@ -1866,7 +1879,7 @@ function PlanesScreen({ onBack, currentPlan = "gratis", authUser }) {
               </div>
             ))}
           </div>
-          {currentPlan === "gratis" && (
+          {currentPlan === "gratis" && !esFundador && (
             <div style={{ textAlign: "center", marginTop: 14, fontSize: 12, fontWeight: 700, color: BRAND.gold }}>Tu plan actual</div>
           )}
         </div>
@@ -1877,10 +1890,12 @@ function PlanesScreen({ onBack, currentPlan = "gratis", authUser }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 4 }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: BRAND.gold }}>Premium</h3>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 24, fontWeight: 900 }}>$8.999<span style={{ fontSize: 13, fontWeight: 600, color: BRAND.textMute }}>/mes</span></div>
+              {esFundador
+                ? <div style={{ fontSize: 24, fontWeight: 900, color: "#a7f3c0" }}>Gratis</div>
+                : <div style={{ fontSize: 24, fontWeight: 900 }}>$8.999<span style={{ fontSize: 13, fontWeight: 600, color: BRAND.textMute }}>/mes</span></div>}
             </div>
           </div>
-          <p style={{ fontSize: 12, color: "#bcd8ff", margin: "2px 0 14px", fontWeight: 700 }}>{"\u{1F381}"} Empezás con 7 días gratis · Protección completa</p>
+          <p style={{ fontSize: 12, color: "#bcd8ff", margin: "2px 0 14px", fontWeight: 700 }}>{esFundador ? "\u{1F389} Sos usuario fundador · Protección completa gratis" : "\u{1F381} Empezás con 7 días gratis · Protección completa"}</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
             {premiumFeatures.map((f, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 13.5, color: BRAND.textLight }}>
@@ -1891,7 +1906,12 @@ function PlanesScreen({ onBack, currentPlan = "gratis", authUser }) {
 
           {error && <p style={{ color: "#fca5a5", fontSize: 13, marginTop: 12, textAlign: "center" }}>{error}</p>}
 
-          {esPremium ? (
+          {esFundador ? (
+            <div style={{ textAlign: "center", marginTop: 16, padding: "16px", borderRadius: 14, background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.45)", color: "#a7f3c0", fontWeight: 700, lineHeight: 1.5 }}>
+              {"\u{1F389}"} Sos <b style={{ color: "#fff" }}>usuario fundador</b><br/>
+              <span style={{ fontWeight: 500, fontSize: 13 }}>Tenés Premium completo gratis. Te avisamos con tiempo cuando haya planes en tu país.</span>
+            </div>
+          ) : esPremium ? (
             <div style={{ textAlign: "center", marginTop: 16, padding: "14px", borderRadius: 14, background: "rgba(46,139,255,0.12)", border: "1px solid rgba(46,139,255,0.4)", color: "#5fa8ff", fontWeight: 800 }}>{"\u2705"} Ya tenés Premium activo</div>
           ) : (
             <button onClick={suscribirse} disabled={loadingPlan}
@@ -1899,9 +1919,11 @@ function PlanesScreen({ onBack, currentPlan = "gratis", authUser }) {
               {loadingPlan ? "Abriendo pago seguro..." : "Suscribirme a Premium"}
             </button>
           )}
-          <p style={{ textAlign: "center", fontSize: 11.5, color: BRAND.textMute, marginTop: 12, lineHeight: 1.5 }}>
-            {"\u{1F512}"} Pago seguro con MercadoPago · Tarjeta, débito o efectivo · Cancelás cuando quieras
-          </p>
+          {!esFundador && (
+            <p style={{ textAlign: "center", fontSize: 11.5, color: BRAND.textMute, marginTop: 12, lineHeight: 1.5 }}>
+              {"\u{1F512}"} Pago seguro con MercadoPago · Tarjeta, débito o efectivo · Cancelás cuando quieras
+            </p>
+          )}
         </div>
 
         <p style={{ textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 20 }}>
@@ -5746,10 +5768,12 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
   const [menuOpen, setMenuOpen] = useState(false);
 
   const nombreUsuario = userProfile?.nombre || pendingName || sessionStorage.getItem("traza360_pending_name") || authUser?.email?.split("@")[0] || "Usuario";
+  const esAR = esArgentina();
+  const esFundadorLatam = !esAR; // fuera de Argentina = Premium fundador gratis (hasta que haya tiendas)
   const pagoPremium = userProfile?.plan === "premium";
   const trialActivo = !!(userProfile?.trial_until && new Date(userProfile.trial_until).getTime() > Date.now());
   const diasTrial = trialActivo ? Math.max(1, Math.ceil((new Date(userProfile.trial_until).getTime() - Date.now()) / (24 * 60 * 60 * 1000))) : 0;
-  const userPlan = (pagoPremium || trialActivo) ? "premium" : "gratis";
+  const userPlan = (pagoPremium || trialActivo || esFundadorLatam) ? "premium" : "gratis";
 
   // v19.9: exponer globalmente para RutaSeguraModal dentro de ModuleCard
   useEffect(() => {
@@ -6144,11 +6168,17 @@ async function ejecutarPanico() {
           </div>
 
           {/* Aviso de prueba gratis */}
-          {trialActivo && !pagoPremium && (
+          {trialActivo && !pagoPremium && esAR && (
             <button onClick={onViewPlans} className="mt-3 w-full rounded-xl py-3 px-3 text-sm font-semibold text-left flex items-center justify-between gap-2" style={{ background: "rgba(46,139,255,0.1)", border: "1px solid rgba(46,139,255,0.4)", color: "#bcd8ff" }}>
               <span>{"\u{1F381}"} Premium gratis · te quedan <b style={{ color: "#fff" }}>{diasTrial} {diasTrial === 1 ? "día" : "días"}</b></span>
               <span style={{ color: "#5fa8ff", fontWeight: 800 }}>Suscribirme →</span>
             </button>
+          )}
+          {esFundadorLatam && !pagoPremium && (
+            <div className="mt-3 w-full rounded-xl py-3 px-3 text-sm font-semibold flex items-center gap-2" style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.4)", color: "#a7f3c0" }}>
+              <span style={{ fontSize: 16 }}>{"\u{1F389}"}</span>
+              <span>Sos <b style={{ color: "#fff" }}>usuario fundador</b> · Premium completo gratis</span>
+            </div>
           )}
 
           {/* Alerta si sin contactos */}
