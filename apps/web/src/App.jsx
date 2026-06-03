@@ -5599,7 +5599,6 @@ function LandingScreen({ onScreen }) {
                   {"\u{1F381}"} Obtené Premium GRATIS por 7 días
                 </div>
                 <button onClick={() => setVista("register")} style={{ width: "100%", borderRadius: 16, padding: "16px", fontSize: 16, fontWeight: 900, background: "linear-gradient(135deg, #2E8BFF, #1466d6)", color: "#fff", border: "none", cursor: "pointer", boxShadow: "0 8px 30px rgba(46,139,255,0.45), inset 0 0 14px rgba(255,255,255,0.12)", letterSpacing: "0.5px" }}>Comenzar gratis →</button>
-                <button onClick={() => setVista("login")} style={{ width: "100%", borderRadius: 16, padding: "14px", fontSize: 15, fontWeight: 700, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", cursor: "pointer" }}>Ya tengo cuenta → Ingresar</button>
                 <InstallButton />
               </div>
             </section>
