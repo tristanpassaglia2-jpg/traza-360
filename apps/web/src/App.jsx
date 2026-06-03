@@ -5227,7 +5227,7 @@ function InstallButton() {
   const [showBanner, setShowBanner] = useState(false);
 
   const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
-  const isIos = /iphone|ipad|ipod/i.test(ua);
+  const isIos = /iphone|ipad|ipod/i.test(ua) || (/macintosh/i.test(ua) && typeof navigator !== "undefined" && (navigator.maxTouchPoints || 0) > 1);
   const isAndroid = /android/i.test(ua);
   const isDesktop = !isIos && !isAndroid;
   let isStandalone = false;
@@ -5297,6 +5297,11 @@ function InstallButton() {
         <div onClick={() => setModal(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: "#11131a", border: "1px solid rgba(46,139,255,0.4)", borderRadius: 20, padding: 24, maxWidth: 340 }}>
             <h3 style={{ color: "#5fa8ff", fontSize: 18, fontWeight: 800, marginBottom: 14 }}>{modal === "ios" ? "\u{1F4F2} Agregar en tu iPhone" : modal === "desktop" ? "\u{1F4BB} Instalar en tu PC" : "\u{1F4F2} Instalar en Android"}</h3>
+            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+              {[["ios", "\u{1F34E} iPhone"], ["android", "\u{1F916} Android"], ["desktop", "\u{1F4BB} PC"]].map(([k, t]) => (
+                <button key={k} onClick={() => setModal(k)} style={{ flex: 1, padding: "8px 4px", borderRadius: 10, fontSize: 12.5, fontWeight: 800, cursor: "pointer", border: modal === k ? "1px solid #2E8BFF" : "1px solid rgba(255,255,255,0.15)", background: modal === k ? "rgba(46,139,255,0.25)" : "rgba(255,255,255,0.04)", color: modal === k ? "#fff" : "rgba(255,255,255,0.6)" }}>{t}</button>
+              ))}
+            </div>
             {modal === "ios" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
