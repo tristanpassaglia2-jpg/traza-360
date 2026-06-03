@@ -5228,6 +5228,8 @@ function InstallButton() {
 
   const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
   const isIos = /iphone|ipad|ipod/i.test(ua);
+  const isAndroid = /android/i.test(ua);
+  const isDesktop = !isIos && !isAndroid;
   let isStandalone = false;
   try { isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true; } catch(e){}
 
@@ -5253,16 +5255,18 @@ function InstallButton() {
   }
 
   async function instalar() {
-    // Android / Chrome con prompt nativo → 1 solo toque, sin pasos
+    // Android / Chrome / Edge de PC con prompt nativo -> 1 solo click, sin pasos
     if (deferredPrompt) {
       deferredPrompt.prompt();
       try { await deferredPrompt.userChoice; } catch(e){}
       setDeferredPrompt(null);
       return;
     }
-    // iPhone → guía mínima (Apple obliga a hacerlo a mano)
+    // iPhone -> guia minima (Apple NO permite instalacion con 1 toque)
     if (isIos) { setModal("ios"); return; }
-    // Android sin prompt disponible → guía
+    // PC (Windows / Mac) sin prompt -> guia de PC
+    if (isDesktop) { setModal("desktop"); return; }
+    // Android sin prompt -> guia
     setModal("android");
   }
 
@@ -5292,7 +5296,7 @@ function InstallButton() {
       {modal && (
         <div onClick={() => setModal(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: "#11131a", border: "1px solid rgba(46,139,255,0.4)", borderRadius: 20, padding: 24, maxWidth: 340 }}>
-            <h3 style={{ color: "#5fa8ff", fontSize: 18, fontWeight: 800, marginBottom: 14 }}>{modal === "ios" ? "\u{1F4F2} Agregar en tu iPhone" : "\u{1F4F2} Instalar en Android"}</h3>
+            <h3 style={{ color: "#5fa8ff", fontSize: 18, fontWeight: 800, marginBottom: 14 }}>{modal === "ios" ? "\u{1F4F2} Agregar en tu iPhone" : modal === "desktop" ? "\u{1F4BB} Instalar en tu PC" : "\u{1F4F2} Instalar en Android"}</h3>
             {modal === "ios" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -5303,6 +5307,18 @@ function InstallButton() {
                   <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(46,139,255,0.2)", border: "1px solid rgba(46,139,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", color: "#5fa8ff", fontWeight: 900, flexShrink: 0 }}>2</div>
                   <div style={{ color: "rgba(255,255,255,0.9)", fontSize: 14.5, lineHeight: 1.4 }}>Elegí <b style={{ color: "#fff" }}>"Agregar a inicio"</b> y tocá <b style={{ color: "#fff" }}>Agregar</b></div>
                 </div>
+              </div>
+            ) : modal === "desktop" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(46,139,255,0.2)", border: "1px solid rgba(46,139,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", color: "#5fa8ff", fontWeight: 900, flexShrink: 0 }}>1</div>
+                  <div style={{ color: "rgba(255,255,255,0.9)", fontSize: 14.5, lineHeight: 1.4 }}>Arriba, a la derecha de la barra de dirección, tocá el ícono <b style={{ color: "#fff" }}>Instalar</b> {"\u2B07"} (un monitor con una flechita)</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(46,139,255,0.2)", border: "1px solid rgba(46,139,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", color: "#5fa8ff", fontWeight: 900, flexShrink: 0 }}>2</div>
+                  <div style={{ color: "rgba(255,255,255,0.9)", fontSize: 14.5, lineHeight: 1.4 }}>Tocá <b style={{ color: "#fff" }}>"Instalar"</b> y listo</div>
+                </div>
+                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, margin: 0 }}>Si no ves el ícono, abrí el menú <b style={{ color: "#fff" }}>{"\u22EE"}</b> {"\u2192"} <b style={{ color: "#fff" }}>"Instalar VIGÍA 24"</b>. (Funciona en Chrome o Edge.)</p>
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
