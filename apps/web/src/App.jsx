@@ -318,7 +318,11 @@ async function pedirPermisoNotificaciones() {
 }
 
 function enviarNotificacion(titulo, body) {
-  if (Notification.permission === "granted") new Notification(titulo, { body, icon: "/favicon.ico" });
+  try {
+    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+      new Notification(titulo, { body, icon: "/favicon.ico" });
+    }
+  } catch(e) {}
 }
 
 function reproducirSonido() {
@@ -2179,8 +2183,8 @@ function SelectorContactoModal({ contactos, mensaje, onClose, onAlertaSent, modu
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#08080c] p-6 shadow-2xl">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm overflow-y-auto py-8">
+      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#08080c] p-6 shadow-2xl my-auto">
         {sent ? (
           <div className="text-center space-y-4">
             {/* Feedback visual premium */}
