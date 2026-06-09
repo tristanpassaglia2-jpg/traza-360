@@ -57,7 +57,7 @@ const T = {
   continuar:      { es: "Continuar →",             pt: "Continuar →" },
   empezar:        { es: "Empezar a usar la app →", pt: "Começar a usar o app →" },
   // Módulos
-  violenciaGenero:{ es: "Noche de Alerta",     pt: "Noite de Alerta" },
+  violenciaGenero:{ es: "Modo Alerta",     pt: "Modo Alerta" },
   nocheSegura:    { es: "Cita Segura",            pt: "Encontro Seguro" },
   adolescenteSeguro: { es: "Adolescente Seguro",   pt: "Adolescente Seguro" },
   // Botones
@@ -106,7 +106,7 @@ const BRAND = {
   goldGradient: "linear-gradient(135deg, #8B6914 0%, #C9A84C 30%, #E8C96A 50%, #C9A84C 70%, #8B6914 100%)",
   cardBg:      "linear-gradient(145deg, #111008, #080808)",
   // Colores por módulo
-  modViolencia:  { bg: "rgba(192,57,43,0.12)",  border: "rgba(192,57,43,0.4)",  accent: "#E74C3C", label: "Noche de Alerta" },
+  modViolencia:  { bg: "rgba(192,57,43,0.12)",  border: "rgba(192,57,43,0.4)",  accent: "#E74C3C", label: "Modo Alerta" },
   modNoche:      { bg: "rgba(52,73,94,0.18)",   border: "rgba(93,173,226,0.3)", accent: "#5DADE2", label: "Cita Segura" },
   modAdolescente:{ bg: "rgba(39,174,96,0.12)",  border: "rgba(39,174,96,0.35)", accent: "#2ECC71", label: "Adolescente Seguro" },
 };
@@ -895,7 +895,7 @@ function ModoTestigoModal({ onClose, contactos }) {
           await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia",
-              params: [nombre.substring(0,60), "Estoy grabando evidencias y necesito ayuda." + (location && location.lat ? " - Mapa con su ubicacion: https://maps.google.com/?q=" + location.lat + "," + location.lng : " - GPS no disponible") + " - Responder: traza360.app/alerta/" + alertaId, hora, "Noche de Alerta"],
+              params: [nombre.substring(0,60), "Estoy grabando evidencias y necesito ayuda." + (location && location.lat ? " - Mapa con su ubicacion: https://maps.google.com/?q=" + location.lat + "," + location.lng : " - GPS no disponible") + " - Responder: traza360.app/alerta/" + alertaId, hora, "Modo Alerta"],
               alerta_id: alertaId })
           });
         } catch(e) {}
@@ -2202,7 +2202,7 @@ function SelectorContactoModal({ contactos, mensaje, onClose, onAlertaSent, modu
           body: JSON.stringify({
             to: numLimpio,
             template: "alerta_emergencia",
-            params: [nombre.substring(0,60), msgFinal.substring(0,130) + (location && location.lat ? " - Mapa con su ubicacion: https://maps.google.com/?q=" + location.lat + "," + location.lng : " - GPS no disponible") + " - Responder: traza360.app/alerta/" + alertaId, hora, moduloKey === "mi_escudo" ? "Noche de Alerta" : moduloKey === "turno_seguro" ? "Cita Segura" : moduloKey === "los_cuido" ? "Adolescente" : "Seguridad"],
+            params: [nombre.substring(0,60), msgFinal.substring(0,130) + (location && location.lat ? " - Mapa con su ubicacion: https://maps.google.com/?q=" + location.lat + "," + location.lng : " - GPS no disponible") + " - Responder: traza360.app/alerta/" + alertaId, hora, moduloKey === "mi_escudo" ? "Modo Alerta" : moduloKey === "turno_seguro" ? "Cita Segura" : moduloKey === "los_cuido" ? "Adolescente" : "Seguridad"],
             alerta_id: alertaId
           })
         });
@@ -2303,7 +2303,7 @@ function SelectorContactoModal({ contactos, mensaje, onClose, onAlertaSent, modu
 // - Sacado "Escribir" de Adolescente Seguro
 // - Fusionados "Entro a la casa de..." y "Me reúno con..." → "Estoy en..."
 const MODULES = [
-  { key: "mi_escudo", iconName: "shield", emoji: "\u{1F6A8}", title: "Noche de Alerta", desc: "Algo está pasando AHORA. Alertá a tu gente al instante, con tu ubicación y evidencia.",
+  { key: "mi_escudo", iconName: "shield", emoji: "\u{1F6A8}", title: "Modo Alerta", desc: "Algo está pasando AHORA. Alertá a tu gente al instante, con tu ubicación y evidencia.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
       { key: "panico", iconName: "shield", icon: "🚨", name: "Botón de pánico", desc: "Alerta inmediata + ubicación en el mapa a tu gente.", type: "alert_contacts", message: "ALERTA — Necesito ayuda urgente." },
@@ -3008,7 +3008,7 @@ function InstruccionesScreen({ onBack }) {
             <>
               <h3 className="font-bold mb-2" style={{ color: BRAND.gold }}>Los 2 módulos de protección</h3>
               {[
-                { icon: "shield", titulo: "Noche de Alerta", desc: "Cuando algo está pasando AHORA. Botón de pánico, mandar tu ubicación al instante, compartir ubicación en vivo, grabar evidencias (foto + audio) y grabación de entorno silenciosa." },
+                { icon: "shield", titulo: "Modo Alerta", desc: "Cuando algo está pasando AHORA. Botón de pánico, mandar tu ubicación al instante, compartir ubicación en vivo, grabar evidencias (foto + audio) y grabación de entorno silenciosa." },
                 { icon: "night", titulo: "Cita Segura", desc: "Antes y durante un encuentro. Timer de cita, compartir tu ubicación en vivo, avisar con quién te encontrás, botón de ingreso a un lugar y llegar a casa." },
               ].map((m, i) => (
                 <div key={i} className="flex gap-3 rounded-xl p-3" style={{ background: "rgba(255,255,255,0.02)" }}>
@@ -4269,7 +4269,7 @@ function PinAuthScreen({ onSuccess, onFallback, onLogout }) {
               {/* Ícono biométrico animado */}
               <button onClick={autenticarBio} disabled={bioLoading}
                 className="mx-auto flex items-center justify-center rounded-3xl mb-8 active:scale-95 disabled:opacity-60"
-                style={{ width: 96, height: 96, background: bioLoading ? "rgba(212,175,55,0.15)" : "rgba(212,175,55,0.1)", border: `2px solid ${bioLoading ? BRAND.gold : BRAND.borderStrong}`, boxShadow: bioLoading ? `0 0 30px rgba(212,175,55,0.3)` : "none", transition: "all 0.3s" }}>
+                style={{ width: 96, height: 96, background: bioLoading ? "rgba(212,175,55,0.18)" : "rgba(212,175,55,0.12)", border: `2px solid ${BRAND.gold}`, boxShadow: `0 0 26px rgba(212,175,55,0.28)`, transition: "all 0.3s" }}>
                 {bioLoading
                   ? <div className="h-8 w-8 rounded-full border-2 border-dashed animate-spin" style={{ borderColor: BRAND.gold }} />
                   : <span style={{ fontSize: 44 }}>
@@ -5531,7 +5531,7 @@ function LandingScreen({ onScreen }) {
 
   const MODULE_CARDS = [
     { key: "turno_seguro", title: "Cita Segura", subtitle: "Avisá con quién vas y compartí tu ubicación en vivo", img: "https://images.unsplash.com/photo-1729704706106-d8792faa9f94?q=80&w=1920&auto=format&fit=crop", icon: "🕐", pos: "center 30%" },
-    { key: "mi_escudo", title: "Noche de Alerta", subtitle: "Alertá a tu gente al instante si algo pasa", img: "https://images.unsplash.com/photo-1588747020648-4ff0ec1abecb?q=80&w=1920&auto=format&fit=crop", icon: "🚨", pos: "center 40%" },
+    { key: "mi_escudo", title: "Modo Alerta", subtitle: "Alertá a tu gente al instante si algo pasa", img: "https://images.unsplash.com/photo-1588747020648-4ff0ec1abecb?q=80&w=1920&auto=format&fit=crop", icon: "🚨", pos: "center 40%" },
 
   ];
 
@@ -5606,7 +5606,7 @@ function LandingScreen({ onScreen }) {
           </span>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button onClick={() => setVista(vista === "login" ? "hero" : "login")} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.16)", color: "#fff", borderRadius: 11, padding: "8px 15px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Ingresar</button>
+          <button onClick={() => setVista(vista === "login" ? "hero" : "login")} style={{ background: "rgba(201,168,76,0.16)", border: "1px solid rgba(201,168,76,0.65)", color: "#E8C96A", borderRadius: 11, padding: "8px 18px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", boxShadow: "0 0 14px rgba(201,168,76,0.25)" }}>Ingresar</button>
           <div style={{ position: "relative" }}>
             <button onClick={() => setMenuOpen(o => !o)} aria-label="Menú" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.16)", color: "#fff", borderRadius: 11, padding: "8px 11px", fontSize: 15, fontWeight: 700, cursor: "pointer", lineHeight: 1 }}>{"\u2630"}</button>
             {menuOpen && (
@@ -5746,7 +5746,7 @@ function LandingScreen({ onScreen }) {
                 <h2 style={{ fontSize: 22, fontWeight: 900, background: GOLD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", margin: 0 }}>VIGÍA 24</h2>
                 <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>Ingresá a tu cuenta</p>
               </div>
-              <button onClick={handleGoogle} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: "rgba(255,255,255,0.06)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 600, color: "#fff", cursor: "pointer", marginBottom: 16 }}>
+              <button onClick={handleGoogle} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: "#fff", border: "none", borderRadius: 14, padding: "15px", fontSize: 15, fontWeight: 700, color: "#1f1f1f", cursor: "pointer", marginBottom: 16, boxShadow: "0 6px 20px rgba(0,0,0,0.35)" }}>
                 <GoogleIcon /> Continuar con Google
               </button>
               <Divider />
@@ -5775,16 +5775,16 @@ function LandingScreen({ onScreen }) {
                 <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>Crear cuenta gratis</p>
                 {selectedModuleKey && (
                   <div style={{ marginTop: 8, background: "rgba(201,168,76,0.1)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 10, padding: "5px 12px", fontSize: 12, color: GOLD_SOLID }}>
-                    ✓ {{ mi_escudo: "Noche de Alerta", turno_seguro: "Cita Segura", los_cuido: "Adolescente Seguro", te_cuido: "Te Cuido a Distancia" }[selectedModuleKey]}
+                    ✓ {{ mi_escudo: "Modo Alerta", turno_seguro: "Cita Segura", los_cuido: "Adolescente Seguro", te_cuido: "Te Cuido a Distancia" }[selectedModuleKey]}
                   </div>
                 )}
               </div>
-              <button onClick={handleGoogle} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: "rgba(255,255,255,0.06)", border: `1px solid ${GOLD_BORDER}`, borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 600, color: "#fff", cursor: "pointer", marginBottom: 16, opacity: !aceptaTerminos ? 0.45 : 1 }}>
+              <button onClick={handleGoogle} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: "#fff", border: "none", borderRadius: 14, padding: "15px", fontSize: 15, fontWeight: 700, color: "#1f1f1f", cursor: "pointer", marginBottom: 16, boxShadow: "0 6px 20px rgba(0,0,0,0.35)", opacity: !aceptaTerminos ? 0.45 : 1 }}>
                 <GoogleIcon /> Registrarme con Google
               </button>
               <Divider />
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
-                <input type="text" value={regName} onChange={e => setRegName(e.target.value)} placeholder="Nombre completo" style={inputStyle} />
+                <input type="text" value={regName} onChange={e => setRegName(e.target.value)} placeholder="Tu alias o nombre (ej: Tris)" style={inputStyle} />
                 <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} placeholder="tu@email.com" style={inputStyle} />
                 <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} placeholder="Mínimo 6 caracteres" style={inputStyle} />
               </div>
@@ -5905,7 +5905,7 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
   const quickCards = [
     { key: "turno_seguro", emoji: "\u{1F550}", title: "Cita Segura", text: "Antes y durante un encuentro: avisá con quién vas, compartí tu ubicación en vivo y activá tu timer.",
       img: "https://images.unsplash.com/photo-1729704706106-d8792faa9f94?q=80&w=800&auto=format&fit=crop" },
-    { key: "mi_escudo",    emoji: "\u{1F6A8}", title: "Noche de Alerta",    text: "Algo está pasando ahora: alertá a tu gente al instante, con tu ubicación y evidencia.",
+    { key: "mi_escudo",    emoji: "\u{1F6A8}", title: "Modo Alerta",    text: "Algo está pasando ahora: alertá a tu gente al instante, con tu ubicación y evidencia.",
       img: "https://images.unsplash.com/photo-1588747020648-4ff0ec1abecb?q=80&w=800&auto=format&fit=crop" },
 
     { key: "contactos",    emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} contactos configurados`, img: null },
