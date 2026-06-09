@@ -318,11 +318,7 @@ async function pedirPermisoNotificaciones() {
 }
 
 function enviarNotificacion(titulo, body) {
-  try {
-    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-      new Notification(titulo, { body, icon: "/favicon.ico" });
-    }
-  } catch(e) {}
+  if (Notification.permission === "granted") new Notification(titulo, { body, icon: "/favicon.ico" });
 }
 
 function reproducirSonido() {
@@ -769,7 +765,21 @@ async function listarEvidencias() {
     if (!user) return [];
     const { data, error } = await supabase.storage.from("evidencias").list(user.id, { limit: 100, sortBy: { column: "created_at", order: "desc" } });
     if (error) return [];
-    return (data || []).map(f => ({ ...f, fullPath: `${user.id}/${f.name}` }));
+    let files = data || [];
+    // AUTO-BORRADO: en plan NO pago, borrar evidencias de más de 15 días (controla el costo de Supabase)
+    try {
+      const { data: perfil } = await supabase.from("usuarios").select("plan").eq("auth_user_id", user.id).single();
+      const esPagador = perfil && perfil.plan === "premium";
+      if (!esPagador) {
+        const limite = Date.now() - 15 * 24 * 60 * 60 * 1000;
+        const viejas = files.filter(f => f.created_at && new Date(f.created_at).getTime() < limite);
+        if (viejas.length) {
+          await supabase.storage.from("evidencias").remove(viejas.map(f => `${user.id}/${f.name}`));
+          files = files.filter(f => !(f.created_at && new Date(f.created_at).getTime() < limite));
+        }
+      }
+    } catch(e) {}
+    return files.map(f => ({ ...f, fullPath: `${user.id}/${f.name}` }));
   } catch(e) { return []; }
 }
 
@@ -1446,6 +1456,8 @@ function EvidenciasScreen({ onBack }) {
   const [loading, setLoading] = useState(true);
   const [audioUrl, setAudioUrl] = useState(null);
   const [audioName, setAudioName] = useState(null);
+  const [imgUrl, setImgUrl] = useState(null);
+  const [imgName, setImgName] = useState(null);
 
   useEffect(() => { cargar(); }, []);
   async function cargar() { setLoading(true); setArchivos(await listarEvidencias()); setLoading(false); }
@@ -1454,6 +1466,12 @@ function EvidenciasScreen({ onBack }) {
     const url = await getEvidenciaUrl(f.fullPath);
     if (!url) { alert("No se pudo obtener el archivo."); return; }
     setAudioUrl(url); setAudioName(f.name);
+  }
+
+  async function verFoto(f) {
+    const url = await getEvidenciaUrl(f.fullPath);
+    if (!url) { alert("No se pudo obtener la foto."); return; }
+    setImgUrl(url); setImgName(f.name);
   }
 
   async function eliminar(f) {
@@ -1478,6 +1496,11 @@ function EvidenciasScreen({ onBack }) {
           <p className="mt-2 text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>Grabaciones guardadas en la nube con cifrado.</p>
         </div>
 
+        <div className="mb-4 rounded-xl p-3 flex items-start gap-2" style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.3)" }}>
+          <span style={{ fontSize: 15 }}>{"\u2139\uFE0F"}</span>
+          <p className="text-[12.5px]" style={{ color: "rgba(255,255,255,0.7)" }}>En el plan gratis, las evidencias se guardan <b style={{ color: "#fff" }}>15 días</b>. Descargá las que quieras conservar. Con Premium se guardan sin límite.</p>
+        </div>
+
         {audioUrl && (
           <div className="mb-4 rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #101018, #08080c)", border: "1px solid rgba(224,224,224,0.15)" }}>
             <div className="flex items-center gap-2 mb-2">
@@ -1489,35 +1512,49 @@ function EvidenciasScreen({ onBack }) {
           </div>
         )}
 
+        {imgUrl && (
+          <div className="mb-4 rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #101018, #08080c)", border: "1px solid rgba(224,224,224,0.15)" }}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">{"\u{1F4F7}"}</span>
+              <span className="text-sm font-semibold truncate" style={{ color: "#E0E0E0" }}>{imgName}</span>
+              <button onClick={() => { setImgUrl(null); setImgName(null); }} className="ml-auto text-sm text-slate-400">{"\u2715"}</button>
+            </div>
+            <img src={imgUrl} alt={imgName} style={{ width: "100%", borderRadius: "10px", maxHeight: "70vh", objectFit: "contain" }} />
+          </div>
+        )}
+
         {loading ? <div className="text-center py-8 text-slate-300">Cargando...</div>
         : archivos.length === 0 ? (
           <div className="rounded-2xl p-8 text-center" style={{ background: "linear-gradient(145deg, #0c0c14, #08080c)", border: "1px solid rgba(224,224,224,0.08)" }}>
             <div className="text-5xl mb-3">{"\u{1F4C1}"}</div>
             <h3 className="text-lg font-semibold text-white">Sin evidencias</h3>
-            <p className="mt-2 text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>Cuando grabes audio desde cualquier módulo, aparecerá acá.</p>
+            <p className="mt-2 text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>Cuando grabes audio o se capturen fotos desde un módulo, aparecerán acá.</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {archivos.map((f, i) => (
-              <div key={i} className="rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #0c0c14, #08080c)", border: audioName === f.name ? "1px solid rgba(224,224,224,0.3)" : "1px solid rgba(224,224,224,0.08)" }}>
+            {archivos.map((f, i) => {
+              const esFoto = /\.(jpe?g|png|webp)$/i.test(f.name);
+              return (
+              <div key={i} className="rounded-2xl p-4" style={{ background: "linear-gradient(145deg, #0c0c14, #08080c)", border: (audioName === f.name || imgName === f.name) ? "1px solid rgba(224,224,224,0.3)" : "1px solid rgba(224,224,224,0.08)" }}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <span className="text-2xl">{"\u{1F399}\u{FE0F}"}</span>
+                    <span className="text-2xl">{esFoto ? "\u{1F4F7}" : "\u{1F399}\u{FE0F}"}</span>
                     <div className="min-w-0">
                       <div className="text-sm font-semibold text-white truncate">{f.name}</div>
                       <div className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>{f.metadata?.size ? (f.metadata.size / 1024).toFixed(0) + " KB" : ""}</div>
                     </div>
                   </div>
                   <div className="flex gap-2 shrink-0">
-                    <button onClick={() => reproducir(f)} className="rounded-lg px-3 py-1.5 text-sm font-semibold" style={{ background: "rgba(224,224,224,0.08)", border: "1px solid rgba(224,224,224,0.2)", color: "#E0E0E0" }}>
-                      {audioName === f.name ? "\u{1F50A} Escuchando" : "\u25B6\u{FE0F} Escuchar"}
+                    <button onClick={() => esFoto ? verFoto(f) : reproducir(f)} className="rounded-lg px-3 py-1.5 text-sm font-semibold" style={{ background: "rgba(224,224,224,0.08)", border: "1px solid rgba(224,224,224,0.2)", color: "#E0E0E0" }}>
+                      {esFoto ? "\u{1F441}\u{FE0F} Ver" : (audioName === f.name ? "\u{1F50A} Escuchando" : "\u25B6\u{FE0F} Escuchar")}
                     </button>
                     <button onClick={() => descargar(f)} className="rounded-lg px-2 py-1.5 text-sm" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)" }}>{"\u{2B07}\u{FE0F}"}</button>
                     <button onClick={() => eliminar(f)} className="rounded-lg px-2 py-1.5 text-sm" style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.2)", color: "#f87171" }}>{"\u{1F5D1}\u{FE0F}"}</button>
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -2183,8 +2220,8 @@ function SelectorContactoModal({ contactos, mensaje, onClose, onAlertaSent, modu
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm overflow-y-auto py-8">
-      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#08080c] p-6 shadow-2xl my-auto">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#08080c] p-6 shadow-2xl">
         {sent ? (
           <div className="text-center space-y-4">
             {/* Feedback visual premium */}
