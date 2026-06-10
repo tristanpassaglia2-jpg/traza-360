@@ -22,7 +22,6 @@ import { signUp, signIn, signOut, getCurrentUser, supabase, getContactos, addCon
 
 // ─── CONFIG ─────────────────────────────────
 const WHATSAPP_NUMBER_DEFAULT = "5493513956879";
-const PIN_DEFAULT = "1234";
 const HOME_ADDRESS_DEFAULT = "Mi casa";
 
 // v19.7: Email de soporte centralizado (cambialo acá para que se actualice en TODA la app)
@@ -210,6 +209,36 @@ function getCurrentLocationWithFallback() {
 
 function buildMapLink(loc) { return loc ? `https://maps.google.com/?q=${loc.lat},${loc.lng}` : null; }
 
+// Mantiene la pantalla encendida mientras "activo" sea true (Wake Lock API)
+function useWakeLock(activo) {
+  useEffect(() => {
+    if (!activo || !("wakeLock" in navigator)) return;
+    let wl = null, vivo = true;
+    async function pedir() { try { wl = await navigator.wakeLock.request("screen"); } catch(e) {} }
+    function onVis() { if (vivo && document.visibilityState === "visible") pedir(); }
+    pedir();
+    document.addEventListener("visibilitychange", onVis);
+    return () => { vivo = false; document.removeEventListener("visibilitychange", onVis); try { wl && wl.release(); } catch(e) {} };
+  }, [activo]);
+}
+
+// Normaliza texto para comparar frases (minúsculas, sin tildes)
+function normTexto(t) { try { return (t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim(); } catch(e) { return (t || "").toLowerCase(); } }
+
+// CANDADO DE ALERTA: si hay PIN configurado, cancelar una alerta exige el PIN.
+// El agresor puede sacarte el teléfono, pero no puede cancelar tu alerta.
+function verificarPinCancelacion() {
+  try {
+    var pinGuardado = localStorage.getItem("traza360_quick_pin") || localStorage.getItem("traza360_pin");
+    if (!pinGuardado) return true; // sin PIN configurado no se puede exigir
+    var ingreso = prompt("\u{1F512} Candado de Alerta\n\nIngresá tu PIN para confirmar que sos vos:");
+    if (ingreso === null) return false;
+    if ((ingreso || "").trim() === pinGuardado) return true;
+    alert("PIN incorrecto. La alerta sigue activa y tus contactos siguen viendo tu ubicación.");
+    return false;
+  } catch(e) { return true; }
+}
+
 // ─── DETECCIÓN DE PAÍS: Argentina vs resto de LATAM (por zona horaria) ───
 function esArgentina() {
   try {
@@ -257,7 +286,7 @@ async function sendWhatsAppAPI(numero, text) {
             creado_en: new Date().toISOString()
           });
         } catch(e) { console.warn("DB alerta:", e); }
-        const linkAlerta = "https://traza360.app/alerta/" + alertaId;  
+        const linkAlerta = "https://vigia24.app/alerta/" + alertaId;  
     // Enviar via Edge Function
     const response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
       method: "POST",
@@ -265,7 +294,7 @@ async function sendWhatsAppAPI(numero, text) {
       body: JSON.stringify({ 
   to: numLimpio, 
   template: "alerta_emergencia", 
-  params: [nombre.substring(0,60), textoLimpio + " - Ver: traza360.app/alerta/" + alertaId, hora, "Seguridad"],
+  params: [nombre.substring(0,60), textoLimpio + " - Ver: vigia24.app/alerta/" + alertaId, hora, "Seguridad"],
   usuario_id: userData?.data?.user?.id || null,
   modulo: "violencia de genero",
   mensaje: textoLimpio,
@@ -276,7 +305,7 @@ async function sendWhatsAppAPI(numero, text) {
 });
     
     const data = await response.json();
-    if (data.messages) { console.log("WhatsApp enviado OK:", data.messages[0].id); return { success: true, data }; }
+    if (data.messages) { return { success: true, data }; }
     else { console.warn("WhatsApp API error:", data.error); return { success: false, error: data.error }; }
   } catch (error) { console.error("WhatsApp fetch error:", error); return { success: false, error: error.message }; }
 }
@@ -296,7 +325,7 @@ function openWhatsAppDefault(text) { enviarWhatsApp(WHATSAPP_NUMBER_DEFAULT, tex
 function buildMessageWithReply(baseMessage, loc, alertaId) {
   let msg = baseMessage;
   if (loc) msg += "\n\n\u{1F4CD} Ubicacion: " + buildMapLink(loc);
-  if (alertaId) msg += "\n\n\u{1F6A8} Ver alerta y responder:\nhttps://traza360.app/alerta/" + alertaId;
+  if (alertaId) msg += "\n\n\u{1F6A8} Ver alerta y responder:\nhttps://vigia24.app/alerta/" + alertaId;
   msg += "\n\n\u{1F4F1} RESPONDER:\n\u2705 OK\n\u{1F44D} Recibi\n\u{1F3C3} Voy\n\u{1F697} Salgo ya\n\u23F0 5 min\n\u{1F3E0} En casa\n\u{1F4A8} Llegue\n\u{1F6A8} Emergencia";
   return msg;
 }
@@ -690,7 +719,7 @@ function OnboardingScreen({ onComplete }) {
 
 // ─── VERIFICACIÓN CONTACTO (Safety Check) ───
 async function verificarContacto(telefono, nombreContacto, nombreUsuario) {
-  const msg = `Hola ${nombreContacto} 👋 Soy ${nombreUsuario} y te agregué como contacto de confianza en VIGÍA 24, una app de seguridad personal.\n\n✅ Si recibís este mensaje, todo funciona correctamente.\n\nRespondé "OK" para confirmar que lo recibiste.\n\n🛡️ VIGÍA 24 — traza360.app`;
+  const msg = `Hola ${nombreContacto} 👋 Soy ${nombreUsuario} y te agregué como contacto de confianza en VIGÍA 24, una app de seguridad personal.\n\n✅ Si recibís este mensaje, todo funciona correctamente.\n\nRespondé "OK" para confirmar que lo recibiste.\n\n🛡️ VIGÍA 24 — vigia24.app`;
   return await sendWhatsAppAPI(telefono, msg);
 }
 
@@ -895,7 +924,7 @@ function ModoTestigoModal({ onClose, contactos }) {
           await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia",
-              params: [nombre.substring(0,60), "Estoy grabando evidencias y necesito ayuda." + (location && location.lat ? " - Mapa con su ubicacion: https://maps.google.com/?q=" + location.lat + "," + location.lng : " - GPS no disponible") + " - Responder: traza360.app/alerta/" + alertaId, hora, "Modo Alerta"],
+              params: [nombre.substring(0,60), "Estoy grabando evidencias y necesito ayuda." + (location && location.lat ? " - Mapa con su ubicacion: https://maps.google.com/?q=" + location.lat + "," + location.lng : " - GPS no disponible") + " - Responder: vigia24.app/alerta/" + alertaId, hora, "Modo Alerta"],
               alerta_id: alertaId })
           });
         } catch(e) {}
@@ -1278,7 +1307,7 @@ function CheckInModal({ onClose, contactos, titulo = "Botón de ingreso" }) {
                   var numL = elegidos[i].telefono.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
                   await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
                     method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ to: numL, template: "alerta_emergencia", params: [nombre.substring(0,60), "TIMER VENCIDO — No confirmó que está bien. Verificar urgente. Ver: traza360.app/alerta/" + alertaId, horaStr, "Ingreso a lugar"] })
+                    body: JSON.stringify({ to: numL, template: "alerta_emergencia", params: [nombre.substring(0,60), "TIMER VENCIDO — No confirmó que está bien. Verificar urgente. Ver: vigia24.app/alerta/" + alertaId, horaStr, "Ingreso a lugar"] })
                   });
                 } catch(e) {}
               }
@@ -1295,6 +1324,7 @@ function CheckInModal({ onClose, contactos, titulo = "Botón de ingreso" }) {
   }, [activo, seleccionados, contactos]);
 
   function estoyBien() {
+    if (!verificarPinCancelacion()) return;
     clearInterval(timerRef.current);
     setActivo(false);
     (async function() {
@@ -1879,12 +1909,16 @@ function PlanesScreen({ onBack, currentPlan = "gratis", authUser }) {
     { ok: true,  t: "Alertas por WhatsApp con ubicación" },
     { ok: true,  t: "Timer Cita Segura (1 por día)" },
     { ok: false, t: "Ubicación en vivo (mapa en tiempo real)" },
+    { ok: false, t: "Zona Segura (alerta automática si te alejás)" },
+    { ok: false, t: "Código Secreto (frases en código + auxilio silencioso)" },
     { ok: false, t: "Evidencias: foto + audio" },
     { ok: false, t: "Grabación de entorno" },
   ];
   const premiumFeatures = [
     { ok: true, t: "Todo lo del plan Gratis" },
     { ok: true, t: "Ubicación en vivo en tiempo real" },
+    { ok: true, t: "Zona Segura: si te alejás de tu zona, tu gente se entera" },
+    { ok: true, t: "Código Secreto: tus frases hablan por vos en silencio" },
     { ok: true, t: "Evidencias: foto + audio ilimitadas" },
     { ok: true, t: "Grabación de entorno" },
     { ok: true, t: "Timer Cita Segura ilimitado" },
@@ -2202,13 +2236,13 @@ function SelectorContactoModal({ contactos, mensaje, onClose, onAlertaSent, modu
           body: JSON.stringify({
             to: numLimpio,
             template: "alerta_emergencia",
-            params: [nombre.substring(0,60), msgFinal.substring(0,130) + (location && location.lat ? " - Mapa con su ubicacion: https://maps.google.com/?q=" + location.lat + "," + location.lng : " - GPS no disponible") + " - Responder: traza360.app/alerta/" + alertaId, hora, moduloKey === "mi_escudo" ? "Modo Alerta" : moduloKey === "turno_seguro" ? "Cita Segura" : moduloKey === "los_cuido" ? "Adolescente" : "Seguridad"],
+            params: [nombre.substring(0,60), msgFinal.substring(0,130) + (location && location.lat ? " - Mapa con su ubicacion: https://maps.google.com/?q=" + location.lat + "," + location.lng : " - GPS no disponible") + " - Responder: vigia24.app/alerta/" + alertaId, hora, moduloKey === "mi_escudo" ? "Modo Alerta" : moduloKey === "turno_seguro" ? "Cita Segura" : moduloKey === "los_cuido" ? "Adolescente" : "Seguridad"],
             alerta_id: alertaId
           })
         });
         var data = await response.json();
         if (data.messages && data.messages[0]) {
-          console.log("WhatsApp enviado OK:", data.messages[0].id);
+          
         } else { allOk = false; console.warn("WA error:", data); }
       } catch(e) { allOk = false; console.warn("WA:", e); }
     }
@@ -2928,7 +2962,7 @@ function InstruccionesScreen({ onBack }) {
   const [seccion, setSeccion] = useState("modulos");
   // v19.4: PIN configurable para modo calculadora
   const [pin, setPin] = useState(() => {
-    try { return localStorage.getItem("traza360_pin") || sessionStorage.getItem("traza360_pin") || "1234"; } catch(e) { return "1234"; }
+    try { return localStorage.getItem("traza360_pin") || sessionStorage.getItem("traza360_pin") || ""; } catch(e) { return ""; }
   });
   const [nuevoPin, setNuevoPin] = useState("");
   const [mostrarPin, setMostrarPin] = useState(false);
@@ -2956,6 +2990,7 @@ function InstruccionesScreen({ onBack }) {
   }
 
   function copiarLinkOculto() {
+    if (!pin) { alert("Primero configurá tu PIN del modo oculto (acá abajo) para poder volver a la app."); return; }
     const link = window.location.origin + "/?modo=calc";
     if (navigator.clipboard) {
       navigator.clipboard.writeText(link).then(() => {
@@ -2967,6 +3002,7 @@ function InstruccionesScreen({ onBack }) {
   }
 
   function probarModoCalculadora() {
+    if (!pin) { alert("Primero configurá tu PIN del modo oculto (acá abajo). Sin PIN no se puede volver a la app desde la calculadora."); return; }
     if (window.confirm("¿Probar modo calculadora ahora?\n\nVas a ir al modo oculto. Para volver, ingresá tu PIN (" + pin + ") y tocá '=' en la calculadora.")) {
       window.location.href = "/?modo=calc";
     }
@@ -3075,9 +3111,30 @@ function InstruccionesScreen({ onBack }) {
                 <p className="text-[11px] mt-3" style={{ color: BRAND.gold }}>{"\u2713"} El ícono de VIGÍA 24 aparece como cualquier otra app del celular.</p>
               </div>
 
+              {/* OPCIÓN 2: Modo oculto (calculadora) */}
+              <div className="rounded-xl p-4 mb-3" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BRAND.border}` }}>
+                <p className="text-sm font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F9EE}"} 2. Modo oculto: la app disfrazada de calculadora</p>
+                <p className="text-sm mb-3" style={{ color: BRAND.textLight }}>Si necesitás que nadie sepa que tenés VIGÍA 24, podés abrirla con un link especial que muestra una calculadora real. Solo vos, con tu PIN secreto y la tecla "=", entrás a la app.</p>
+                <div className="rounded-lg p-3 mb-3" style={{ background: "rgba(0,0,0,0.4)" }}>
+                  <p className="text-[11px] font-bold mb-2" style={{ color: BRAND.gold }}>{"\u{1F511}"} Tu PIN del modo oculto {pin ? "(configurado \u2713)" : "(sin configurar)"}</p>
+                  <div className="flex gap-2">
+                    <input type={mostrarPin ? "text" : "password"} inputMode="numeric" value={nuevoPin} onChange={e => setNuevoPin(e.target.value.replace(/\D/g, "").slice(0, 8))} placeholder={pin ? "Nuevo PIN (4-8 números)" : "Elegí un PIN (4-8 números)"}
+                      className="flex-1 rounded-lg px-3 py-2.5 text-sm" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${BRAND.border}`, color: BRAND.white, outline: "none" }} />
+                    <button onClick={() => setMostrarPin(m => !m)} className="rounded-lg px-3 text-sm" style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${BRAND.border}`, color: BRAND.textLight }}>{mostrarPin ? "\u{1F648}" : "\u{1F441}\u{FE0F}"}</button>
+                    <button onClick={guardarPin} className="rounded-lg px-3 text-sm font-bold" style={{ background: "rgba(212,175,55,0.15)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold }}>Guardar</button>
+                  </div>
+                  {pinGuardado && <p className="text-[11px] mt-2" style={{ color: "#86efac" }}>{"\u2713"} PIN guardado. Ya podés usar el modo oculto.</p>}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={copiarLinkOculto} className="flex-1 rounded-lg py-2.5 text-sm font-semibold" style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${BRAND.border}`, color: BRAND.white }}>{"\u{1F517}"} Copiar link oculto</button>
+                  <button onClick={probarModoCalculadora} className="flex-1 rounded-lg py-2.5 text-sm font-semibold" style={{ background: "rgba(212,175,55,0.12)", border: `1px solid ${BRAND.borderStrong}`, color: BRAND.gold }}>{"\u25B6\u{FE0F}"} Probar ahora</button>
+                </div>
+                <p className="text-[11px] mt-3" style={{ color: BRAND.textMute }}>Para volver a la app desde la calculadora: escribí tu PIN y tocá "=".</p>
+              </div>
+
               {/* OPCIÓN 3: Emergencia real */}
               <div className="rounded-xl p-4" style={{ background: "rgba(220,38,38,0.05)", border: `1px solid ${BRAND.red}30` }}>
-                <p className="text-sm font-bold mb-2" style={{ color: BRAND.red }}>{"\u26A0\u{FE0F}"} 2. En una emergencia REAL</p>
+                <p className="text-sm font-bold mb-2" style={{ color: BRAND.red }}>{"\u26A0\u{FE0F}"} 3. En una emergencia REAL</p>
                 <p className="text-sm" style={{ color: BRAND.textLight }}>Si tu vida o la de alguien está en peligro inminente, llamá <strong style={{ color: BRAND.red }}>primero</strong> al 911 (o al número de emergencias de tu país). VIGÍA 24 te ayuda a avisar a tus contactos, pero NO reemplaza a la policía ni a los servicios médicos.</p>
               </div>
             </>
@@ -4916,6 +4973,28 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
   });
   const gpsIntervalRef = useRef(null);
   const timerRef       = useRef(null);
+  // ── ZONA SEGURA (Premium) ──
+  const [zonaActiva, setZonaActiva] = useState(false);
+  const [zonaRadio, setZonaRadio] = useState(500);
+  const zonaAnclaRef = useRef(null);    // punto de partida (se fija con el primer GPS)
+  const zonaAvisadaRef = useRef(false); // para avisar una sola vez por sesión
+  const esPremiumZona = (userProfile?.plan === "premium") || (!!userProfile?.trial_until && new Date(userProfile.trial_until).getTime() > Date.now()) || !esArgentina();
+  // ── CÓDIGO SECRETO (Premium) — hasta 3 frases en código, alerta silenciosa por voz ──
+  const [fraseActiva, setFraseActiva] = useState(false);
+  const [frases, setFrases] = useState(() => {
+    try {
+      const raw = localStorage.getItem("traza360_frases_secretas");
+      if (raw) { const arr = JSON.parse(raw); if (Array.isArray(arr)) return [0,1,2].map(i => (arr[i] && typeof arr[i] === "object") ? { f: arr[i].f || "", s: arr[i].s || "" } : { f: "", s: "" }); }
+      const vieja = localStorage.getItem("traza360_frase_secreta");
+      if (vieja) return [{ f: vieja, s: "Necesito ayuda YA" }, { f: "", s: "" }, { f: "", s: "" }];
+    } catch(e) {}
+    return [{ f: "", s: "" }, { f: "", s: "" }, { f: "", s: "" }];
+  });
+  const recogRef = useRef(null);
+  const escuchaVivaRef = useRef(false);
+  const fraseAvisadaRef = useRef({});
+  // Pantalla siempre encendida mientras el seguimiento está activo (el GPS no se corta)
+  useWakeLock(paso === 2);
 
   const duraciones = [
     { label: "30 min", min: 30 }, { label: "1 hora", min: 60 },
@@ -4927,6 +5006,8 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
   useEffect(() => () => {
     clearInterval(gpsIntervalRef.current);
     clearInterval(timerRef.current);
+    escuchaVivaRef.current = false;
+    try { recogRef.current && recogRef.current.stop(); } catch(e) {}
   }, []);
 
   async function agregarDesdeAgenda() {
@@ -4991,6 +5072,57 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
 
       setToken(nuevoToken); setExpiresAt(expira);
 
+      // Zona Segura: capturar config al momento de activar
+      const zonaOn = zonaActiva && esPremiumZona;
+      const zonaR = zonaRadio;
+      zonaAnclaRef.current = null;
+      zonaAvisadaRef.current = false;
+
+      // ── CÓDIGO SECRETO: escucha de voz en silencio (hasta 3 frases) ──
+      const paresCodigo = frases
+        .map(p => ({ f: normTexto(p.f), s: (p.s || "").trim() }))
+        .filter(p => p.f.length >= 4 && p.s.length >= 2);
+      const fraseOn = fraseActiva && esPremiumZona && paresCodigo.length > 0;
+      if (fraseOn) {
+        try { localStorage.setItem("traza360_frases_secretas", JSON.stringify(frases)); } catch(e) {}
+        try {
+          var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+          if (SR) {
+            escuchaVivaRef.current = true;
+            fraseAvisadaRef.current = {};
+            var recog = new SR();
+            recog.lang = "es-AR"; recog.continuous = true; recog.interimResults = true;
+            recog.onresult = async function(ev) {
+              var texto = "";
+              try { for (var ri = ev.resultIndex; ri < ev.results.length; ri++) texto += ev.results[ri][0].transcript + " "; } catch(e) {}
+              var textoNorm = normTexto(texto);
+              for (var pi = 0; pi < paresCodigo.length; pi++) {
+                if (fraseAvisadaRef.current[pi]) continue;
+                if (textoNorm.indexOf(paresCodigo[pi].f) === -1) continue;
+                fraseAvisadaRef.current[pi] = true;
+                // ALERTA SILENCIOSA: sin sonido ni cambio visible, para no delatar
+                var horaF = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+                var msgCodigo = paresCodigo[pi].s.substring(0, 90) + " - (mensaje en codigo secreto, manejate con discrecion) - Seguir en vivo: " + urlPublica;
+                for (var fi = 0; fi < contactosMod.length; fi++) {
+                  if (!contactosMod[fi].telefono) continue;
+                  try {
+                    var numF = contactosMod[fi].telefono.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
+                    await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+                      method: "POST", headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ to: numF, template: "alerta_emergencia", params: [nombreUsuario.substring(0,60), msgCodigo, horaF, "Codigo secreto"] })
+                    });
+                  } catch(e) {}
+                }
+              }
+            };
+            recog.onend = function() { if (escuchaVivaRef.current) { try { recog.start(); } catch(e) {} } };
+            recog.onerror = function() {};
+            recogRef.current = recog;
+            try { recog.start(); } catch(e) {}
+          }
+        } catch(e) {}
+      }
+
       function guardarGPS() {
         navigator.geolocation.getCurrentPosition(async function(pos) {
           var battery = null;
@@ -5001,6 +5133,31 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
               battery, speed: pos.coords.speed ?? null, updated_at: new Date().toISOString(),
             }, { onConflict: "session_token" });
           } catch(e) { console.warn("GPS upsert:", e); }
+          // ── ZONA SEGURA: ¿salió del radio? ──
+          if (zonaOn) {
+            try {
+              if (!zonaAnclaRef.current) {
+                zonaAnclaRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+              } else if (!zonaAvisadaRef.current) {
+                var dist = distanciaMetros(zonaAnclaRef.current.lat, zonaAnclaRef.current.lng, pos.coords.latitude, pos.coords.longitude);
+                if (dist > zonaR) {
+                  zonaAvisadaRef.current = true;
+                  var horaZ = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+                  for (var zi = 0; zi < contactosMod.length; zi++) {
+                    if (!contactosMod[zi].telefono) continue;
+                    try {
+                      var numZ = contactosMod[zi].telefono.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
+                      await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ to: numZ, template: "alerta_emergencia", params: [nombreUsuario.substring(0,60), "SALIO DE SU ZONA SEGURA (a " + Math.round(dist) + " m, limite " + zonaR + " m) - Seguir en vivo: " + urlPublica, horaZ, "Zona Segura"] })
+                      });
+                    } catch(e) {}
+                  }
+                  try { reproducirSonido(); } catch(e) {}
+                }
+              }
+            } catch(e) {}
+          }
         }, function() {}, { enableHighAccuracy: true, timeout: 8000 });
       }
       guardarGPS();
@@ -5058,7 +5215,10 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
   }
 
   async function cancelar() {
+    if (!verificarPinCancelacion()) return;
     clearInterval(gpsIntervalRef.current); clearInterval(timerRef.current);
+    escuchaVivaRef.current = false;
+    try { recogRef.current && recogRef.current.stop(); } catch(e) {}
     if (token) {
       await supabase.from("live_sessions").update({ cancelado_at: new Date().toISOString() }).eq("token", token);
       var horaStr = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
@@ -5184,13 +5344,76 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
               rows={2} className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none mb-4"
               style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.white }} />
 
+            {/* ZONA SEGURA (Premium) */}
+            <div className="rounded-xl p-3.5 mb-4" style={{ background: zonaActiva ? "rgba(46,139,255,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${zonaActiva ? "rgba(46,139,255,0.55)" : BRAND.border}`, boxShadow: zonaActiva ? "0 0 16px rgba(46,139,255,0.15)" : "none" }}>
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "#5fa8ff" }}>{"\u{1F6E1}\u{FE0F}"} Zona Segura <span style={{ color: BRAND.gold }}>{"\u{1F48E}"}</span></p>
+                <button onClick={() => {
+                    if (!esPremiumZona) { alert("\u{1F6E1}\u{FE0F} Zona Segura es una función Premium.\n\nMarcamos tu punto de partida y, si te alejás más del límite que elijas, tus contactos reciben alerta automática.\n\nActivala desde \u{1F48E} Planes y Premium."); return; }
+                    setZonaActiva(z => !z);
+                  }}
+                  className="rounded-lg px-3 py-1.5 text-xs font-bold"
+                  style={{ background: zonaActiva ? "linear-gradient(135deg, #2E8BFF, #1466d6)" : "rgba(255,255,255,0.06)", color: zonaActiva ? "#fff" : BRAND.textLight, border: `1px solid ${zonaActiva ? "#2E8BFF" : BRAND.border}` }}>
+                  {zonaActiva ? "Activada \u2713" : "Activar"}
+                </button>
+              </div>
+              <p className="text-[12px] leading-relaxed" style={{ color: BRAND.textLight }}>Marcamos tu punto de partida al iniciar. Si te alejás más del límite, tus contactos reciben un WhatsApp automático con tu mapa en vivo.</p>
+              {zonaActiva && (
+                <div className="grid grid-cols-3 gap-2 mt-2.5">
+                  {[{ l: "300 m", v: 300 }, { l: "500 m", v: 500 }, { l: "1 km", v: 1000 }].map(r => (
+                    <button key={r.v} onClick={() => setZonaRadio(r.v)}
+                      className="rounded-xl py-2 text-sm font-bold"
+                      style={{ background: zonaRadio === r.v ? "linear-gradient(135deg, #2E8BFF, #1466d6)" : "rgba(255,255,255,0.04)", color: zonaRadio === r.v ? "#fff" : BRAND.textMute, border: `1px solid ${zonaRadio === r.v ? "#2E8BFF" : BRAND.border}` }}>
+                      {r.l}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* CÓDIGO SECRETO (Premium) */}
+            <div className="rounded-xl p-3.5 mb-4" style={{ background: fraseActiva ? "rgba(255,46,85,0.07)" : "rgba(255,255,255,0.03)", border: `1px solid ${fraseActiva ? "rgba(255,46,85,0.5)" : BRAND.border}`, boxShadow: fraseActiva ? "0 0 16px rgba(255,46,85,0.12)" : "none" }}>
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "#ff7a93" }}>{"\u{1F910}"} Código Secreto <span style={{ color: BRAND.gold }}>{"\u{1F48E}"}</span></p>
+                <button onClick={() => {
+                    if (!esPremiumZona) { alert("\u{1F910} Código Secreto es una función Premium.\n\nCreá hasta 3 frases en código (ej: \u00ABlindo el bar\u00BB = \u00ABsospecho de esta persona\u00BB). Si decís una durante el seguimiento, tus contactos reciben la traducción + tu ubicación en vivo, en silencio total.\n\nActivala desde \u{1F48E} Planes y Premium."); return; }
+                    if (!fraseActiva && !(window.SpeechRecognition || window.webkitSpeechRecognition)) { alert("Tu navegador no soporta reconocimiento de voz. Probá con Chrome (Android) o Safari actualizado (iPhone)."); return; }
+                    setFraseActiva(f => !f);
+                  }}
+                  className="rounded-lg px-3 py-1.5 text-xs font-bold"
+                  style={{ background: fraseActiva ? "linear-gradient(135deg, #FF2E55, #c01437)" : "rgba(255,255,255,0.06)", color: fraseActiva ? "#fff" : BRAND.textLight, border: `1px solid ${fraseActiva ? "#FF2E55" : BRAND.border}` }}>
+                  {fraseActiva ? "Activado \u2713" : "Activar"}
+                </button>
+              </div>
+              <p className="text-[12px] leading-relaxed mb-2" style={{ color: BRAND.textLight }}>Tu idioma secreto con tu gente: hasta 3 frases en código. Si decís una en voz alta, tus contactos reciben la <strong style={{ color: "#ff7a93" }}>traducción + tu ubicación en vivo</strong> — tu teléfono no suena ni muestra nada.</p>
+              {fraseActiva && (
+                <>
+                  {frases.map((p, i) => (
+                    <div key={i} className="rounded-lg p-2.5 mb-2" style={{ background: "rgba(0,0,0,0.35)", border: `1px solid ${normTexto(p.f).length >= 4 && (p.s || "").trim().length >= 2 ? "rgba(255,46,85,0.45)" : BRAND.border}` }}>
+                      <input type="text" value={p.f}
+                        onChange={e => setFrases(arr => arr.map((x, xi) => xi === i ? { ...x, f: e.target.value } : x))}
+                        placeholder={["Frase 1 — ej: lindo el bar", "Frase 2 — ej: qué lindo paisaje", "Frase 3 — ej: tomemos un fernet"][i]}
+                        className="w-full rounded-lg px-3 py-2 text-sm outline-none mb-1.5"
+                        style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${BRAND.border}`, color: BRAND.white }} />
+                      <input type="text" value={p.s}
+                        onChange={e => setFrases(arr => arr.map((x, xi) => xi === i ? { ...x, s: e.target.value } : x))}
+                        placeholder={["Traducción — ej: sospecho de esta persona", "Traducción — ej: la cosa está fea, vengan", "Traducción — ej: necesito ayuda YA"][i]}
+                        className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                        style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${BRAND.border}`, color: "#ff7a93" }} />
+                    </div>
+                  ))}
+                  <p className="text-[11px]" style={{ color: BRAND.textMute }}>Tip: frases de 3+ palabras que suenen naturales pero que NO digas por accidente. Cada una avisa una sola vez por salida. Tus contactos siempre reciben tu mapa en vivo.</p>
+                </>
+              )}
+            </div>
+
             {/* Preview */}
             <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
               <p className="text-[11px] uppercase tracking-wider font-bold mb-2" style={{ color: BRAND.gold }}>📱 Van a recibir por WhatsApp:</p>
               <p className="text-sm leading-relaxed font-mono" style={{ color: BRAND.textLight }}>
                 🛡️ VIGÍA 24 — Movimiento en Vivo<br/><br/>
                 {nombreUsuario} compartió su ubicación.<br/>
-                📍 <span style={{ color: BRAND.gold }}>traza360.app/live/abc1234</span><br/>
+                📍 <span style={{ color: BRAND.gold }}>vigia24.app/live/abc1234</span><br/>
                 ⏱️ Si no cancela antes de las [hora], necesita ayuda.
               </p>
             </div>
@@ -5217,6 +5440,18 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
               <p className="text-5xl font-bold tabular-nums mb-1" style={{ color: BRAND.white }}>{fmt(countdown)}</p>
               <p className="text-sm" style={{ color: BRAND.textLight }}>Vence a las {expiresAt?.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</p>
             </div>
+            {zonaActiva && esPremiumZona && (
+              <div className="rounded-xl p-3 mb-4 flex items-center justify-center gap-2" style={{ background: "rgba(46,139,255,0.08)", border: "1px solid rgba(46,139,255,0.5)" }}>
+                <span style={{ fontSize: 16 }}>{"\u{1F6E1}\u{FE0F}"}</span>
+                <p className="text-sm font-bold" style={{ color: "#5fa8ff" }}>Zona Segura activa · límite {zonaRadio >= 1000 ? (zonaRadio / 1000) + " km" : zonaRadio + " m"}</p>
+              </div>
+            )}
+            {fraseActiva && esPremiumZona && (
+              <div className="rounded-xl p-3 mb-4 flex items-center justify-center gap-2" style={{ background: "rgba(255,46,85,0.06)", border: "1px solid rgba(255,46,85,0.35)" }}>
+                <span style={{ fontSize: 16 }}>{"\u{1F910}"}</span>
+                <p className="text-sm font-bold" style={{ color: "#ff7a93" }}>Código Secreto escuchando</p>
+              </div>
+            )}
             <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
               <p className="text-sm font-bold mb-1" style={{ color: BRAND.gold }}>Link de seguimiento activo</p>
               <p className="text-[11px] break-all" style={{ color: BRAND.textLight }}>{liveUrl}</p>
@@ -5429,7 +5664,7 @@ function CitaSeguraTimer({ onExpire, noContacts }) {
     setEndTime(et); setDuracion(seg); setRestante(seg); setActivo(true); setSetup(false); setCheckIn(false);
     try { localStorage.setItem("vigia_timer", JSON.stringify({ endTime: et, duracion: seg })); } catch(e) {}
   }
-  function cancelar() { setActivo(false); setEndTime(null); setRestante(0); setDuracion(0); setCheckIn(false); try { localStorage.removeItem("vigia_timer"); } catch(e) {} }
+  function cancelar() { if (!verificarPinCancelacion()) return; setActivo(false); setEndTime(null); setRestante(0); setDuracion(0); setCheckIn(false); try { localStorage.removeItem("vigia_timer"); } catch(e) {} }
   function extender() {
     var ne = (endTime || Date.now()) + 1800000; var nd = duracion + 1800;
     setEndTime(ne); setDuracion(nd); setRestante(Math.floor((ne - Date.now()) / 1000)); setCheckIn(false);
@@ -5732,7 +5967,7 @@ function LandingScreen({ onScreen }) {
                 <span style={{ color: "rgba(255,255,255,0.25)" }}>·</span>
                 <button onClick={() => onScreen("terminos")} style={{ color: "rgba(255,255,255,0.6)", background: "none", border: "none", cursor: "pointer", fontSize: 12 }}>Términos</button>
               </div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>{"\u{1F4E7}"} {SUPPORT_EMAIL} · traza360.app</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>{"\u{1F4E7}"} {SUPPORT_EMAIL} · vigia24.app</div>
             </div>
           </div>
         )}
@@ -5811,6 +6046,77 @@ function LandingScreen({ onScreen }) {
     </div>
   );
 }
+// ═══════════════════════════════════════════════
+// MIS FRASES — Código Secreto configurable del usuario
+// ═══════════════════════════════════════════════
+function MisFrasesScreen({ onBack }) {
+  const [frases, setFrases] = useState(() => {
+    try {
+      const raw = localStorage.getItem("traza360_frases_secretas");
+      if (raw) { const arr = JSON.parse(raw); if (Array.isArray(arr)) return [0,1,2].map(i => (arr[i] && typeof arr[i] === "object") ? { f: arr[i].f || "", s: arr[i].s || "" } : { f: "", s: "" }); }
+    } catch(e) {}
+    return [{ f: "", s: "" }, { f: "", s: "" }, { f: "", s: "" }];
+  });
+  const [guardado, setGuardado] = useState(false);
+
+  function guardar() {
+    const validas = frases.filter(p => normTexto(p.f).length >= 4 && (p.s || "").trim().length >= 2);
+    if (validas.length === 0) { alert("Completá al menos una frase con su traducción.\n\nLa frase necesita 4+ letras y la traducción 2+."); return; }
+    try { localStorage.setItem("traza360_frases_secretas", JSON.stringify(frases)); } catch(e) { alert("No se pudo guardar."); return; }
+    setGuardado(true);
+    setTimeout(() => setGuardado(false), 2500);
+  }
+
+  return (
+    <div className="min-h-screen px-5 py-8" style={{ background: BRAND.blackBg, color: BRAND.white }}>
+      <div className="mx-auto max-w-2xl">
+        <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: BRAND.gold }}>{"\u2190"} Volver al panel</button>
+        <div className="mb-6 text-center">
+          <div style={{ fontSize: 44 }}>{"\u{1F910}"}</div>
+          <p className="text-[11px] uppercase tracking-[3px] mt-2" style={{ color: BRAND.gold }}>Código Secreto {"\u{1F48E}"}</p>
+          <h2 className="text-xl font-bold mt-1" style={{ color: BRAND.white }}>Mis Frases</h2>
+          <p className="text-sm mt-2 max-w-sm mx-auto" style={{ color: BRAND.textLight }}>Tu idioma secreto con tu gente. Escribí la frase que vas a decir y su traducción. Si la decís durante un seguimiento en vivo, tus contactos reciben la traducción + tu ubicación, en silencio total.</p>
+        </div>
+
+        <div className="rounded-2xl p-5" style={{ background: "linear-gradient(145deg, #111111, #000000)", border: `1px solid ${BRAND.border}` }}>
+          {frases.map((p, i) => (
+            <div key={i} className="rounded-xl p-3 mb-3" style={{ background: "rgba(0,0,0,0.4)", border: `1px solid ${normTexto(p.f).length >= 4 && (p.s || "").trim().length >= 2 ? "rgba(255,46,85,0.5)" : BRAND.border}` }}>
+              <p className="text-[11px] font-bold mb-2" style={{ color: BRAND.gold }}>Frase {i + 1}</p>
+              <div className="flex items-center gap-2">
+                <input type="text" value={p.f}
+                  onChange={e => setFrases(arr => arr.map((x, xi) => xi === i ? { ...x, f: e.target.value } : x))}
+                  placeholder="Lo que decís en voz alta"
+                  className="flex-1 min-w-0 rounded-lg px-3 py-2.5 text-sm outline-none"
+                  style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${BRAND.border}`, color: BRAND.white }} />
+                <span style={{ color: BRAND.gold, fontWeight: 900, fontSize: 16, flexShrink: 0 }}>=</span>
+                <input type="text" value={p.s}
+                  onChange={e => setFrases(arr => arr.map((x, xi) => xi === i ? { ...x, s: e.target.value } : x))}
+                  placeholder="Lo que reciben tus contactos"
+                  className="flex-1 min-w-0 rounded-lg px-3 py-2.5 text-sm outline-none"
+                  style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${BRAND.border}`, color: "#ff7a93" }} />
+              </div>
+            </div>
+          ))}
+
+          {guardado && (
+            <div className="rounded-lg p-2.5 mb-3 text-center" style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.4)" }}>
+              <p className="text-sm font-semibold" style={{ color: "#86efac" }}>{"\u2713"} Frases guardadas. Activá el Código Secreto al iniciar un seguimiento en Cita Segura.</p>
+            </div>
+          )}
+
+          <button onClick={guardar} className="w-full rounded-2xl py-3.5 font-bold" style={{ background: BRAND.goldGradient, color: BRAND.black }}>Guardar mis frases</button>
+
+          <div className="rounded-xl p-3 mt-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
+            <p className="text-[12px] leading-relaxed" style={{ color: BRAND.textLight }}>
+              {"\u{1F4A1}"} <strong style={{ color: BRAND.white }}>Consejos:</strong> usá frases de 3+ palabras que suenen naturales pero que NO digas por accidente. Tus contactos siempre reciben tu mapa en vivo junto a la traducción. Cada frase avisa una sola vez por salida. El micrófono escucha únicamente mientras el seguimiento está activo.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function HomeScreen({ userProfile, authUser, pendingName, onLogout, onViewPlans }) {
   const [activeScreen, setActiveScreen] = useState("home");
   const [activeModule, setActiveModule] = useState(null);
@@ -5885,6 +6191,7 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
 
   if (activeScreen === "contactos") return <ContactosScreen onBack={() => { setActiveScreen("home"); cargarContactos(); }} userPlan={userPlan} nombreUsuario={nombreUsuario} onViewPlans={onViewPlans} />;
   if (activeScreen === "evidencias") return <EvidenciasScreen onBack={() => setActiveScreen("home")} />;
+  if (activeScreen === "mis_frases") return <MisFrasesScreen onBack={() => setActiveScreen("home")} />;
   if (activeScreen === "te_cuido") return <TeCuidoScreen onBack={() => setActiveScreen("home")} contactos={contactos} />;
   if (activeScreen === "instrucciones") return <InstruccionesScreen onBack={() => setActiveScreen("home")} />;
   // v19.6: Pantallas legales y borrar cuenta
@@ -5921,10 +6228,12 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
     else { const mod = MODULES.find(m => m.key === key); if (mod) setActiveModule(mod); }
   }
 function PanelPostPanico({ alertaActualId, respuestasPanico, setRespuestasPanico, contactos, enviarWhatsApp, setPanicoEnviado, setAlertaActualId, supabase, BRAND, GoldIcon }) {
+  // Pantalla siempre encendida mientras se esperan respuestas (GPS y radar no se cortan)
+  useWakeLock(true);
 React.useEffect(function() {
       if (!alertaActualId) return;
       var panicoTime = new Date().toISOString();
-      console.log("POLLING: escuchando respuestas desde", panicoTime);
+      
       var intervalo = setInterval(function() {
         // Buscar respuestas por alerta_id O por timestamp reciente (últimos 3 min)
         Promise.all([
@@ -5935,7 +6244,7 @@ React.useEffect(function() {
           if (results[0].data) todas = todas.concat(results[0].data);
           if (results[1].data) todas = todas.concat(results[1].data);
           if (todas.length > 0) {
-            console.log("POLLING: encontradas", todas.length, "respuestas");
+            
             var nuevas = {};
             todas.forEach(function(r) {
               nuevas[r.button_id] = { hora: new Date(r.timestamp || Date.now()), lat: r.lat, lng: r.lng };
@@ -6006,10 +6315,10 @@ React.useEffect(function() {
                   var numLimpio = contactos[i].telefono.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
                   var resp = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
                     method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [nombre.substring(0,60), "SIGO EN PELIGRO - necesito ayuda - Ver: traza360.app/alerta/" + alertaActualId, hora, "Seguridad"], alerta_id: alertaActualId })
+                    body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [nombre.substring(0,60), "SIGO EN PELIGRO - necesito ayuda - Ver: vigia24.app/alerta/" + alertaActualId, hora, "Seguridad"], alerta_id: alertaActualId })
                   });
                   var d = await resp.json();
-                  if (d.messages && d.messages[0]) console.log("Sigo en peligro enviado OK:", d.messages[0].id);
+                  
                 }
               } catch(e) { console.warn("Sigo en peligro error:", e); }
             }}
@@ -6019,6 +6328,7 @@ React.useEffect(function() {
               <div className="text-[11px] mt-0.5" style={{ color: BRAND.red }}>{t("sigoEnPeligro")}</div>
             </button>
             <button onClick={async function() {
+              if (!verificarPinCancelacion()) return;
               try {
                 var userData = await supabase.auth.getUser();
                 var nombre = "Usuario";
@@ -6110,13 +6420,13 @@ async function ejecutarPanico() {
           body: JSON.stringify({
             to: numLimpio,
             template: "alerta_emergencia",
-            params: [nombre.substring(0,60), "Alerta de panico - necesito ayuda urgente" + (location && location.lat ? " - Mapa: https://maps.google.com/?q=" + location.lat + "," + location.lng : "") + " - Responder: traza360.app/alerta/" + alertaId, hora, "Seguridad"],
+            params: [nombre.substring(0,60), "Alerta de panico - necesito ayuda urgente" + (location && location.lat ? " - Mapa: https://maps.google.com/?q=" + location.lat + "," + location.lng : "") + " - Responder: vigia24.app/alerta/" + alertaId, hora, "Seguridad"],
             alerta_id: alertaId
           })
         });
         var data = await response.json();
         if (data.messages && data.messages[0]) {
-          console.log("WhatsApp enviado OK:", data.messages[0].id);
+          
           try { await supabase.from("alertas").update({ wamid: data.messages[0].id }).eq("id", alertaId); } catch(e) {}
         } else { console.warn("WhatsApp API error:", data.error || data); }
       } catch(e) { console.warn("WA error:", e); }
@@ -6140,7 +6450,7 @@ async function ejecutarPanico() {
     for (var i = 0; i < contactosParaEnviar.length; i++) {
       try {
         var numLimpio = contactosParaEnviar[i].telefono.replace(/\+/g,"").replace(/\s/g,"").replace(/-/g,"").replace(/^0+/,"");
-        var response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [nombre.substring(0,60), "Timer de seguridad vencido - No respondio - verificar urgente" + (location && location.lat ? " - Mapa: https://maps.google.com/?q=" + location.lat + "," + location.lng : "") + " - Responder: traza360.app/alerta/" + alertaId, hora, "Cita Segura"], alerta_id: alertaId }) });
+        var response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: numLimpio, template: "alerta_emergencia", params: [nombre.substring(0,60), "Timer de seguridad vencido - No respondio - verificar urgente" + (location && location.lat ? " - Mapa: https://maps.google.com/?q=" + location.lat + "," + location.lng : "") + " - Responder: vigia24.app/alerta/" + alertaId, hora, "Cita Segura"], alerta_id: alertaId }) });
         var data = await response.json();
         if (data.messages && data.messages[0]) { try { await supabase.from("alertas").update({ wamid: data.messages[0].id }).eq("id", alertaId); } catch(e) {} }
       } catch(e) {}
@@ -6193,6 +6503,7 @@ async function ejecutarPanico() {
                   </button>
                   {[
                     { ico: "\u{1F465}", l: "Mis contactos", fn: () => setActiveScreen("contactos") },
+                    { ico: "\u{1F910}", l: "Mis Frases (código secreto)", fn: () => setActiveScreen("mis_frases") },
                     { ico: "\u2139\uFE0F", l: "¿Cómo funciona?", fn: () => setActiveScreen("instrucciones") },
                     { ico: "\u{1F512}", l: "Privacidad", fn: () => setActiveScreen("privacidad") },
                     { ico: "\u{1F4C4}", l: "Términos", fn: () => setActiveScreen("terminos") },
@@ -6377,7 +6688,7 @@ async function ejecutarPanico() {
               </div>
 
               <div className="text-[11px]" style={{ color: BRAND.textMute }}>
-                v{APP_VERSION} · traza360.app
+                v{APP_VERSION} · vigia24.app
               </div>
             </div>
           </>
@@ -6653,7 +6964,6 @@ function CalculadoraScreen({ onUnlock }) {
     try { const a = localStorage.getItem("traza360_quick_pin"); if (a) list.push(a); } catch(e){}
     try { const b = localStorage.getItem("traza360_pin"); if (b) list.push(b); } catch(e){}
     try { const c = sessionStorage.getItem("traza360_pin"); if (c) list.push(c); } catch(e){}
-    if (list.length === 0) list.push("1234");
     return list;
   });
   function handleKey(key) {
@@ -6764,12 +7074,19 @@ export default function App() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    // Página pública del mapa en vivo: traza360.app/live/{token}
+    // Página pública del mapa en vivo: vigia24.app/live/{token}
     const liveMatch = window.location.pathname.match(/\/live\/([^\/?#]+)/);
     if (liveMatch && liveMatch[1]) { setLiveToken(liveMatch[1]); setScreen("live"); return; }
-    // Página pública para que el CONTACTO responda y comparta SU ubicación: traza360.app/alerta/{id}
+    // Página pública para que el CONTACTO responda y comparta SU ubicación: vigia24.app/alerta/{id}
     const alertaMatch = window.location.pathname.match(/\/alerta\/([^\/?#]+)/);
     if (alertaMatch && alertaMatch[1]) { setAlertaResponderId(alertaMatch[1]); setScreen("alerta_responder"); return; }
+    // Modo oculto (calculadora): vigia24.app/?modo=calc — solo si hay PIN configurado
+    if (params.get("modo") === "calc") {
+      let tienePinCalc = false;
+      try { tienePinCalc = !!(localStorage.getItem("traza360_pin") || localStorage.getItem("traza360_quick_pin")); } catch(e){}
+      if (tienePinCalc) { setScreen("calc"); return; }
+      try { window.history.replaceState({}, "", window.location.pathname); } catch(e){}
+    }
     checkSession();
     // v19.7: pedir GPS con explicación primero
     const gpsAsked = sessionStorage.getItem("traza360_gps_asked");
@@ -6919,6 +7236,7 @@ export default function App() {
 
   if (screen === "live") return <LiveScreen token={liveToken} />;
   if (screen === "alerta_responder") return <AlertaResponderScreen alertaId={alertaResponderId} />;
+  if (screen === "calc") return <CalculadoraScreen onUnlock={() => { try { window.history.replaceState({}, "", window.location.pathname); } catch(e){} window.location.reload(); }} />;
 
   if (screen === "loading") return (
     <div className="flex min-h-screen items-center justify-center" style={{ background: BRAND.blackBg }}>
