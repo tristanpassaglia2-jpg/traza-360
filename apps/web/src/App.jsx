@@ -4993,6 +4993,53 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
   const recogRef = useRef(null);
   const escuchaVivaRef = useRef(false);
   const fraseAvisadaRef = useRef({});
+  // Nota de voz: decir la frase en código a demanda (estilo audio de WhatsApp)
+  const [notaEscuchando, setNotaEscuchando] = useState(false);
+  const [notaFeedback, setNotaFeedback] = useState("");
+  const notaRecogRef = useRef(null);
+
+  function notaDeVoz() {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert("Tu navegador no soporta reconocimiento de voz. Probá con Chrome (Android) o Safari actualizado."); return; }
+    if (!esPremiumZona) { alert("\u{1F910} El Código Secreto es una función Premium.\n\nActivala desde \u{1F48E} Planes y Premium."); return; }
+    var pares = frases.map(p => ({ f: normTexto(p.f), s: (p.s || "").trim() })).filter(p => p.f.length >= 4 && p.s.length >= 2);
+    if (pares.length === 0) { alert("Primero configurá tus frases en código:\n\nMenú de tu cuenta \u2192 \u{1F910} Mis Frases."); return; }
+    try {
+      setNotaFeedback("");
+      setNotaEscuchando(true);
+      var recog = new SR();
+      recog.lang = "es-AR"; recog.continuous = false; recog.interimResults = false; recog.maxAlternatives = 3;
+      var resuelto = false;
+      recog.onresult = async function(ev) {
+        resuelto = true;
+        var texto = "";
+        try { for (var ri = 0; ri < ev.results.length; ri++) { for (var ai = 0; ai < ev.results[ri].length; ai++) texto += ev.results[ri][ai].transcript + " "; } } catch(e) {}
+        var textoNorm = normTexto(texto);
+        var match = null;
+        for (var pi = 0; pi < pares.length; pi++) { if (textoNorm.indexOf(pares[pi].f) !== -1) { match = pares[pi]; break; } }
+        setNotaEscuchando(false);
+        if (!match) { setNotaFeedback("\u21BB No coincidió. Repetí tu frase."); setTimeout(() => setNotaFeedback(""), 3500); return; }
+        var horaF = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+        var msgCodigo = match.s.substring(0, 90) + " - (mensaje en codigo secreto, manejate con discrecion) - Seguir en vivo: " + liveUrl;
+        for (var fi = 0; fi < contactosMod.length; fi++) {
+          if (!contactosMod[fi].telefono) continue;
+          try {
+            var numF = contactosMod[fi].telefono.replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, "");
+            await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ to: numF, template: "alerta_emergencia", params: [nombreUsuario.substring(0,60), msgCodigo, horaF, "Codigo secreto"] })
+            });
+          } catch(e) {}
+        }
+        setNotaFeedback("\u2713 Enviado");
+        setTimeout(() => setNotaFeedback(""), 3000);
+      };
+      recog.onerror = function() { if (!resuelto) { resuelto = true; setNotaEscuchando(false); setNotaFeedback("\u21BB Repetí tu frase"); setTimeout(() => setNotaFeedback(""), 3500); } };
+      recog.onend = function() { if (!resuelto) { setNotaEscuchando(false); } };
+      notaRecogRef.current = recog;
+      recog.start();
+    } catch(e) { setNotaEscuchando(false); }
+  }
   // Pantalla siempre encendida mientras el seguimiento está activo (el GPS no se corta)
   useWakeLock(paso === 2);
 
@@ -5219,6 +5266,8 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
     clearInterval(gpsIntervalRef.current); clearInterval(timerRef.current);
     escuchaVivaRef.current = false;
     try { recogRef.current && recogRef.current.stop(); } catch(e) {}
+    try { notaRecogRef.current && notaRecogRef.current.stop(); } catch(e) {}
+    try { notaRecogRef.current && notaRecogRef.current.stop(); } catch(e) {}
     if (token) {
       await supabase.from("live_sessions").update({ cancelado_at: new Date().toISOString() }).eq("token", token);
       var horaStr = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
@@ -5452,6 +5501,14 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
                 <p className="text-sm font-bold" style={{ color: "#ff7a93" }}>Código Secreto escuchando</p>
               </div>
             )}
+
+            {/* NOTA DE VOZ — decir la frase en código a demanda */}
+            <button onClick={notaDeVoz} disabled={notaEscuchando}
+              className="w-full rounded-2xl py-4 mb-4 font-bold flex items-center justify-center gap-2"
+              style={{ background: notaEscuchando ? "linear-gradient(135deg, #FF2E55, #c01437)" : "rgba(255,255,255,0.04)", border: `1px solid ${notaEscuchando ? "#FF2E55" : BRAND.border}`, color: notaEscuchando ? "#fff" : BRAND.textLight, transition: "all 0.25s" }}>
+              <span style={{ fontSize: 18 }}>{"\u{1F3A4}"}</span>
+              {notaEscuchando ? "Escuchando... decí tu frase" : (notaFeedback || "Nota de voz")}
+            </button>
             <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
               <p className="text-sm font-bold mb-1" style={{ color: BRAND.gold }}>Link de seguimiento activo</p>
               <p className="text-[11px] break-all" style={{ color: BRAND.textLight }}>{liveUrl}</p>
