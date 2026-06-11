@@ -2341,8 +2341,10 @@ const MODULES = [
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
       { key: "panico", iconName: "shield", icon: "🚨", name: "Botón de pánico", desc: "Alerta inmediata + ubicación en el mapa a tu gente.", type: "alert_contacts", message: "ALERTA — Necesito ayuda urgente." },
+      { key: "audio_codex", iconName: "mic", icon: "\u{1F3A4}", name: "Enviar Audio Codex", desc: "Decí tu frase en código como si grabaras un audio. Tus contactos reciben la traducción + tu ubicación. \u{1F48E}", type: "audio_codex" },
       { key: "testigo",  iconName: "mic", icon: "📸", name: "Grabar evidencias + avisar", desc: "Foto frontal y trasera + audio del entorno + envía tu ubicación a tus contactos. Todo a la vez.", type: "modo_testigo" },
       { key: "ruta_segura", iconName: "eye", icon: "\u{1F4CD}", name: "Compartir mi ubicación en vivo", desc: "Tu gente ve tu mapa moviéndose en tiempo real. No instalan nada, abren un link.", type: "ruta_segura" },
+      { key: "zona_segura", iconName: "pin", icon: "\u{1F6E1}\u{FE0F}", name: "Zona Segura", desc: "Marcá tu zona y elegí el límite. Si te alejás, tus contactos reciben alerta automática + tu mapa en vivo. \u{1F48E}", type: "zona_segura" },
       { key: "ubicacion_ahora", iconName: "pin", icon: "\u{1F4CD}", name: "Mandar mi ubicación ahora", desc: "Envía tu ubicación actual en el mapa a tus contactos.", type: "alert_contacts", message: "Necesito que sepas dónde estoy ahora mismo." },
       { key: "grabar", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación de audio silenciosa → evidencias.", type: "record_audio" },
       { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver todas las fotos y grabaciones guardadas.", type: "evidencias" },
@@ -2354,6 +2356,8 @@ const MODULES = [
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
       { key: "ruta_segura", iconName: "eye",   icon: "\u{1F4CD}", name: "Compartir mi ubicación en vivo", desc: "Tu gente ve tu mapa moviéndose en tiempo real. No instalan nada, abren un link.", type: "ruta_segura" },
+      { key: "zona_segura", iconName: "pin", icon: "\u{1F6E1}\u{FE0F}", name: "Zona Segura", desc: "Marcá tu zona y elegí el límite. Si te alejás, tus contactos reciben alerta automática + tu mapa en vivo. \u{1F48E}", type: "zona_segura" },
+      { key: "audio_codex", iconName: "mic", icon: "\u{1F3A4}", name: "Enviar Audio Codex", desc: "Decí tu frase en código como si grabaras un audio. Tus contactos reciben la traducción + tu ubicación. \u{1F48E}", type: "audio_codex" },
       { key: "agenda", iconName: "pin", icon: "\u{1F4C5}", name: "Mi agenda — avisar encuentro", desc: "Avisá con quién y dónde te vas a encontrar. Envía nombre + ubicación a tu gente.", type: "alert_contacts", message: "Me voy a encontrar con [completar]. Te aviso por las dudas." },
       { key: "desconocido", iconName: "person", icon: "\u{1F6B6}", name: "Salgo con desconocido/a", desc: "Avisa a tu gente + nombre + ubicación.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
       { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Ingreso a este lugar", desc: "Activá tu tiempo de estadía. Si no desactivás, se avisa a tu gente con tu ubicación.", type: "checkin", titulo: "Ingreso a este lugar — Cita Segura" },
@@ -2438,6 +2442,8 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
   function handleAction(action) {
     switch (action.type) {
       case "ruta_segura":  setShowRutaSegura(true);  break;
+      case "zona_segura":  setShowRutaSegura(true);  break;
+      case "audio_codex":  setShowRutaSegura(true);  break;
       case "geocercas":    setShowGeocercas(true);   break;
       case "modo_testigo": setShowModoTestigo(true); break;
       case "alert_contacts":
@@ -5926,27 +5932,45 @@ function LandingScreen({ onScreen }) {
         {/* HERO */}
         {vista === "hero" && (
           <div>
-            <section style={{ textAlign: "center", padding: "44px 20px 30px" }}>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 18, animation: "heroUp 0.6s ease both" }}>
-                <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 92, height: 92, objectFit: "contain", filter: "drop-shadow(0 0 18px rgba(255,46,85,0.55)) drop-shadow(0 0 26px rgba(46,139,255,0.45))" }} />
+            <section style={{ textAlign: "center", padding: "38px 20px 26px" }}>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 14, animation: "heroUp 0.6s ease both" }}>
+                <img src="/preview.webp" alt="VIGÍA 24" style={{ width: 84, height: 84, objectFit: "contain", filter: "drop-shadow(0 0 18px rgba(255,46,85,0.55)) drop-shadow(0 0 26px rgba(46,139,255,0.45))" }} />
               </div>
-              <h1 style={{ fontSize: "clamp(46px, 13vw, 76px)", fontWeight: 900, letterSpacing: "3px", margin: "0 0 14px", lineHeight: 1, animation: "neonFlicker 7s infinite" }}>
+              <h1 style={{ fontSize: "clamp(42px, 12vw, 68px)", fontWeight: 900, letterSpacing: "3px", margin: "0 0 10px", lineHeight: 1, animation: "neonFlicker 7s infinite" }}>
                 <span style={{ color: "#fff", textShadow: NEON_RED_GLOW }}>VIGÍA</span>{" "}
                 <span style={{ color: "#fff", textShadow: NEON_BLUE_GLOW }}>24</span>
               </h1>
-              <div style={{ display: "inline-block", background: "rgba(46,139,255,0.1)", border: `1px solid rgba(46,139,255,0.4)`, borderRadius: 20, padding: "5px 14px", fontSize: 10, letterSpacing: "1.5px", textTransform: "uppercase", color: "#bcd8ff", marginBottom: 20, boxShadow: "0 0 16px rgba(46,139,255,0.2)" }}>
-                1ra app de seguridad con IA multimodal de LATAM
-              </div>
-              <h2 style={{ fontSize: "clamp(28px, 8vw, 44px)", fontWeight: 800, lineHeight: 1.12, margin: "0 auto 14px", maxWidth: 360, color: "#fff" }}>
-                Si algo pasa,<br/>
-                <span style={{ textShadow: NEON_RED_GLOW }}>alguien ya sabe.</span>
+              <h2 style={{ fontSize: "clamp(22px, 6.4vw, 32px)", fontWeight: 800, lineHeight: 1.15, margin: "0 auto 22px", maxWidth: 340, color: "#fff" }}>
+                Si algo pasa, <span style={{ textShadow: NEON_RED_GLOW }}>alguien ya sabe.</span>
               </h2>
-              <p style={{ fontSize: 15.5, color: "rgba(255,255,255,0.78)", maxWidth: 330, margin: "0 auto 26px", fontWeight: 400, lineHeight: 1.55 }}>
-                Seguridad personal en tiempo real. Compartí tu ubicación, grabá evidencia y alertá a tu gente de confianza con un toque.
+
+              {/* FRANJA INFO — estilo ficha de tienda */}
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "stretch", maxWidth: 400, margin: "0 auto 24px", borderTop: "1px solid rgba(255,255,255,0.1)", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+                {[
+                  { top: "GRATIS", bot: "para empezar" },
+                  { top: "\u{1F381} 7 DÍAS", bot: "Premium sin tarjeta" },
+                  { top: "\u{1F6E1}\u{FE0F} 24/7", bot: "tu gente te cuida" },
+                ].map((s, i) => (
+                  <div key={i} style={{ flex: 1, padding: "12px 6px", borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.1)" : "none" }}>
+                    <div style={{ fontSize: 15, fontWeight: 900, color: "#fff", letterSpacing: "0.5px" }}>{s.top}</div>
+                    <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>{s.bot}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* CTA PRINCIPAL — único protagonista, arriba de todo */}
+              <div style={{ maxWidth: 380, margin: "0 auto 30px", display: "flex", flexDirection: "column", gap: 10, padding: "0 16px" }}>
+                <button onClick={() => setVista("register")} style={{ width: "100%", borderRadius: 16, padding: "17px", fontSize: 17, fontWeight: 900, background: "linear-gradient(135deg, #2E8BFF, #1466d6)", color: "#fff", border: "none", cursor: "pointer", boxShadow: "0 8px 30px rgba(46,139,255,0.45), inset 0 0 14px rgba(255,255,255,0.12)", letterSpacing: "0.5px" }}>Comenzar gratis →</button>
+                <button onClick={() => setVista("login")} style={{ width: "100%", background: "none", border: "none", color: "rgba(255,255,255,0.6)", fontSize: 13.5, cursor: "pointer", padding: "6px" }}>¿Ya tenés cuenta? <span style={{ color: "#E8C96A", fontWeight: 800 }}>Ingresar</span></button>
+                <InstallButton />
+              </div>
+
+              <p style={{ fontSize: 15, color: "rgba(255,255,255,0.78)", maxWidth: 330, margin: "0 auto 24px", fontWeight: 400, lineHeight: 1.55 }}>
+                Compartí tu ubicación en vivo, grabá evidencia y alertá a tu gente de confianza con un toque.
               </p>
 
               {/* FEATURES */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, maxWidth: 400, margin: "0 auto 26px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, maxWidth: 400, margin: "0 auto" }}>
                 {[
                   { ico: "\u{1F4CD}", t: "Ubicación en vivo", d: "Tu mapa en tiempo real", c: NEON_BLUE, g: "rgba(46,139,255,0.45)" },
                   { ico: "\u{1F4F8}", t: "Evidencias", d: "Foto + audio al instante", c: NEON_RED, g: "rgba(255,46,85,0.45)" },
@@ -5958,24 +5982,6 @@ function LandingScreen({ onScreen }) {
                     <div style={{ fontSize: 10, color: "rgba(255,255,255,0.6)", lineHeight: 1.3 }}>{f.d}</div>
                   </div>
                 ))}
-              </div>
-
-              {/* Contacts line */}
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginBottom: 24 }}>
-                <div style={{ display: "flex" }}>
-                  {[0,1,2].map((i) => (
-                    <div key={i} style={{ width: 26, height: 26, borderRadius: "50%", background: "rgba(46,139,255,0.18)", border: "2px solid rgba(46,139,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, marginLeft: i > 0 ? -8 : 0 }}>{"\u{1F464}"}</div>
-                  ))}
-                </div>
-                <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.75)", fontWeight: 500 }}>Tu gente de confianza, siempre alerta</span>
-              </div>
-
-              <div style={{ maxWidth: 380, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12, padding: "0 16px" }}>
-                <div style={{ display: "inline-block", margin: "0 auto", background: "rgba(46,139,255,0.12)", border: "1px solid rgba(46,139,255,0.45)", borderRadius: 20, padding: "7px 16px", fontSize: 13, fontWeight: 800, color: "#bcd8ff", boxShadow: "0 0 16px rgba(46,139,255,0.25)" }}>
-                  {"\u{1F381}"} Obtené Premium GRATIS por 7 días
-                </div>
-                <button onClick={() => setVista("register")} style={{ width: "100%", borderRadius: 16, padding: "16px", fontSize: 16, fontWeight: 900, background: "linear-gradient(135deg, #2E8BFF, #1466d6)", color: "#fff", border: "none", cursor: "pointer", boxShadow: "0 8px 30px rgba(46,139,255,0.45), inset 0 0 14px rgba(255,255,255,0.12)", letterSpacing: "0.5px" }}>Comenzar gratis →</button>
-                <InstallButton />
               </div>
             </section>
 
