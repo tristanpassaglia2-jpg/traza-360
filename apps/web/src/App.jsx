@@ -2341,6 +2341,7 @@ const MODULES = [
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
       { key: "panico", iconName: "shield", icon: "🚨", name: "Botón de pánico", desc: "Alerta inmediata + ubicación en el mapa a tu gente.", type: "alert_contacts", message: "ALERTA — Necesito ayuda urgente." },
+      { key: "ruta_segura", iconName: "eye", icon: "\u{1F4CD}", name: "Compartir mi ubicación en vivo", desc: "Tu gente ve tu mapa moviéndose en tiempo real. No instalan nada, abren un link.", type: "ruta_segura" },
       { key: "activar_timer", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Activar Timer", desc: "Elegí cuánto tiempo. Si no cancelás, mandamos tu ubicación + fotos (adelante y atrás) + audio del entorno a tus contactos.", type: "activar_timer" },
       { key: "zona_segura", iconName: "pin", icon: "\u{1F6E1}\u{FE0F}", name: "Zona Segura", desc: "Marcá tu punto de partida y el límite. Si te alejás, tus contactos reciben alerta automática con tu mapa. \u{1F48E}", type: "zona_segura" },
       { key: "audio_codex", iconName: "mic", icon: "\u{1F3A4}", name: "Audio Codex", desc: "Decí tu frase en código. Tus contactos reciben la traducción + tu ubicación. \u{1F48E}", type: "audio_codex" },
@@ -2355,6 +2356,7 @@ const MODULES = [
   { key: "turno_seguro", iconName: "night", emoji: "\u{1F550}", title: "Cita Segura", desc: "Antes y durante un encuentro. Avisá con quién vas, compartí tu ubicación en vivo y que tu gente te siga.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
+      { key: "ruta_segura", iconName: "eye", icon: "\u{1F4CD}", name: "Compartir mi ubicación en vivo", desc: "Tu gente ve tu mapa moviéndose en tiempo real. No instalan nada, abren un link.", type: "ruta_segura" },
       { key: "activar_timer", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Activar Timer", desc: "Elegí cuánto tiempo. Si no cancelás que llegaste, mandamos tu ubicación + fotos (adelante y atrás) + audio del entorno a tus contactos.", type: "activar_timer" },
       { key: "zona_segura", iconName: "pin", icon: "\u{1F6E1}\u{FE0F}", name: "Zona Segura", desc: "Marcá tu punto de partida y el límite. Si te alejás, tus contactos reciben alerta automática con tu mapa. \u{1F48E}", type: "zona_segura" },
       { key: "audio_codex", iconName: "mic", icon: "\u{1F3A4}", name: "Audio Codex", desc: "Decí tu frase en código. Tus contactos reciben la traducción + tu ubicación. \u{1F48E}", type: "audio_codex" },
