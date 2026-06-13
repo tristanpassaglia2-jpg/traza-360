@@ -1213,7 +1213,7 @@ function GrabacionModal({ onClose }) {
           <div className="mb-3 text-4xl">{guardado ? "\u2705" : "\u{1F399}\u{FE0F}"}</div>
           <div className="text-lg font-bold text-slate-100">{guardado ? "Evidencia guardada" : "Grabación silenciosa"}</div>
           {guardado ? (
-            <><p className="mt-2 text-sm text-slate-300">{guardado === "nube" ? "Guardado en la nube. Accedé desde Mis Evidencias." : "Descargado en tu dispositivo."}</p>
+            <><p className="mt-2 text-sm text-slate-300">{guardado === "nube" ? "Guardado en la nube. Accedé desde Mis archivos." : "Descargado en tu dispositivo."}</p>
             <button onClick={onClose} className="mt-4 w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 py-3 text-sm font-semibold text-white">Listo</button></>
           ) : grabando ? (
             <><div className="my-6 rounded-2xl border border-red-500/30 bg-red-500/10 py-6">
@@ -1522,7 +1522,7 @@ function EvidenciasScreen({ onBack }) {
         <button onClick={onBack} className="mb-4 text-sm font-semibold" style={{ color: "#E0E0E0" }}>{"\u2190"} Volver al panel</button>
         <div className="mb-6 rounded-2xl p-6" style={{ background: "linear-gradient(145deg, #13131d, #0e0e16)", border: "1px solid rgba(224,224,224,0.1)" }}>
           <p className="text-[12px] uppercase tracking-[3px]" style={{ color: "#E0E0E0" }}>Mis archivos protegidos</p>
-          <h2 className="mt-2 text-xl font-bold">Mis Evidencias</h2>
+          <h2 className="mt-2 text-xl font-bold">Mis archivos</h2>
           <p className="mt-2 text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>Grabaciones guardadas en la nube con cifrado.</p>
         </div>
 
@@ -2341,13 +2341,13 @@ const MODULES = [
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
       { key: "panico", iconName: "shield", icon: "🚨", name: "Botón de pánico", desc: "Alerta inmediata + ubicación en el mapa a tu gente.", type: "alert_contacts", message: "ALERTA — Necesito ayuda urgente." },
-      { key: "audio_codex", iconName: "mic", icon: "\u{1F3A4}", name: "Enviar Audio Codex", desc: "Decí tu frase en código como si grabaras un audio. Tus contactos reciben la traducción + tu ubicación. \u{1F48E}", type: "audio_codex" },
+      { key: "activar_timer", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Activar Timer", desc: "Elegí cuánto tiempo. Si no cancelás, mandamos tu ubicación + fotos (adelante y atrás) + audio del entorno a tus contactos.", type: "activar_timer" },
+      { key: "zona_segura", iconName: "pin", icon: "\u{1F6E1}\u{FE0F}", name: "Zona Segura", desc: "Marcá tu punto de partida y el límite. Si te alejás, tus contactos reciben alerta automática con tu mapa. \u{1F48E}", type: "zona_segura" },
+      { key: "audio_codex", iconName: "mic", icon: "\u{1F3A4}", name: "Audio Codex", desc: "Decí tu frase en código. Tus contactos reciben la traducción + tu ubicación. \u{1F48E}", type: "audio_codex" },
       { key: "testigo",  iconName: "mic", icon: "📸", name: "Grabar evidencias + avisar", desc: "Foto frontal y trasera + audio del entorno + envía tu ubicación a tus contactos. Todo a la vez.", type: "modo_testigo" },
-      { key: "ruta_segura", iconName: "eye", icon: "\u{1F4CD}", name: "Compartir mi ubicación en vivo", desc: "Tu gente ve tu mapa moviéndose en tiempo real. No instalan nada, abren un link.", type: "ruta_segura" },
-      { key: "zona_segura", iconName: "pin", icon: "\u{1F6E1}\u{FE0F}", name: "Zona Segura", desc: "Marcá tu zona y elegí el límite. Si te alejás, tus contactos reciben alerta automática + tu mapa en vivo. \u{1F48E}", type: "zona_segura" },
       { key: "ubicacion_ahora", iconName: "pin", icon: "\u{1F4CD}", name: "Mandar mi ubicación ahora", desc: "Envía tu ubicación actual en el mapa a tus contactos.", type: "alert_contacts", message: "Necesito que sepas dónde estoy ahora mismo." },
-      { key: "grabar", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación de audio silenciosa → evidencias.", type: "record_audio" },
-      { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver todas las fotos y grabaciones guardadas.", type: "evidencias" },
+      { key: "grabar", iconName: "mic", icon: "\u{1F399}\u{FE0F}", name: "Grabar sonido entorno", desc: "Grabación de audio silenciosa → mis archivos.", type: "record_audio" },
+      { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis archivos", desc: "Ver todas las fotos y grabaciones guardadas.", type: "evidencias" },
     ]},
   // v19.1: Renombrado "Noches Seguras" → "Noches Seguras"
   // Motivo: Nicho mucho más grande (jóvenes que salen de noche + trabajadores nocturnos).
@@ -2355,13 +2355,12 @@ const MODULES = [
   { key: "turno_seguro", iconName: "night", emoji: "\u{1F550}", title: "Cita Segura", desc: "Antes y durante un encuentro. Avisá con quién vas, compartí tu ubicación en vivo y que tu gente te siga.",
     color: "from-[#D4AF37] to-[#9A7B0F]", border: "border-[rgba(212,175,55,0.25)]", accentBg: "bg-[rgba(212,175,55,0.1)]", accentBorder: "border-[rgba(212,175,55,0.4)]", accentText: "text-[#D4AF37]",
     actions: [
-      { key: "ruta_segura", iconName: "eye",   icon: "\u{1F4CD}", name: "Compartir mi ubicación en vivo", desc: "Tu gente ve tu mapa moviéndose en tiempo real. No instalan nada, abren un link.", type: "ruta_segura" },
-      { key: "zona_segura", iconName: "pin", icon: "\u{1F6E1}\u{FE0F}", name: "Zona Segura", desc: "Marcá tu zona y elegí el límite. Si te alejás, tus contactos reciben alerta automática + tu mapa en vivo. \u{1F48E}", type: "zona_segura" },
-      { key: "audio_codex", iconName: "mic", icon: "\u{1F3A4}", name: "Enviar Audio Codex", desc: "Decí tu frase en código como si grabaras un audio. Tus contactos reciben la traducción + tu ubicación. \u{1F48E}", type: "audio_codex" },
-      { key: "agenda", iconName: "pin", icon: "\u{1F4C5}", name: "Mi agenda — avisar encuentro", desc: "Avisá con quién y dónde te vas a encontrar. Envía nombre + ubicación a tu gente.", type: "alert_contacts", message: "Me voy a encontrar con [completar]. Te aviso por las dudas." },
-      { key: "desconocido", iconName: "person", icon: "\u{1F6B6}", name: "Salgo con desconocido/a", desc: "Avisa a tu gente + nombre + ubicación.", type: "alert_contacts", message: "Salgo con desconocido/a: [completar]." },
+      { key: "activar_timer", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Activar Timer", desc: "Elegí cuánto tiempo. Si no cancelás que llegaste, mandamos tu ubicación + fotos (adelante y atrás) + audio del entorno a tus contactos.", type: "activar_timer" },
+      { key: "zona_segura", iconName: "pin", icon: "\u{1F6E1}\u{FE0F}", name: "Zona Segura", desc: "Marcá tu punto de partida y el límite. Si te alejás, tus contactos reciben alerta automática con tu mapa. \u{1F48E}", type: "zona_segura" },
+      { key: "audio_codex", iconName: "mic", icon: "\u{1F3A4}", name: "Audio Codex", desc: "Decí tu frase en código. Tus contactos reciben la traducción + tu ubicación. \u{1F48E}", type: "audio_codex" },
+      { key: "desconocido", iconName: "person", icon: "\u{1F6B6}", name: "Salgo con desconocido/a", desc: "Poné el nombre y un timer. Avisamos a tu gente con quién salís + tu ubicación. Si no cancelás, alerta automática.", type: "salgo_desconocido" },
       { key: "checkin", iconName: "timer", icon: "\u23F1\u{FE0F}", name: "Ingreso a este lugar", desc: "Activá tu tiempo de estadía. Si no desactivás, se avisa a tu gente con tu ubicación.", type: "checkin", titulo: "Ingreso a este lugar — Cita Segura" },
-      { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis evidencias", desc: "Ver fotos y grabaciones guardadas.", type: "evidencias" },
+      { key: "evidencias", iconName: "folder", icon: "\u{1F4C1}", name: "Mis archivos", desc: "Ver fotos y grabaciones guardadas.", type: "evidencias" },
       { key: "maps", iconName: "home", icon: "\u{1F3E1}", name: "Llegar a casa", desc: "Activa GPS hasta llegar a casa.", type: "maps", destination: HOME_ADDRESS_DEFAULT },
       { key: "uber", iconName: "car", icon: "\u{1F695}", name: "Llamar Uber", desc: "Abre Uber.", type: "uber", destination: HOME_ADDRESS_DEFAULT },
     ]},
@@ -2427,8 +2426,424 @@ const MODULES = [
 
 ];
 
+// ═══════════════════════════════════════════════
+// ACTIVAR TIMER (y Salgo con desconocido/a) — timer de seguridad directo
+// Si no cancelás antes de que venza: ubicación + fotos (frontal+trasera) + audio → contactos
+// ═══════════════════════════════════════════════
+async function _nombreUsuarioActual() {
+  try { var u = await supabase.auth.getUser(); return u.data.user.user_metadata.nombre || u.data.user.user_metadata.full_name || u.data.user.email.split("@")[0] || "Usuario"; } catch(e) { return "Usuario"; }
+}
+function _limpiarNum(t) { return (t || "").replace(/\+/g, "").replace(/\s/g, "").replace(/-/g, "").replace(/^0+/, ""); }
+
+function TimerSeguridadModal({ onClose, contactos, moduloKey, conNombre = false }) {
+  var [fase, setFase] = useState("setup"); // setup | activo | vencido
+  var [nombreCita, setNombreCita] = useState("");
+  var [minutos, setMinutos] = useState(60);
+  var [customMin, setCustomMin] = useState("");
+  var [endTime, setEndTime] = useState(null);
+  var [restante, setRestante] = useState(0);
+  var [error, setError] = useState("");
+  var [estado, setEstado] = useState("");
+  var timerRef = useRef(null);
+  var moduloLabel = moduloKey === "mi_escudo" ? "Modo Alerta" : "Cita Segura";
+
+  useEffect(function() { return function() { clearInterval(timerRef.current); }; }, []);
+  useWakeLock(fase === "activo");
+
+  function minutosFinales() {
+    if (customMin) { var n = parseInt(customMin, 10); if (!isNaN(n) && n >= 1 && n <= 1440) return n; }
+    return minutos;
+  }
+
+  async function activar() {
+    setError("");
+    if (conNombre && !nombreCita.trim()) { setError("Poné el nombre de la persona con quien salís."); return; }
+    if (!contactos || contactos.length === 0) { setError("Necesitás al menos 1 contacto de confianza."); return; }
+    var mins = minutosFinales();
+    var et = Date.now() + mins * 60000;
+    setEndTime(et); setRestante(mins * 60); setFase("activo");
+    try {
+      var nombre = await _nombreUsuarioActual();
+      var loc = (await getCurrentLocationWithFallback()).location;
+      var hora = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+      var horaFin = new Date(et).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+      var mapa = loc && loc.lat ? " - Mapa: https://maps.google.com/?q=" + loc.lat + "," + loc.lng : "";
+      var msg = conNombre
+        ? "Salgo con " + nombreCita.trim() + ". Si no cancelo antes de las " + horaFin + ", necesito que me contacten." + mapa
+        : "Activé un timer de seguridad. Si no cancelo antes de las " + horaFin + ", algo pasó." + mapa;
+      for (var i = 0; i < contactos.length; i++) {
+        try {
+          await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ to: _limpiarNum(contactos[i].telefono), template: "alerta_emergencia", params: [nombre.substring(0,60), msg, hora, moduloLabel] })
+          });
+        } catch(e) {}
+      }
+    } catch(e) {}
+    timerRef.current = setInterval(function() {
+      var ms = et - Date.now();
+      if (ms <= 0) { clearInterval(timerRef.current); setRestante(0); vencer(); return; }
+      setRestante(Math.floor(ms / 1000));
+    }, 1000);
+  }
+
+  async function vencer() {
+    setFase("vencido");
+    try {
+      setEstado("Obteniendo tu ubicación...");
+      var nombre = await _nombreUsuarioActual();
+      var loc = (await getCurrentLocationWithFallback()).location;
+      var hora = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+      var alertaId = crypto.randomUUID();
+      try {
+        await supabase.from("alertas").insert({ id: alertaId, usuario_id: (window.__traza360_auth && window.__traza360_auth.id) || null, tipo: "timer", modulo: moduloKey, mensaje: "Timer de seguridad vencido. No confirmó.", latitud: (loc && loc.lat) || null, longitud: (loc && loc.lng) || null, link_mapa: loc && loc.lat ? "https://maps.google.com/?q=" + loc.lat + "," + loc.lng : null, enviado_a: contactos.map(function(c){ return c.telefono; }), creado_en: new Date().toISOString() });
+      } catch(e) {}
+      setEstado("Capturando evidencias...");
+      try { var ff = await capturarFoto("user"); if (ff) await subirFotoEvidencia(ff, "frontal"); } catch(e) {}
+      try { var ft = await capturarFoto("environment"); if (ft) await subirFotoEvidencia(ft, "trasera"); } catch(e) {}
+      try { var ar = await iniciarGrabacion(); if (ar.success) { await new Promise(function(r){ setTimeout(r, 12000); }); var blob = await detenerGrabacion(); if (blob) await guardarEvidencia(blob, "audio"); } } catch(e) {}
+      setEstado("Avisando a tus contactos...");
+      var mapa = loc && loc.lat ? " - Mapa: https://maps.google.com/?q=" + loc.lat + "," + loc.lng : "";
+      var msg = (conNombre && nombreCita.trim() ? "TIMER VENCIDO — Salí con " + nombreCita.trim() + " y no confirmé. Verificar urgente." : "TIMER VENCIDO — No confirmé que estoy bien. Verificar urgente.") + mapa + " - Responder: vigia24.app/alerta/" + alertaId;
+      for (var i = 0; i < contactos.length; i++) {
+        try {
+          await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ to: _limpiarNum(contactos[i].telefono), template: "alerta_emergencia", params: [nombre.substring(0,60), msg, hora, moduloLabel], alerta_id: alertaId })
+          });
+        } catch(e) {}
+      }
+      try { reproducirSonido(); } catch(e) {}
+      setEstado("");
+    } catch(e) { setEstado(""); }
+  }
+
+  function llegueBien() {
+    if (!verificarPinCancelacion()) return;
+    clearInterval(timerRef.current);
+    (async function() {
+      try {
+        var nombre = await _nombreUsuarioActual();
+        var hora = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+        for (var i = 0; i < contactos.length; i++) {
+          try {
+            await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ to: _limpiarNum(contactos[i].telefono), template: "alerta_emergencia", params: [nombre.substring(0,60), "Llegué bien. Todo en orden.", hora, moduloLabel] })
+            });
+          } catch(e) {}
+        }
+      } catch(e) {}
+    })();
+    onClose();
+  }
+
+  function fmt(s) { if (!s || s < 0) s = 0; var h = Math.floor(s/3600), m = Math.floor((s%3600)/60), ss = s%60; return h>0 ? h+":"+String(m).padStart(2,"0")+":"+String(ss).padStart(2,"0") : String(m).padStart(2,"0")+":"+String(ss).padStart(2,"0"); }
+  var pct = (fase === "activo" && endTime) ? Math.max(0, Math.min(1, restante / (minutosFinales()*60))) : 1;
+
+  return (
+    <div className="fixed inset-0 z-[300] flex items-end justify-center bg-black/95 backdrop-blur-sm" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div className="w-full max-w-md rounded-t-3xl overflow-hidden" style={{ background: "#000", border: `2px solid ${BRAND.borderStrong}`, maxHeight: "92vh", overflowY: "auto" }}>
+        <div className="flex justify-center pt-3 pb-1"><div className="h-1 w-12 rounded-full" style={{ background: BRAND.borderStrong }} /></div>
+
+        {fase === "setup" && (
+          <div className="px-5 pb-7 pt-2">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-bold" style={{ color: BRAND.white }}>{conNombre ? "Salgo con desconocido/a" : "Activar Timer"}</h2>
+                <p className="text-sm mt-0.5" style={{ color: BRAND.textLight }}>Si no cancelás a tiempo, alerta automática.</p>
+              </div>
+              <button onClick={onClose} className="text-2xl" style={{ color: BRAND.textMute }}>✕</button>
+            </div>
+
+            {conNombre && (
+              <>
+                <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>¿Con quién salís?</p>
+                <input type="text" value={nombreCita} onChange={e => setNombreCita(e.target.value)} placeholder="Nombre de la persona"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none mb-4"
+                  style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.white }} />
+              </>
+            )}
+
+            <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>¿Cuánto tiempo?</p>
+            <div className="grid grid-cols-4 gap-2 mb-2">
+              {[{l:"30 min",m:30},{l:"1 hora",m:60},{l:"2 horas",m:120},{l:"3 horas",m:180}].map(o => (
+                <button key={o.m} onClick={() => { setMinutos(o.m); setCustomMin(""); }}
+                  className="rounded-xl py-2.5 text-sm font-bold"
+                  style={{ background: (minutos === o.m && !customMin) ? BRAND.goldGradient : "rgba(255,255,255,0.04)", color: (minutos === o.m && !customMin) ? BRAND.black : BRAND.textMute, border: `1px solid ${(minutos === o.m && !customMin) ? BRAND.gold : BRAND.border}` }}>
+                  {o.l}
+                </button>
+              ))}
+            </div>
+            <input type="number" min="1" max="1440" value={customMin} onChange={e => setCustomMin(e.target.value)}
+              placeholder="Personalizado (minutos)"
+              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none mb-4"
+              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${customMin ? BRAND.gold : BRAND.border}`, color: BRAND.white }} />
+
+            <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
+              <p className="text-[12px] leading-relaxed" style={{ color: BRAND.textLight }}>{"\u23F1\uFE0F"} Si no tocás <strong style={{ color: BRAND.white }}>"Llegué bien"</strong> antes de que termine, mandamos a tus contactos tu <strong style={{ color: BRAND.white }}>ubicación + fotos (adelante y atrás) + audio del entorno</strong>.</p>
+            </div>
+
+            {error && <p className="text-sm mb-3" style={{ color: "#fca5a5" }}>{error}</p>}
+            <button onClick={activar} className="w-full rounded-2xl py-4 font-bold text-base" style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+              {"\u23F1\uFE0F"} Activar timer
+            </button>
+            <button onClick={onClose} className="w-full py-3 text-sm mt-1" style={{ color: BRAND.textMute }}>Cancelar</button>
+          </div>
+        )}
+
+        {fase === "activo" && (
+          <div className="px-5 pb-7 pt-4 text-center">
+            <p className="text-[11px] uppercase tracking-[4px] mb-1 font-bold" style={{ color: BRAND.gold }}>{"\u23F1\uFE0F"} Timer activo</p>
+            {conNombre && nombreCita.trim() && <p className="text-sm mb-3" style={{ color: BRAND.textLight }}>Salida con <strong style={{ color: BRAND.white }}>{nombreCita.trim()}</strong></p>}
+            <div className="relative mx-auto mb-5" style={{ width: 150, height: 150 }}>
+              <svg width="150" height="150" style={{ transform: "rotate(-90deg)" }}>
+                <circle cx="75" cy="75" r="62" fill="none" stroke="rgba(201,168,76,0.15)" strokeWidth="9" />
+                <circle cx="75" cy="75" r="62" fill="none" stroke={restante <= 120 ? "#ff4444" : BRAND.gold} strokeWidth="9" strokeLinecap="round" strokeDasharray={389.6} strokeDashoffset={389.6 * (1 - pct)} style={{ transition: "stroke-dashoffset 1s linear" }} />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="font-mono text-3xl font-bold" style={{ color: restante <= 120 ? "#ff4444" : BRAND.white }}>{fmt(restante)}</span>
+              </div>
+            </div>
+            <button onClick={llegueBien} className="w-full rounded-2xl py-4 font-bold text-base mb-2" style={{ background: BRAND.goldGradient, color: BRAND.black }}>{"\u2705"} Llegué bien — Cancelar</button>
+            <p className="text-[11px]" style={{ color: BRAND.textMute }}>Mantené la pantalla encendida para que el timer corra preciso.</p>
+          </div>
+        )}
+
+        {fase === "vencido" && (
+          <div className="px-5 pb-8 pt-5 text-center">
+            <div className="text-5xl mb-3">{"\u{1F6A8}"}</div>
+            <h3 className="text-lg font-bold mb-1" style={{ color: BRAND.red }}>Timer vencido</h3>
+            <p className="text-sm mb-4" style={{ color: BRAND.textLight }}>{estado || "Tus contactos fueron avisados con tu ubicación y evidencias."}</p>
+            {estado ? <div className="animate-spin text-3xl mb-4">{"\u{1F504}"}</div> : (
+              <button onClick={onClose} className="w-full rounded-2xl py-4 font-bold" style={{ background: BRAND.goldGradient, color: BRAND.black }}>Cerrar</button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// ZONA SEGURA (geocerca directa) — marcar punto + límite, alerta si te alejás
+// ═══════════════════════════════════════════════
+function ZonaSeguraModal({ onClose, contactos, moduloKey }) {
+  var [fase, setFase] = useState("setup"); // setup | activo
+  var [radio, setRadio] = useState(500);
+  var [capturando, setCapturando] = useState(false);
+  var [distancia, setDistancia] = useState(null);
+  var [fuera, setFuera] = useState(false);
+  var [error, setError] = useState("");
+  var anclaRef = useRef(null);
+  var radioRef = useRef(500);
+  var avisadoRef = useRef(false);
+  var intervalRef = useRef(null);
+  var moduloLabel = moduloKey === "mi_escudo" ? "Modo Alerta" : "Cita Segura";
+
+  useEffect(function(){ radioRef.current = radio; }, [radio]);
+  useEffect(function(){ return function(){ clearInterval(intervalRef.current); }; }, []);
+  useWakeLock(fase === "activo");
+
+  function activar() {
+    setError("");
+    if (!contactos || contactos.length === 0) { setError("Necesitás al menos 1 contacto de confianza."); return; }
+    if (!navigator.geolocation) { setError("Tu teléfono no permite ubicación."); return; }
+    setCapturando(true);
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      anclaRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      radioRef.current = radio; avisadoRef.current = false;
+      setCapturando(false); setFase("activo"); setDistancia(0); setFuera(false);
+      intervalRef.current = setInterval(chequear, 15000);
+    }, function() { setCapturando(false); setError("No pudimos obtener tu ubicación. Activá el GPS y reintentá."); }, { enableHighAccuracy: true, timeout: 10000 });
+  }
+
+  function chequear() {
+    if (!navigator.geolocation || !anclaRef.current) return;
+    navigator.geolocation.getCurrentPosition(async function(pos) {
+      var d = distanciaMetros(anclaRef.current.lat, anclaRef.current.lng, pos.coords.latitude, pos.coords.longitude);
+      setDistancia(Math.round(d));
+      var estaFuera = d > radioRef.current;
+      setFuera(estaFuera);
+      if (estaFuera && !avisadoRef.current) {
+        avisadoRef.current = true;
+        try {
+          var nombre = await _nombreUsuarioActual();
+          var hora = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+          var mapa = "https://maps.google.com/?q=" + pos.coords.latitude + "," + pos.coords.longitude;
+          for (var i = 0; i < contactos.length; i++) {
+            try {
+              await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ to: _limpiarNum(contactos[i].telefono), template: "alerta_emergencia", params: [nombre.substring(0,60), "SALIO DE SU ZONA SEGURA (a " + Math.round(d) + " m, límite " + radioRef.current + " m) - Mapa: " + mapa, hora, moduloLabel] })
+              });
+            } catch(e) {}
+          }
+          try { reproducirSonido(); } catch(e) {}
+        } catch(e) {}
+      }
+    }, function(){}, { enableHighAccuracy: true, timeout: 8000 });
+  }
+
+  function desactivar() { if (!verificarPinCancelacion()) return; clearInterval(intervalRef.current); onClose(); }
+
+  return (
+    <div className="fixed inset-0 z-[300] flex items-end justify-center bg-black/95 backdrop-blur-sm" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div className="w-full max-w-md rounded-t-3xl overflow-hidden" style={{ background: "#000", border: `2px solid ${BRAND.borderStrong}`, maxHeight: "92vh", overflowY: "auto" }}>
+        <div className="flex justify-center pt-3 pb-1"><div className="h-1 w-12 rounded-full" style={{ background: BRAND.borderStrong }} /></div>
+
+        {fase === "setup" && (
+          <div className="px-5 pb-7 pt-2">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-bold" style={{ color: BRAND.white }}>{"\u{1F6E1}\uFE0F"} Zona Segura</h2>
+                <p className="text-sm mt-0.5" style={{ color: BRAND.textLight }}>Te avisamos si te alejás de tu punto de partida.</p>
+              </div>
+              <button onClick={onClose} className="text-2xl" style={{ color: BRAND.textMute }}>✕</button>
+            </div>
+
+            <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(46,139,255,0.08)", border: "1px solid rgba(46,139,255,0.4)" }}>
+              <p className="text-[12px] leading-relaxed" style={{ color: BRAND.textLight }}>Marcamos tu punto de partida al activar. Si te alejás más del límite que elijas, tus contactos reciben un WhatsApp automático con tu mapa.</p>
+            </div>
+
+            <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>Límite</p>
+            <div className="grid grid-cols-3 gap-2 mb-5">
+              {[{l:"300 m",v:300},{l:"500 m",v:500},{l:"1 km",v:1000}].map(r => (
+                <button key={r.v} onClick={() => setRadio(r.v)}
+                  className="rounded-xl py-3 text-sm font-bold"
+                  style={{ background: radio === r.v ? "linear-gradient(135deg, #2E8BFF, #1466d6)" : "rgba(255,255,255,0.04)", color: radio === r.v ? "#fff" : BRAND.textMute, border: `1px solid ${radio === r.v ? "#2E8BFF" : BRAND.border}` }}>
+                  {r.l}
+                </button>
+              ))}
+            </div>
+
+            {error && <p className="text-sm mb-3" style={{ color: "#fca5a5" }}>{error}</p>}
+            <button onClick={activar} disabled={capturando} className="w-full rounded-2xl py-4 font-bold text-base disabled:opacity-50" style={{ background: BRAND.goldGradient, color: BRAND.black }}>
+              {capturando ? "\u{1F4E1} Marcando tu punto de partida..." : "\u{1F4CD} Marcar punto y activar"}
+            </button>
+            <button onClick={onClose} className="w-full py-3 text-sm mt-1" style={{ color: BRAND.textMute }}>Cancelar</button>
+          </div>
+        )}
+
+        {fase === "activo" && (
+          <div className="px-5 pb-7 pt-4 text-center">
+            <div className="text-5xl mb-3">{fuera ? "\u26A0\uFE0F" : "\u2705"}</div>
+            <p className="text-xl font-bold mb-1" style={{ color: fuera ? BRAND.red : "#22c55e" }}>{fuera ? "Fuera de tu zona" : "Dentro de tu zona"}</p>
+            {distancia !== null && <p className="text-sm mb-4" style={{ color: BRAND.textLight }}>A {distancia} m del punto de partida · Límite {radio >= 1000 ? (radio/1000)+" km" : radio+" m"}</p>}
+            <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(46,139,255,0.08)", border: "1px solid rgba(46,139,255,0.4)" }}>
+              <p className="text-sm font-bold" style={{ color: "#5fa8ff" }}>{"\u{1F6E1}\uFE0F"} Vigilando cada 15 segundos</p>
+              <p className="text-[12px] mt-1" style={{ color: BRAND.textLight }}>{fuera ? "Ya avisamos a tus contactos con tu mapa." : "Si salís del límite, avisamos solos."}</p>
+            </div>
+            <button onClick={desactivar} className="w-full rounded-2xl py-4 font-bold" style={{ background: "rgba(220,38,38,0.1)", border: `2px solid ${BRAND.red}`, color: "#fca5a5" }}>Desactivar Zona Segura</button>
+            <p className="text-[11px] mt-2" style={{ color: BRAND.textMute }}>Mantené la pantalla encendida para el monitoreo en vivo.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// AUDIO CODEX (directo) — decí tu frase en código → traducción + ubicación a contactos
+// ═══════════════════════════════════════════════
+function AudioCodexModal({ onClose, contactos, moduloKey, onConfigFrases }) {
+  var [escuchando, setEscuchando] = useState(false);
+  var [feedback, setFeedback] = useState("");
+  var recogRef = useRef(null);
+
+  var pares = (function() {
+    try {
+      var raw = localStorage.getItem("traza360_frases_secretas");
+      if (raw) { var arr = JSON.parse(raw); if (Array.isArray(arr)) return arr.map(function(x){ return { f: normTexto((x && x.f) || ""), s: (((x && x.s) || "")).trim() }; }).filter(function(p){ return p.f.length >= 4 && p.s.length >= 2; }); }
+    } catch(e) {}
+    return [];
+  })();
+
+  useEffect(function(){ return function(){ try { recogRef.current && recogRef.current.stop(); } catch(e){} }; }, []);
+
+  function grabar() {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert("Tu navegador no soporta reconocimiento de voz. Probá con Chrome (Android) o Safari actualizado."); return; }
+    if (pares.length === 0) { alert("Primero configurá tus frases en código."); return; }
+    if (!contactos || contactos.length === 0) { alert("Necesitás al menos 1 contacto de confianza."); return; }
+    try {
+      setFeedback(""); setEscuchando(true);
+      var recog = new SR();
+      recog.lang = "es-AR"; recog.continuous = false; recog.interimResults = false; recog.maxAlternatives = 3;
+      var resuelto = false;
+      recog.onresult = async function(ev) {
+        resuelto = true;
+        var texto = "";
+        try { for (var ri=0; ri<ev.results.length; ri++) { for (var ai=0; ai<ev.results[ri].length; ai++) texto += ev.results[ri][ai].transcript + " "; } } catch(e) {}
+        var tn = normTexto(texto);
+        var match = null;
+        for (var pi=0; pi<pares.length; pi++) { if (tn.indexOf(pares[pi].f) !== -1) { match = pares[pi]; break; } }
+        setEscuchando(false);
+        if (!match) { setFeedback("\u21BB No coincidió. Repetí tu frase."); setTimeout(function(){ setFeedback(""); }, 3500); return; }
+        var nombre = await _nombreUsuarioActual();
+        var loc = (await getCurrentLocationWithFallback()).location;
+        var hora = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+        var mapa = loc && loc.lat ? " - Mapa: https://maps.google.com/?q=" + loc.lat + "," + loc.lng : "";
+        var msg = match.s.substring(0,90) + " - (mensaje en codigo secreto, manejate con discrecion)" + mapa;
+        for (var fi=0; fi<contactos.length; fi++) {
+          try {
+            await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ to: _limpiarNum(contactos[fi].telefono), template: "alerta_emergencia", params: [nombre.substring(0,60), msg, hora, "Codigo secreto"] })
+            });
+          } catch(e) {}
+        }
+        setFeedback("\u2713 Enviado a tus contactos");
+        setTimeout(function(){ setFeedback(""); }, 4000);
+      };
+      recog.onerror = function(){ if (!resuelto) { resuelto = true; setEscuchando(false); setFeedback("\u21BB Repetí tu frase"); setTimeout(function(){ setFeedback(""); }, 3500); } };
+      recog.onend = function(){ if (!resuelto) setEscuchando(false); };
+      recogRef.current = recog;
+      recog.start();
+    } catch(e) { setEscuchando(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[300] flex items-end justify-center bg-black/95 backdrop-blur-sm" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div className="w-full max-w-md rounded-t-3xl overflow-hidden" style={{ background: "#000", border: `2px solid ${BRAND.borderStrong}`, maxHeight: "92vh", overflowY: "auto" }}>
+        <div className="flex justify-center pt-3 pb-1"><div className="h-1 w-12 rounded-full" style={{ background: BRAND.borderStrong }} /></div>
+        <div className="px-5 pb-8 pt-2 text-center">
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-left">
+              <h2 className="text-lg font-bold" style={{ color: BRAND.white }}>{"\u{1F910}"} Audio Codex</h2>
+              <p className="text-sm mt-0.5" style={{ color: BRAND.textLight }}>Decí tu frase en código.</p>
+            </div>
+            <button onClick={onClose} className="text-2xl" style={{ color: BRAND.textMute }}>✕</button>
+          </div>
+
+          {pares.length === 0 ? (
+            <div className="rounded-2xl p-5 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
+              <p className="text-sm mb-4" style={{ color: BRAND.textLight }}>Todavía no tenés frases en código configuradas. Creá las tuyas y volvé acá.</p>
+              <button onClick={function(){ onClose(); if (onConfigFrases) onConfigFrases(); }} className="w-full rounded-2xl py-3.5 font-bold" style={{ background: BRAND.goldGradient, color: BRAND.black }}>{"\u2699\uFE0F"} Configurar mis frases</button>
+            </div>
+          ) : (
+            <>
+              <button onClick={grabar} disabled={escuchando}
+                className="mx-auto flex flex-col items-center justify-center rounded-full mb-5 active:scale-95"
+                style={{ width: 150, height: 150, background: escuchando ? "rgba(255,46,85,0.18)" : "rgba(255,46,85,0.1)", border: `3px solid ${escuchando ? "#FF2E55" : "rgba(255,46,85,0.5)"}`, boxShadow: escuchando ? "0 0 30px rgba(255,46,85,0.45)" : "0 0 18px rgba(255,46,85,0.2)", transition: "all 0.25s" }}>
+                <span style={{ fontSize: 46 }}>{"\u{1F3A4}"}</span>
+                <span className="text-sm font-bold mt-1" style={{ color: escuchando ? "#ff7a93" : BRAND.textLight }}>{escuchando ? "Escuchando..." : "Tocá y hablá"}</span>
+              </button>
+              {feedback && <p className="text-sm font-bold mb-3" style={{ color: feedback.indexOf("\u2713") !== -1 ? "#86efac" : "#ff7a93" }}>{feedback}</p>}
+              <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(212,175,55,0.05)", border: `1px solid ${BRAND.border}` }}>
+                <p className="text-[12px] leading-relaxed" style={{ color: BRAND.textLight }}>Si decís una de tus frases, tus contactos reciben la <strong style={{ color: "#ff7a93" }}>traducción + tu ubicación</strong> — tu teléfono no muestra nada.</p>
+              </div>
+              <button onClick={function(){ onClose(); if (onConfigFrases) onConfigFrases(); }} className="w-full rounded-xl py-3 text-sm font-semibold" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BRAND.border}`, color: BRAND.gold }}>{"\u2699\uFE0F"} Configurar mis frases</button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── MODULE CARD ────────────────────────────
-function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, onOpenEvidencias, onAlertaSent }) {
+function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, onOpenEvidencias, onAlertaSent, onOpenFrases }) {
   const [expanded, setExpanded] = useState(autoExpand);
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [currentMessage, setCurrentMessage] = useState("");
@@ -2438,12 +2853,24 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
   const [showRutaSegura,  setShowRutaSegura]  = useState(false);
   const [showGeocercas,   setShowGeocercas]   = useState(false);
   const [showModoTestigo, setShowModoTestigo] = useState(false);
+  const [showTimer,       setShowTimer]       = useState(false);
+  const [showZonaSegura,  setShowZonaSegura]  = useState(false);
+  const [showAudioCodex,  setShowAudioCodex]  = useState(false);
+  const [showDesconocido, setShowDesconocido] = useState(false);
 
   function handleAction(action) {
     switch (action.type) {
       case "ruta_segura":  setShowRutaSegura(true);  break;
-      case "zona_segura":  setShowRutaSegura(true);  break;
-      case "audio_codex":  setShowRutaSegura(true);  break;
+      case "activar_timer":
+        if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza primero."); return; }
+        setShowTimer(true); break;
+      case "salgo_desconocido":
+        if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza primero."); return; }
+        setShowDesconocido(true); break;
+      case "zona_segura":
+        if (contactos.length === 0) { alert("Configurá al menos 1 contacto de confianza primero."); return; }
+        setShowZonaSegura(true); break;
+      case "audio_codex":  setShowAudioCodex(true);  break;
       case "geocercas":    setShowGeocercas(true);   break;
       case "modo_testigo": setShowModoTestigo(true); break;
       case "alert_contacts":
@@ -2544,6 +2971,10 @@ function ModuleCard({ m, autoExpand = false, contactos = [], onOpenPastillero, o
       {showCheckIn     && <CheckInModal contactos={contactos} titulo={checkInTitulo} onClose={() => setShowCheckIn(false)} />}
       {showRutaSegura  && <RutaSeguraModal onClose={() => setShowRutaSegura(false)} contactos={contactos} authUser={window.__traza360_auth} userProfile={window.__traza360_profile} />}
       {showModoTestigo && <ModoTestigoModal onClose={() => setShowModoTestigo(false)} contactos={contactos} />}
+      {showTimer       && <TimerSeguridadModal onClose={() => setShowTimer(false)} contactos={contactos} moduloKey={m.key} conNombre={false} />}
+      {showDesconocido && <TimerSeguridadModal onClose={() => setShowDesconocido(false)} contactos={contactos} moduloKey={m.key} conNombre={true} />}
+      {showZonaSegura  && <ZonaSeguraModal onClose={() => setShowZonaSegura(false)} contactos={contactos} moduloKey={m.key} />}
+      {showAudioCodex  && <AudioCodexModal onClose={() => setShowAudioCodex(false)} contactos={contactos} moduloKey={m.key} onConfigFrases={onOpenFrases} />}
       {showGeocercas   && (
         <div className="fixed inset-0 z-[300] overflow-y-auto" style={{ background: BRAND.blackBg }}>
           <GeocercasScreen onBack={() => setShowGeocercas(false)} contactos={contactos} authUser={window.__traza360_auth} />
@@ -6628,8 +7059,7 @@ async function ejecutarPanico() {
         {activeModule ? (
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-4">   <button onClick={() => setActiveModule(null)} className="rounded-xl px-5 py-3 text-sm font-bold flex items-center gap-2" style={{ color: BRAND.gold, background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)", border: `1px solid ${BRAND.borderStrong}` }}>     {"\u2190"} Volver al panel   </button>   <span className="text-sm font-bold uppercase tracking-wider" style={{ color: BRAND.textMute }}>{activeModule?.title}</span> </div>
-            {activeModule.key === "turno_seguro" && <CitaSeguraTimer onExpire={ejecutarAlertaTimer} noContacts={contactos.length === 0} />}
-            <ModuleCard m={activeModule} autoExpand={true} contactos={contactos} onOpenPastillero={() => { setActiveModule(null); setActiveScreen("pastillero"); }} onOpenEvidencias={() => { setActiveModule(null); setActiveScreen("evidencias"); }} onAlertaSent={function(aid) { setAlertaActualId(aid); setRespuestasPanico({}); setPanicoEnviado(true); }} />
+            <ModuleCard m={activeModule} autoExpand={true} contactos={contactos} onOpenPastillero={() => { setActiveModule(null); setActiveScreen("pastillero"); }} onOpenEvidencias={() => { setActiveModule(null); setActiveScreen("evidencias"); }} onOpenFrases={() => { setActiveModule(null); setActiveScreen("mis_frases"); }} onAlertaSent={function(aid) { setAlertaActualId(aid); setRespuestasPanico({}); setPanicoEnviado(true); }} />
           </div>
         ) : (
           <>
