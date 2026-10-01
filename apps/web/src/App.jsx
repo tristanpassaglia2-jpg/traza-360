@@ -15,6 +15,31 @@ window.fetch = async function (url, options) {
     }
   } catch (e) {}
   return _fetchOriginal(url, options);
+};// ─── CANDADO RESPUESTAS: la lectura de respuestas pasa por una ventanilla segura ───
+const _supabaseFromOriginal = supabase.from.bind(supabase);
+supabase.from = function (table) {
+  const real = _supabaseFromOriginal(table);
+  if (table !== "respuestas_contacto") return real;
+  return new Proxy(real, {
+    get(target, prop) {
+      if (prop === "select") {
+        return function () {
+          const q = { alertaId: "", desde: undefined };
+          const chain = {
+            eq(col, val) { if (col === "alerta_id") q.alertaId = val; return chain; },
+            gte(col, val) { if (col === "timestamp") q.desde = val; return chain; },
+            is() { return chain; },
+            then(ok, fail) {
+              return supabase.rpc("respuestas_de_alerta", { p_alerta_id: q.alertaId, p_desde: q.desde }).then(ok, fail);
+            },
+          };
+          return chain;
+        };
+      }
+      const v = target[prop];
+      return typeof v === "function" ? v.bind(target) : v;
+    },
+  });
 };
 
 /* ═══════════════════════════════════════════════════════════════
