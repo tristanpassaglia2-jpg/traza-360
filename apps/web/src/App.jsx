@@ -1,5 +1,21 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { signUp, signIn, signOut, getCurrentUser, supabase, getContactos, addContacto, deleteContacto, getMedicamentos, addMedicamento, deleteMedicamento, getTomasHoy, getTomasSemana, marcarTomado, crearTomasDelDia } from "./lib/supabase";
+// ─── CANDADO WHATSAPP: agrega el pase de sesión a cada envío ───
+const _fetchOriginal = window.fetch.bind(window);
+window.fetch = async function (url, options) {
+  try {
+    if (typeof url === "string" && url.indexOf("/functions/v1/send-whatsapp") !== -1) {
+      const { data } = await supabase.auth.getSession();
+      const token = data && data.session && data.session.access_token;
+      if (token) {
+        options = Object.assign({}, options, {
+          headers: Object.assign({}, options && options.headers, { Authorization: "Bearer " + token }),
+        });
+      }
+    }
+  } catch (e) {}
+  return _fetchOriginal(url, options);
+};
 
 /* ═══════════════════════════════════════════════════════════════
    VIGÍA 24 — App completa v19.12
