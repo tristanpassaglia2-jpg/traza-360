@@ -6299,8 +6299,8 @@ function LandingScreen({ onScreen }) {
   const NEON_BLUE_GLOW = "0 0 4px rgba(46,139,255,0.9), 0 0 12px rgba(46,139,255,0.6), 0 0 26px rgba(46,139,255,0.35)";
 
   const MODULE_CARDS = [
-    { key: "turno_seguro", title: "Cita Segura", subtitle: "Avisá con quién vas y compartí tu ubicación en vivo", img: "https://images.unsplash.com/photo-1729704706106-d8792faa9f94?q=80&w=1920&auto=format&fit=crop", icon: "🕐", pos: "center 30%" },
-    { key: "mi_escudo", title: "Modo Alerta", subtitle: "Alertá a tu gente al instante si algo pasa", img: "https://images.unsplash.com/photo-1588747020648-4ff0ec1abecb?q=80&w=1920&auto=format&fit=crop", icon: "🚨", pos: "center 40%" },
+    { key: "turno_seguro", title: "Cita Segura", subtitle: "Avisá con quién vas y compartí tu ubicación en vivo", img: "/cita-segura.jpg", icon: "🕐", pos: "center 30%" },
+    { key: "mi_escudo", title: "Modo Alerta", subtitle: "Alertá a tu gente al instante si algo pasa", img: "/modo-alerta.jpg", icon: "🚨", pos: "center 40%" },
 
   ];
 
@@ -6745,9 +6745,9 @@ const [respuestasPanico, setRespuestasPanico] = useState({});
   // v19.13: Cards con fotos Unsplash cinematográficas
   const quickCards = [
     { key: "turno_seguro", emoji: "\u{1F550}", title: "Cita Segura", text: "Antes y durante un encuentro: avisá con quién vas, compartí tu ubicación en vivo y activá tu timer.",
-      img: "https://images.unsplash.com/photo-1729704706106-d8792faa9f94?q=80&w=800&auto=format&fit=crop" },
+      img: "/cita-segura.jpg" },
     { key: "mi_escudo",    emoji: "\u{1F6A8}", title: "Modo Alerta",    text: "Algo está pasando ahora: alertá a tu gente al instante, con tu ubicación y evidencia.",
-      img: "https://images.unsplash.com/photo-1588747020648-4ff0ec1abecb?q=80&w=800&auto=format&fit=crop" },
+      img: "/modo-alerta.jpg" },
 
     { key: "contactos",    emoji: "\u{1F465}", title: "Mis Contactos", text: `${contactos.length}/${(PLAN_LIMITS[userPlan]||PLAN_LIMITS.gratis).contactos} contactos configurados`, img: null },
     { key: "instrucciones",emoji: "\u{2139}\u{FE0F}", title: "¿Cómo funciona?", text: "Aprendé a usar la app paso a paso.", img: null },
