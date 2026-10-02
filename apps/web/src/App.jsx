@@ -759,9 +759,31 @@ function OnboardingScreen({ onComplete }) {
 }
 
 // ─── VERIFICACIÓN CONTACTO (Safety Check) ───
+// v2 (oct 2026): manda un aviso de PRUEBA claro, sin GPS y sin registrar alerta.
 async function verificarContacto(telefono, nombreContacto, nombreUsuario) {
-  const msg = `Hola ${nombreContacto} 👋 Soy ${nombreUsuario} y te agregué como contacto de confianza en VIGÍA 24, una app de seguridad personal.\n\n✅ Si recibís este mensaje, todo funciona correctamente.\n\nRespondé "OK" para confirmar que lo recibiste.\n\n🛡️ VIGÍA 24 — vigia24.app`;
-  return await sendWhatsAppAPI(telefono, msg);
+  try {
+    const numLimpio = String(telefono || "").replace(/\D/g, "").replace(/^0+/, "");
+    const nombre = String(nombreUsuario || "Tu contacto").substring(0, 60);
+    const hora = new Date().toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+    const aviso = "ESTO ES SOLO UNA PRUEBA, NO ES UNA EMERGENCIA. " + nombre + " te agrego como contacto de confianza en VIGIA 24. No tenes que hacer nada";
+    const response = await fetch("https://vzqxxkxdxcmaucubufpz.supabase.co/functions/v1/send-whatsapp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: numLimpio,
+        template: "alerta_emergencia",
+        params: [nombre, aviso, hora, "Verificacion de contacto (prueba)"],
+        es_prueba: true,
+      }),
+    });
+    const data = await response.json();
+    if (data.messages) { return { success: true, data }; }
+    console.warn("Verificacion WhatsApp error:", data.error);
+    return { success: false, error: data.error };
+  } catch (error) {
+    console.error("Verificacion fetch error:", error);
+    return { success: false, error: error.message };
+  }
 }
 
 // ─── GRABACION AUDIO ────────────────────────
@@ -836,12 +858,12 @@ async function listarEvidencias() {
     const { data, error } = await supabase.storage.from("evidencias").list(user.id, { limit: 100, sortBy: { column: "created_at", order: "desc" } });
     if (error) return [];
     let files = data || [];
-    // AUTO-BORRADO: en plan NO pago, borrar evidencias de más de 15 días (controla el costo de Supabase)
+    // AUTO-BORRADO: en plan NO pago, borrar evidencias de más de 90 días (oct 2026: antes 15; 90 días para dar tiempo a denunciar)
     try {
       const { data: perfil } = await supabase.from("usuarios").select("plan").eq("auth_user_id", user.id).single();
       const esPagador = perfil && perfil.plan === "premium";
       if (!esPagador) {
-        const limite = Date.now() - 15 * 24 * 60 * 60 * 1000;
+        const limite = Date.now() - 90 * 24 * 60 * 60 * 1000;
         const viejas = files.filter(f => f.created_at && new Date(f.created_at).getTime() < limite);
         if (viejas.length) {
           await supabase.storage.from("evidencias").remove(viejas.map(f => `${user.id}/${f.name}`));
@@ -1569,7 +1591,7 @@ function EvidenciasScreen({ onBack }) {
 
         <div className="mb-4 rounded-xl p-3 flex items-start gap-2" style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.3)" }}>
           <span style={{ fontSize: 15 }}>{"\u2139\uFE0F"}</span>
-          <p className="text-[12.5px]" style={{ color: "rgba(255,255,255,0.7)" }}>En el plan gratis, las evidencias se guardan <b style={{ color: "#fff" }}>15 días</b>. Descargá las que quieras conservar. Con Premium se guardan sin límite.</p>
+          <p className="text-[12.5px]" style={{ color: "rgba(255,255,255,0.7)" }}>En el plan gratis, las evidencias se guardan <b style={{ color: "#fff" }}>90 días</b>. Descargá las que quieras conservar. Con Premium se guardan sin límite.</p>
         </div>
 
         {audioUrl && (
@@ -5445,8 +5467,6 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
   const [expiresAt, setExpiresAt] = useState(null);
   const [countdown, setCountdown] = useState(null);
   const [error, setError]     = useState("");
-  const [emailExtra, setEmailExtra] = useState("");
-  const [smsExtra, setSmsExtra]   = useState("");
   // Contactos propios del módulo — persisten entre sesiones
   const [contactosMod, setContactosMod] = useState(() => {
     try { return JSON.parse(sessionStorage.getItem("traza360_ruta_contactos") || "[]"); } catch(e) { return []; }
@@ -5576,8 +5596,8 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
 
   async function activar() {
     setError("");
-    const tieneDestinatario = contactosMod.length > 0 || emailExtra.trim() || smsExtra.trim();
-    if (!tieneDestinatario) { setError("Agregá al menos 1 contacto, email o número SMS."); return; }
+    const tieneDestinatario = contactosMod.length > 0;
+    if (!tieneDestinatario) { setError("Agregá al menos 1 contacto de confianza."); return; }
     setLoading(true);
     try {
       const nuevoToken = Math.random().toString(36).substring(2, 9);
@@ -5727,15 +5747,6 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
           } catch(e) { console.warn("WA seguimiento:", e); }
         }
       }
-      if (emailExtra.trim()) {
-        const asunto = encodeURIComponent(`VIGÍA 24 — ${nombreUsuario} compartió su ubicación`);
-        const cuerpo = encodeURIComponent(`${nombreUsuario} activó seguimiento en vivo.\n\nVer mapa: ${urlPublica}\n\n${msgBase}`);
-        window.open(`mailto:${emailExtra.trim()}?subject=${asunto}&body=${cuerpo}`, "_blank");
-      }
-      if (smsExtra.trim()) {
-        const msgSMS = encodeURIComponent(`VIGÍA 24: ${nombreUsuario} compartió su ubicación. Ver mapa: ${urlPublica}`);
-        window.open(`sms:${smsExtra.trim()}?body=${msgSMS}`, "_blank");
-      }
       setPaso(2);
     } catch(e) { setError("Error al activar: " + e.message); }
     setLoading(false);
@@ -5851,20 +5862,6 @@ function RutaSeguraModal({ onClose, contactos: _contactosGlobal, authUser, userP
                 </button>
               </div>
             )}
-
-            {/* Email */}
-            <p className="text-[11px] uppercase tracking-widest font-bold mb-2 mt-4" style={{ color: BRAND.gold }}>También por email (opcional)</p>
-            <input type="email" value={emailExtra} onChange={e => setEmailExtra(e.target.value)}
-              placeholder="correo@ejemplo.com"
-              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none mb-3"
-              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${emailExtra ? BRAND.gold : BRAND.border}`, color: BRAND.white }} />
-
-            {/* SMS */}
-            <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>También por SMS (opcional)</p>
-            <input type="tel" value={smsExtra} onChange={e => setSmsExtra(e.target.value)}
-              placeholder="+54 9 351 000 0000"
-              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none mb-4"
-              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${smsExtra ? BRAND.gold : BRAND.border}`, color: BRAND.white }} />
 
             {/* Mensaje */}
             <p className="text-[11px] uppercase tracking-widest font-bold mb-2" style={{ color: BRAND.gold }}>Mensaje (opcional)</p>
